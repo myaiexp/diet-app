@@ -1,0 +1,25 @@
+{
+  "name": "@diet-app/api",
+  "version": "0.0.1",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsx watch src/index.ts",
+    "start": "node dist/index.js",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@diet-app/db": "*",
+    "@hono/node-server": "latest",
+    "hono": "latest",
+    "dotenv": "latest",
+    "zod": "latest"
+  },
+  "devDependencies": {
+    "typescript": "latest",
+    "tsx": "latest",
+    "vitest": "latest"
+  }
+}
