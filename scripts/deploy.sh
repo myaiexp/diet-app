@@ -37,8 +37,10 @@ rsync -az packages/db/drizzle/ "$REMOTE:$REMOTE_DIR/packages/db/drizzle/"
 echo "=== Installing dependencies on VPS ==="
 ssh "$REMOTE" "cd $REMOTE_DIR && npm install --omit=dev"
 
-echo "=== Running migrations ==="
-ssh "$REMOTE" "cd $REMOTE_DIR/packages/db && npx drizzle-kit migrate"
+echo "=== Running migrations (local via SSH tunnel) ==="
+# Migrations run locally through SSH tunnel to avoid needing tsx on VPS
+# Ensure tunnel is running: npm run dev:tunnel
+(cd packages/db && npm run migrate)
 
 echo "=== Restarting service ==="
 ssh "$REMOTE" "sudo systemctl restart diet-app-api"

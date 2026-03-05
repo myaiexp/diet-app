@@ -1,5 +1,6 @@
 import { config } from 'dotenv';
-config({ path: '../../.env' });
+config({ path: '../../.env' });     // dev: relative to packages/api/src
+config({ path: '.env' });           // prod: WorkingDirectory is project root
 
 import { serve } from '@hono/node-server';
 import { createDb } from '@diet-app/db';
