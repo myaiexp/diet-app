@@ -1,0 +1,13 @@
+{
+  "name": "diet-app",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev:tunnel": "ssh -N -L 5433:localhost:5432 vps"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
