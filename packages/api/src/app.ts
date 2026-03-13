@@ -11,7 +11,9 @@ import { profileRoutes } from './routes/profile.js';
 export function createApp(db: Db) {
   const app = new Hono();
 
-  app.use('*', cors({ origin: '*' }));
+  app.use('*', cors({
+    origin: ['https://mase.fi', 'http://localhost:5173'],
+  }));
 
   app.get('/api/health', (c) => c.json({ ok: true, name: 'diet-app-api' }));
 
