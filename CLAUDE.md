@@ -45,46 +45,10 @@ Design docs in project root: `diet-app-plan-*.md` (features, data model, phases,
 
 ---
 
-## Current Phase
-
-**Phase 1: Pantry + Recipes** — full CRUD for pantry and recipe management
-
-Details: `.claude/phases/current.md`
-
-### Decisions from previous phases
-
-- **Phase 0 (Skeleton)**: Self-hosted on VPS. Hono + Drizzle monorepo. Frontend will be in central-hub. 462 seeded ingredients with nutrition data and Finnish aliases. systemd + nginx deployment.
-
----
-
 ## Doc Management
 
-This project splits documentation to minimize context usage. Follow these rules:
-
-### File layout
-
-| File                         | Purpose                                                        | When to read                              |
-| ---------------------------- | -------------------------------------------------------------- | ----------------------------------------- |
-| `CLAUDE.md` (this file)      | Project identity, structure, patterns, current phase pointer   | Auto-loaded every session                 |
-| `.claude/phases/current.md`  | Symlink → active phase file                                    | Read when starting phase work             |
-| `.claude/phases/NNN-name.md` | Phase files (active via symlink, completed ones local-only)    | Only if you need historical context       |
-| `.claude/ideas.md`           | Future feature ideas, tech debt, and enhancements              | When planning next phase or brainstorming |
-| `.claude/plans/`             | Design docs and implementation plans from brainstorming        | When implementing or reviewing designs    |
-| `.claude/references/`        | Domain reference material (specs, external docs, data sources) | When you need domain knowledge            |
-| `.claude/[freeform].md`      | Project-specific context docs (architecture, deployment, etc.) | As referenced from this file              |
-
-### Phase transitions
-
-When a phase is completed:
-
-1. **Condense** — extract lasting decisions from the active phase file and add to "Decisions from previous phases". Keep each to 1-2 lines.
-2. **Archive** — remove the `current.md` symlink. The completed phase file stays but is no longer committed.
-3. **Start fresh** — create a new numbered phase file from `~/.claude/phase-template.md`, then symlink `current.md` → it.
-4. **Update this file** — update the "Current Phase" section above.
-5. **Prune** — remove anything from this file that was phase-specific and no longer applies.
-
-### What goes where
-
-- **This file**: project-wide truths (stack, structure, patterns, conventions). Things that are true regardless of which phase you're in.
-- **Phase doc**: goals, requirements, architecture decisions, implementation notes, and anything specific to the current body of work.
-- **Process rules**: delegation and modularization standards live in `~/.claude/process.md` (global, not per-project).
+- **CLAUDE.md** (this file): Project identity, structure, patterns, conventions
+- **`.claude/ideas.md`**: Future feature ideas, tech debt, and enhancements
+- **`.claude/plans/`**: Design docs and implementation plans
+- **`.claude/references/`**: Domain reference material (specs, external docs, data sources)
+- **`.claude/[freeform].md`**: Project-specific context docs (architecture, deployment, etc.)
