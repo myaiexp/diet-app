@@ -38,9 +38,10 @@ Design docs in project root: `diet-app-plan-*.md` (features, data model, phases,
 - **Central-hub conventions**: ESM, `.js` imports, UUID PKs, timezone timestamps
 - **Database**: 9 tables — ingredients, recipes, recipeIngredients, pantryItems, mealPlanEntries, cookFeedback, shoppingLists, shoppingListItems, userProfile
 - **API**: Each route module exports `(db: Db) => Hono`, mounted in app.ts
-- **Deployment**: `scripts/deploy.sh` → build, rsync to VPS, migrate locally via tunnel, restart systemd
+- **Deployment**: `scripts/deploy.sh` → build, rsync to `/opt/diet-app`, install deps, restart `diet-app-api.service`
+- **Production**: System service `diet-app-api.service` runs as `www-data`, env in `/opt/diet-app/.env`
 - **Dev tunnel**: `npm run dev:tunnel` → SSH port forward 5433→5432 on VPS
-- **Public URL**: `https://mase.fi/diet/api/` (nginx proxy on VPS)
+- **Public URL**: `https://mase.fi/diet/api/` (nginx proxy → 127.0.0.1:3300)
 - Core concepts: spoilage-first pantry, AI meal planning, constraint satisfaction, auto-deduct cooking
 
 ---
