@@ -4,8 +4,9 @@ config({ path: '../../.env' });
 import { describe, test, expect, afterAll } from 'vitest';
 import { createDb } from '@diet-app/db';
 import { createApp } from '../app.js';
+import { assertEnv } from '../env.js';
 
-const db = createDb(process.env.DATABASE_URL!);
+const db = createDb(assertEnv('DATABASE_URL'));
 const app = createApp(db);
 
 afterAll(async () => {

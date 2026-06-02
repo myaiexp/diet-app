@@ -5,8 +5,9 @@ config({ path: '.env' });           // prod: WorkingDirectory is project root
 import { serve } from '@hono/node-server';
 import { createDb } from '@diet-app/db';
 import { createApp } from './app.js';
+import { assertEnv } from './env.js';
 
-const db = createDb(process.env.DATABASE_URL!);
+const db = createDb(assertEnv('DATABASE_URL'));
 const app = createApp(db);
 const PORT = parseInt(process.env.API_PORT ?? '3300', 10);
 
