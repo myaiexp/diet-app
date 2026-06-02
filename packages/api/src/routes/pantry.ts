@@ -5,8 +5,8 @@ import { eq } from 'drizzle-orm';
 
 type PantryStatus = 'fresh' | 'use_soon' | 'use_today' | 'expired';
 
-function computeStatus(expiresDate: string): PantryStatus {
-  const today = new Date();
+export function computeStatus(expiresDate: string, now: Date = new Date()): PantryStatus {
+  const today = new Date(now);
   today.setHours(0, 0, 0, 0);
   const expires = new Date(expiresDate);
   expires.setHours(0, 0, 0, 0);
