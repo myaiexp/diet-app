@@ -10,8 +10,8 @@ const db = createDb(assertEnv('DATABASE_URL'));
 const app = createApp(db);
 
 afterAll(async () => {
-  // Allow pool connections to close
-  await new Promise((r) => setTimeout(r, 100));
+  // Close the underlying pg pool so the test process exits cleanly
+  await db.$client.end();
 });
 
 describe('GET /api/ingredients', () => {
