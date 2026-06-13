@@ -1,5 +1,4 @@
 import { describe, test, expect } from 'vitest';
-import { Hono } from 'hono';
 import { createApp } from '../app.js';
 
 // Mock db — health endpoint doesn't use it
