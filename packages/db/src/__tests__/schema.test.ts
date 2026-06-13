@@ -1,15 +1,9 @@
 import { describe, test, expect } from 'vitest';
 import * as schema from '../schema/index.js';
-import { ingredients } from '../schema/ingredients.js';
-import { recipes, recipeIngredients } from '../schema/recipes.js';
-import { pantryItems } from '../schema/pantry.js';
-import { mealPlanEntries, cookFeedback } from '../schema/meal-plans.js';
-import { shoppingLists, shoppingListItems } from '../schema/shopping-lists.js';
-import { userProfile } from '../schema/user-profile.js';
 
 describe('schema tables', () => {
   test('ingredients table has correct columns', () => {
-    const cols = Object.keys(ingredients);
+    const cols = Object.keys(schema.ingredients);
     expect(cols).toContain('id');
     expect(cols).toContain('name');
     expect(cols).toContain('nutritionPer100g');
@@ -24,7 +18,7 @@ describe('schema tables', () => {
   });
 
   test('recipes table has correct columns', () => {
-    const cols = Object.keys(recipes);
+    const cols = Object.keys(schema.recipes);
     expect(cols).toContain('id');
     expect(cols).toContain('title');
     expect(cols).toContain('sourceType');
@@ -35,7 +29,7 @@ describe('schema tables', () => {
   });
 
   test('recipeIngredients table has correct columns', () => {
-    const cols = Object.keys(recipeIngredients);
+    const cols = Object.keys(schema.recipeIngredients);
     expect(cols).toContain('id');
     expect(cols).toContain('recipeId');
     expect(cols).toContain('ingredientId');
@@ -45,7 +39,7 @@ describe('schema tables', () => {
   });
 
   test('pantryItems table has correct columns', () => {
-    const cols = Object.keys(pantryItems);
+    const cols = Object.keys(schema.pantryItems);
     expect(cols).toContain('id');
     expect(cols).toContain('ingredientId');
     expect(cols).toContain('quantity');
@@ -57,7 +51,7 @@ describe('schema tables', () => {
   });
 
   test('mealPlanEntries table has correct columns', () => {
-    const cols = Object.keys(mealPlanEntries);
+    const cols = Object.keys(schema.mealPlanEntries);
     expect(cols).toContain('id');
     expect(cols).toContain('date');
     expect(cols).toContain('slot');
@@ -68,7 +62,7 @@ describe('schema tables', () => {
   });
 
   test('cookFeedback table has correct columns', () => {
-    const cols = Object.keys(cookFeedback);
+    const cols = Object.keys(schema.cookFeedback);
     expect(cols).toContain('id');
     expect(cols).toContain('mealPlanEntryId');
     expect(cols).toContain('rating');
@@ -78,14 +72,14 @@ describe('schema tables', () => {
   });
 
   test('shoppingLists table has correct columns', () => {
-    const cols = Object.keys(shoppingLists);
+    const cols = Object.keys(schema.shoppingLists);
     expect(cols).toContain('id');
     expect(cols).toContain('weekStarting');
     expect(cols).toContain('status');
   });
 
   test('shoppingListItems table has correct columns', () => {
-    const cols = Object.keys(shoppingListItems);
+    const cols = Object.keys(schema.shoppingListItems);
     expect(cols).toContain('id');
     expect(cols).toContain('listId');
     expect(cols).toContain('ingredientId');
@@ -97,7 +91,7 @@ describe('schema tables', () => {
   });
 
   test('userProfile table has correct columns', () => {
-    const cols = Object.keys(userProfile);
+    const cols = Object.keys(schema.userProfile);
     expect(cols).toContain('id');
     expect(cols).toContain('name');
     expect(cols).toContain('calorieTargetMin');
@@ -135,19 +129,19 @@ describe('schema tables', () => {
 
   test('foreign keys reference correct tables', () => {
     // recipeIngredients.recipeId references recipes
-    const riRecipeCol = recipeIngredients.recipeId;
+    const riRecipeCol = schema.recipeIngredients.recipeId;
     expect(riRecipeCol).toBeDefined();
 
     // recipeIngredients.ingredientId references ingredients
-    const riIngredientCol = recipeIngredients.ingredientId;
+    const riIngredientCol = schema.recipeIngredients.ingredientId;
     expect(riIngredientCol).toBeDefined();
 
     // pantryItems.ingredientId references ingredients
-    const pantryIngredientCol = pantryItems.ingredientId;
+    const pantryIngredientCol = schema.pantryItems.ingredientId;
     expect(pantryIngredientCol).toBeDefined();
 
     // cookFeedback.mealPlanEntryId references mealPlanEntries (unique + notNull)
-    const cfEntryCol = cookFeedback.mealPlanEntryId;
+    const cfEntryCol = schema.cookFeedback.mealPlanEntryId;
     expect(cfEntryCol).toBeDefined();
 
     // Verify FK config is attached to the column
