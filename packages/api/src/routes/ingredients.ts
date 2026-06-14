@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import type { Db } from '@diet-app/db';
 import { ingredients } from '@diet-app/db';
 import { eq, ilike, and, or, sql } from 'drizzle-orm';
+import { isUuid } from '../validation.js';
 
 export function ingredientsRoutes(db: Db): Hono {
   const app = new Hono();
@@ -32,6 +33,7 @@ export function ingredientsRoutes(db: Db): Hono {
 
   app.get('/:id', async (c) => {
     const id = c.req.param('id');
+    if (!isUuid(id)) return c.json({ error: 'Invalid id format' }, 400);
     const row = await db.query.ingredients.findFirst({
       where: eq(ingredients.id, id),
     });
