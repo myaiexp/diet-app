@@ -6,8 +6,28 @@ import { createDb } from '@diet-app/db';
 import { createApp } from '../app.js';
 import { assertEnv } from '../env.js';
 
-const db = createDb(assertEnv('DATABASE_URL'));
+// SAFETY: tests MUST run against the isolated test DB, never prod (DATABASE_URL).
+// Resolve the test URL and hard-fail BEFORE opening any connection if it looks
+// like the production database — i.e. contains 'dietapp' without the '_test'
+// suffix. This makes it impossible for a misconfigured env to point tests at
+// prod. (The error intentionally does not echo the URL, to avoid leaking any
+// credentials embedded in a misconfigured value.)
+const TEST_DB_URL = assertEnv('TEST_DATABASE_URL');
+if (TEST_DB_URL.includes('dietapp') && !TEST_DB_URL.includes('_test')) {
+  throw new Error(
+    "Refusing to run tests: TEST_DATABASE_URL looks like the production database " +
+      "(contains 'dietapp' but not '_test'). Point it at dietapp_test before running tests."
+  );
+}
+
+const db = createDb(TEST_DB_URL);
 const app = createApp(db);
+
+// Write-path tests: all routes are currently GET-only, so no mutation coverage
+// exists yet. When adding write tests against dietapp_test, isolate them so they
+// don't leave state behind for later tests — wrap each in a transaction that is
+// rolled back, or truncate + reseed in a beforeEach/afterAll. The DB is isolated
+// from prod (guarded above), so writes here are safe regardless.
 
 afterAll(async () => {
   // Close the underlying pg pool so the test process exits cleanly
