@@ -3,6 +3,7 @@ import type { Db } from '@diet-app/db';
 import { ingredients } from '@diet-app/db';
 import { eq, ilike, and, or, sql } from 'drizzle-orm';
 import { isUuid } from '../validation.js';
+import { getPagination } from '../pagination.js';
 
 export function ingredientsRoutes(db: Db): Hono {
   const app = new Hono();
@@ -24,9 +25,13 @@ export function ingredientsRoutes(db: Db): Hono {
       conditions.push(eq(ingredients.category, category));
     }
 
-    const rows = conditions.length > 0
-      ? await db.select().from(ingredients).where(and(...conditions))
-      : await db.select().from(ingredients);
+    const { limit, offset } = getPagination(c);
+    const rows = await db
+      .select()
+      .from(ingredients)
+      .where(conditions.length ? and(...conditions) : undefined)
+      .limit(limit)
+      .offset(offset);
 
     return c.json(rows);
   });

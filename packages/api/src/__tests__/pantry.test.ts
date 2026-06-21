@@ -6,6 +6,8 @@ process.env.TZ = 'UTC';
 
 import { describe, test, expect } from 'vitest';
 import { computeStatus, pantryRoutes } from '../routes/pantry.js';
+import { makeSelectMock } from './select-mock.js';
+import { DEFAULT_LIMIT } from '../pagination.js';
 
 // Fixed reference instant: noon UTC on a non-DST-transition day, so day-diffs
 // are stable integers and the tests are deterministic.
@@ -57,14 +59,28 @@ const EXPIRED_ROW = { id: '22222222-2222-2222-2222-222222222222', expiresDate: '
 
 describe('pantryRoutes', () => {
   test('GET / maps each row to a computed status field', async () => {
-    const mockDb = { select: () => ({ from: async () => [FRESH_ROW, EXPIRED_ROW] }) } as any;
-    const app = pantryRoutes(mockDb);
+    const { db } = makeSelectMock([FRESH_ROW, EXPIRED_ROW]);
+    const app = pantryRoutes(db);
     const res = await app.request('/');
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body).toHaveLength(2);
     expect(body[0].status).toBe('fresh');
     expect(body[1].status).toBe('expired');
+  });
+
+  test('GET / applies default pagination', async () => {
+    const { db, calls } = makeSelectMock([FRESH_ROW]);
+    await pantryRoutes(db).request('/');
+    expect(calls.limit).toBe(DEFAULT_LIMIT);
+    expect(calls.offset).toBe(0);
+  });
+
+  test('GET /:id rejects a malformed id with 400 before touching the DB', async () => {
+    const app = pantryRoutes({} as any);
+    const res = await app.request('/not-a-uuid');
+    expect(res.status).toBe(400);
+    expect(await res.json()).toHaveProperty('error');
   });
 
   test('GET /:id returns 200 with a computed status field when found', async () => {

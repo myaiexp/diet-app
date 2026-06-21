@@ -74,6 +74,31 @@ describe.skipIf(!hasDb)('GET /api/ingredients', () => {
     }
   });
 
+  // Finding #5: ?q + ?category exercises the and(...) combined SQL path that the
+  // single-filter tests above never hit. Every row must satisfy BOTH filters.
+  test('?q + ?category returns rows satisfying both filters', async () => {
+    const res = await app!.request('/api/ingredients?q=chicken&category=protein');
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(Array.isArray(body)).toBe(true);
+    for (const item of body) {
+      expect(item.category).toBe('protein');
+      const nameMatch = item.name.toLowerCase().includes('chicken');
+      const aliasMatch = (item.aliases ?? []).some((a: string) =>
+        a.toLowerCase().includes('chicken')
+      );
+      expect(nameMatch || aliasMatch).toBe(true);
+    }
+  });
+
+  test('?limit caps the number of rows returned', async () => {
+    const res = await app!.request('/api/ingredients?limit=5');
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(Array.isArray(body)).toBe(true);
+    expect(body.length).toBeLessThanOrEqual(5);
+  });
+
   test('/:id returns 404 for missing', async () => {
     const res = await app!.request('/api/ingredients/00000000-0000-0000-0000-000000000000');
     expect(res.status).toBe(404);

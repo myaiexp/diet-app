@@ -5,6 +5,8 @@
 import { describe, test, expect } from 'vitest';
 import { ingredientsRoutes } from '../routes/ingredients.js';
 import { isUuid } from '../validation.js';
+import { makeSelectMock } from './select-mock.js';
+import { DEFAULT_LIMIT, MAX_LIMIT } from '../pagination.js';
 
 describe('isUuid', () => {
   test('accepts a well-formed UUID', () => {
@@ -25,6 +27,63 @@ describe('isUuid', () => {
 
   test('rejects a numeric id', () => {
     expect(isUuid('12345')).toBe(false);
+  });
+});
+
+describe('GET /api/ingredients — list filtering', () => {
+  const ROW = { id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890', name: 'Chicken breast', category: 'meat' };
+
+  test('no filters: where clause is undefined (unfiltered path)', async () => {
+    const { db, calls } = makeSelectMock([ROW]);
+    const res = await ingredientsRoutes(db).request('/');
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual([ROW]);
+    expect(calls.where).toBeUndefined();
+  });
+
+  test('?q alone: combined and() not used but a where clause is applied', async () => {
+    const { db, calls } = makeSelectMock([ROW]);
+    await ingredientsRoutes(db).request('/?q=chicken');
+    expect(calls.where).toBeDefined();
+  });
+
+  // Finding #5: the ?q + ?category combined path runs the and(...) branch, which
+  // single-filter tests never exercise. A defined where clause proves the branch
+  // was taken; real two-filter SQL semantics are checked in the integration suite.
+  test('?q + ?category together: both filters drive a combined where clause', async () => {
+    const { db, calls } = makeSelectMock([ROW]);
+    const res = await ingredientsRoutes(db).request('/?q=chicken&category=meat');
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual([ROW]);
+    expect(calls.where).toBeDefined();
+  });
+});
+
+describe('GET /api/ingredients — pagination', () => {
+  test('defaults: limit=DEFAULT_LIMIT, offset=0 when no params', async () => {
+    const { db, calls } = makeSelectMock([]);
+    await ingredientsRoutes(db).request('/');
+    expect(calls.limit).toBe(DEFAULT_LIMIT);
+    expect(calls.offset).toBe(0);
+  });
+
+  test('honours explicit ?limit and ?offset', async () => {
+    const { db, calls } = makeSelectMock([]);
+    await ingredientsRoutes(db).request('/?limit=10&offset=5');
+    expect(calls.limit).toBe(10);
+    expect(calls.offset).toBe(5);
+  });
+
+  test('clamps an over-large ?limit to MAX_LIMIT', async () => {
+    const { db, calls } = makeSelectMock([]);
+    await ingredientsRoutes(db).request('/?limit=9999');
+    expect(calls.limit).toBe(MAX_LIMIT);
+  });
+
+  test('falls back to default on a non-numeric ?limit', async () => {
+    const { db, calls } = makeSelectMock([]);
+    await ingredientsRoutes(db).request('/?limit=abc');
+    expect(calls.limit).toBe(DEFAULT_LIMIT);
   });
 });
 
