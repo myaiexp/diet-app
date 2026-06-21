@@ -45,3 +45,36 @@ describe('GET /api/ingredients/:id — UUID validation', () => {
     expect(res.status).toBe(400);
   });
 });
+
+describe('GET /api/ingredients/:id — lookup', () => {
+  const VALID_ID = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
+  const ROW = {
+    id: VALID_ID,
+    name: 'Chicken breast',
+    aliases: ['chicken'],
+    category: 'meat',
+    defaultUnit: 'g',
+    nutritionPer100g: { kcal: 165 },
+    shelfLife: { fridge: 3 },
+    tags: [],
+    isPantryStaple: false,
+  };
+
+  test('returns 200 with the full ingredient shape when found', async () => {
+    const mockDb = { query: { ingredients: { findFirst: async () => ROW } } } as any;
+    const app = ingredientsRoutes(mockDb);
+    const res = await app.request(`/${VALID_ID}`);
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body).toMatchObject({ id: VALID_ID, name: 'Chicken breast', category: 'meat' });
+    expect(body.aliases).toEqual(['chicken']);
+  });
+
+  test('returns 404 with error body when a valid id is not found', async () => {
+    const mockDb = { query: { ingredients: { findFirst: async () => undefined } } } as any;
+    const app = ingredientsRoutes(mockDb);
+    const res = await app.request(`/${VALID_ID}`);
+    expect(res.status).toBe(404);
+    expect(await res.json()).toEqual({ error: 'Not found' });
+  });
+});
