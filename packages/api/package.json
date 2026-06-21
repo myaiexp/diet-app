@@ -12,14 +12,15 @@
   },
   "dependencies": {
     "@diet-app/db": "*",
-    "@hono/node-server": "latest",
-    "hono": "latest",
-    "dotenv": "latest",
-    "zod": "latest"
+    "@hono/node-server": "^1.19.14",
+    "hono": "^4.12.26",
+    "dotenv": "^17.3.1",
+    "zod": "^4.4.3"
   },
   "devDependencies": {
-    "typescript": "latest",
-    "tsx": "latest",
-    "vitest": "latest"
+    "@types/node": "^25.9.4",
+    "typescript": "^5.9.3",
+    "tsx": "^4.22.4",
+    "vitest": "^4.1.9"
   }
 }
