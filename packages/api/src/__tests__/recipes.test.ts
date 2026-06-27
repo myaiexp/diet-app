@@ -1,10 +1,17 @@
 // Mock-based route tests for recipesRoutes — deterministic, Postgres-free.
-// Covers the :id 200 path (including the recipeIngredients relation shape) and
-// the 404 path, which the integration suite cannot exercise (nothing is seeded).
+// Covers the :id 200 path (including the recipeIngredients relation shape), the
+// 404 path, and the GET / list-filter wiring for ?tags=/?cuisine= (which the
+// integration suite cannot exercise — nothing is seeded). The filter tests
+// render the WHERE clause the handler builds (via PgDialect) to prove each
+// query param is actually applied; buildTagsCondition's own SQL shape is unit-
+// tested in recipe-filters.test.ts.
 
 import { describe, test, expect } from 'vitest';
+import { PgDialect } from 'drizzle-orm/pg-core';
 import { recipesRoutes } from '../routes/recipes.js';
 import { makeSelectMock } from './select-mock.js';
+
+const dialect = new PgDialect();
 
 const RECIPE_ID = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee';
 
@@ -29,6 +36,40 @@ describe('recipesRoutes', () => {
     const res = await app.request('/');
     expect(res.status).toBe(200);
     expect(Array.isArray(await res.json())).toBe(true);
+  });
+
+  test('GET / with no filters builds no WHERE clause', async () => {
+    const { db, calls } = makeSelectMock([]);
+    await recipesRoutes(db).request('/');
+    expect(calls.where).toBeUndefined();
+  });
+
+  test('GET /?cuisine=italian filters on cuisineType', async () => {
+    const { db, calls } = makeSelectMock([]);
+    const res = await recipesRoutes(db).request('/?cuisine=italian');
+    expect(res.status).toBe(200);
+    const q = dialect.sqlToQuery(calls.where as any);
+    expect(q.params).toContain('italian');
+  });
+
+  test('GET /?tags=pasta,italian applies a two-element array filter', async () => {
+    const { db, calls } = makeSelectMock([]);
+    const res = await recipesRoutes(db).request('/?tags=pasta,italian');
+    expect(res.status).toBe(200);
+    const q = dialect.sqlToQuery(calls.where as any);
+    expect(q.sql).toContain('@> ARRAY[$1, $2]::text[]');
+    expect(q.params).toEqual(['pasta', 'italian']);
+  });
+
+  test('GET /?tags=&cuisine= combines both filters with AND', async () => {
+    const { db, calls } = makeSelectMock([]);
+    const res = await recipesRoutes(db).request('/?cuisine=italian&tags=pasta');
+    expect(res.status).toBe(200);
+    const q = dialect.sqlToQuery(calls.where as any);
+    // Both filters present: cuisine equality + tag array containment, ANDed.
+    expect(q.sql).toContain('and');
+    expect(q.sql).toContain('@> ARRAY[$2]::text[]');
+    expect(q.params).toEqual(['italian', 'pasta']);
   });
 
   test('GET /:id rejects a malformed id with 400 before touching the DB', async () => {

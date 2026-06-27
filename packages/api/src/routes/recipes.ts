@@ -1,9 +1,10 @@
 import { Hono } from 'hono';
 import type { Db } from '@diet-app/db';
 import { recipes } from '@diet-app/db';
-import { eq, and, sql } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { isUuid } from '../validation.js';
 import { getPagination } from '../pagination.js';
+import { buildTagsCondition } from './recipe-filters.js';
 
 export function recipesRoutes(db: Db): Hono {
   const app = new Hono();
@@ -15,7 +16,8 @@ export function recipesRoutes(db: Db): Hono {
     const conditions = [];
     if (cuisine) conditions.push(eq(recipes.cuisineType, cuisine));
     if (tags) {
-      conditions.push(sql`${recipes.tags} @> ARRAY[${tags}]::text[]`);
+      const tagsCondition = buildTagsCondition(tags);
+      if (tagsCondition) conditions.push(tagsCondition);
     }
 
     const { limit, offset } = getPagination(c);
