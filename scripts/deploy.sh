@@ -26,7 +26,16 @@ echo "==> Fixing ownership..."
 sudo chown -R www-data:www-data "$DEPLOY_DIR"
 
 echo "==> Running database migrations..."
-sudo -u www-data bash -c "cd $DEPLOY_DIR && source .env && npx -w packages/db drizzle-kit migrate" 2>/dev/null || true
+# Load DATABASE_URL without sourcing .env: `source` would execute any shell
+# metacharacters in a value (a password containing $(...), backticks, or ';'
+# would run as code). grep|cut captures the value as a literal string and
+# command substitution never re-interprets it, so exporting it is injection-safe.
+sudo -u www-data bash -c '
+  cd "$1" || exit 1
+  DATABASE_URL=$(grep -E "^DATABASE_URL=" .env | head -n1 | cut -d= -f2-)
+  export DATABASE_URL
+  npx -w packages/db drizzle-kit migrate
+' _ "$DEPLOY_DIR" 2>/dev/null || true
 
 echo "==> Restarting service..."
 sudo systemctl restart diet-app-api.service
