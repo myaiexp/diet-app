@@ -1,6 +1,6 @@
 # Diet App — Project Initialization Design
 
-> Approved 2026-03-05. Establishes architecture, tech stack, and project structure for the diet app backend. Supersedes tech stack recommendations in `diet-app-plan-techstack-synthesized.md` — all other plan docs (features, data model, AI, phases) remain valid.
+> Approved 2026-03-05. Establishes architecture, tech stack, and project structure for the diet app backend. Supersedes tech stack recommendations in `archived/diet-app-plan-techstack-synthesized.md` — the other synthesized plan docs (features, data model, AI, phases) are archived alongside it for historical context.
 
 ---
 

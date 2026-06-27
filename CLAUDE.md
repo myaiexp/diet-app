@@ -16,3 +16,8 @@
 - **Public URL**: `https://mase.fi/diet/api/` (nginx proxy on VPS, port 3300)
 - **Database**: PostgreSQL `dietapp`
 - Core concepts: spoilage-first pantry, AI meal planning, constraint satisfaction, auto-deduct cooking
+
+## Plans
+
+- **Active design docs**: `docs/plans/` — `2026-03-05-project-init-design.md` (authoritative architecture) and `2026-03-05-phase0-skeleton.md` (Phase 0 implementation plan).
+- **Archived**: `docs/plans/archived/` — pre-implementation synthesized brainstorming. Historical only; some assumes a stack that was never adopted (Next.js/Vercel/Supabase). See its `README.md`.
