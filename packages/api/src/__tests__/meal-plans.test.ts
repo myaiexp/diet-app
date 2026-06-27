@@ -38,4 +38,16 @@ describe('mealPlansRoutes', () => {
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual([]);
   });
+
+  test('GET /week/:date returns 400 for a malformed date without touching the db', async () => {
+    let queried = false;
+    const db = { select: () => { queried = true; return { from: () => ({ where: async () => [] }) }; } } as any;
+    const app = mealPlansRoutes(db);
+    for (const bad of ['foo', '2026-02-30', '2026-13-01', '03-05-2026']) {
+      const res = await app.request(`/week/${bad}`);
+      expect(res.status, `expected 400 for "${bad}"`).toBe(400);
+      expect(await res.json()).toEqual({ error: 'Invalid date format' });
+    }
+    expect(queried).toBe(false);
+  });
 });
