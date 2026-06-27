@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import type { Db } from '@diet-app/db';
 import { shoppingLists } from '@diet-app/db';
 import { desc, lte } from 'drizzle-orm';
+import { notFound } from '../responses.js';
 
 export function shoppingListsRoutes(db: Db): Hono {
   const app = new Hono();
@@ -22,7 +23,7 @@ export function shoppingListsRoutes(db: Db): Hono {
         },
       },
     });
-    if (!row) return c.json({ error: 'Not found' }, 404);
+    if (!row) return notFound(c);
     return c.json(row);
   });
 

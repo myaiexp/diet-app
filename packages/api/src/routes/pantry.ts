@@ -5,6 +5,7 @@ import { eq } from 'drizzle-orm';
 import { isUuid } from '../validation.js';
 import { getPagination } from '../pagination.js';
 import { computeStatus } from '../pantry-status.js';
+import { notFound } from '../responses.js';
 
 export function pantryRoutes(db: Db): Hono {
   const app = new Hono();
@@ -25,7 +26,7 @@ export function pantryRoutes(db: Db): Hono {
     const row = await db.query.pantryItems.findFirst({
       where: eq(pantryItems.id, id),
     });
-    if (!row) return c.json({ error: 'Not found' }, 404);
+    if (!row) return notFound(c);
     return c.json({ ...row, status: computeStatus(row.expiresDate) });
   });
 

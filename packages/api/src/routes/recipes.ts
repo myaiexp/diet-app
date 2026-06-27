@@ -5,6 +5,7 @@ import { eq, and } from 'drizzle-orm';
 import { isUuid } from '../validation.js';
 import { getPagination } from '../pagination.js';
 import { buildTagsCondition } from './recipe-filters.js';
+import { notFound } from '../responses.js';
 
 export function recipesRoutes(db: Db): Hono {
   const app = new Hono();
@@ -42,7 +43,7 @@ export function recipesRoutes(db: Db): Hono {
         },
       },
     });
-    if (!row) return c.json({ error: 'Not found' }, 404);
+    if (!row) return notFound(c);
     return c.json(row);
   });
 

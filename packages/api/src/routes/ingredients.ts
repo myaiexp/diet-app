@@ -4,6 +4,7 @@ import { ingredients } from '@diet-app/db';
 import { eq, ilike, and, or, sql } from 'drizzle-orm';
 import { isUuid } from '../validation.js';
 import { getPagination } from '../pagination.js';
+import { notFound } from '../responses.js';
 
 export function ingredientsRoutes(db: Db): Hono {
   const app = new Hono();
@@ -42,7 +43,7 @@ export function ingredientsRoutes(db: Db): Hono {
     const row = await db.query.ingredients.findFirst({
       where: eq(ingredients.id, id),
     });
-    if (!row) return c.json({ error: 'Not found' }, 404);
+    if (!row) return notFound(c);
     return c.json(row);
   });
 

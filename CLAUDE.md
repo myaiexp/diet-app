@@ -12,9 +12,11 @@
 - **List filtering**: build a `conditions` array, then pass `conditions.length ? and(...conditions) : undefined` to a single `.where()` — Drizzle treats `undefined` as no clause, so never fork into a separate unfiltered query.
 - **List pagination**: unbounded list endpoints take `?limit`/`?offset` via `getPagination(c)` (`pagination.ts`) — default 50, clamped to ≤200. Bounded endpoints (e.g. meal-plans by week) don't paginate.
 - **`/:id` routes** validate the param with `isUuid(id)` (`validation.ts`) and return `400 {error:'Invalid id format'}` before querying, so a malformed id never reaches Postgres as an unhandled `invalid input syntax for type uuid`.
+- **Shared responses**: GET-by-id misses return `notFound(c)` from `responses.ts` (`{error:'Not found'}`, 404) — don't re-inline the body. Any future change to the error shape lands in that one helper.
 - **Deployment**: Forgejo git hooks (push to deploy) → `diet-app-api.service` (systemd, user `mase`)
 - **Public URL**: `https://mase.fi/diet/api/` (nginx proxy on VPS, port 3300)
 - **Database**: PostgreSQL `dietapp`
+- **Secrets & env loading**: all secrets live in a gitignored `.env` (`chmod 600`, owned by the run user) — never committed; `.env.example` holds placeholders only. `load-env.ts` loads the repo-root `.env` resolved **relative to its own module file** (not the CWD): `src/` (dev/tsx) and `dist/` (prod/node) sit at the same depth under `packages/api`, so `../../../.env` reaches the repo root from either. Prod's systemd `WorkingDirectory` is `/opt/diet-app` and its `.env` there is managed on the box (excluded from the deploy rsync). To rotate the DB password: `ALTER ROLE dietapp PASSWORD '<new>'`, then update `DATABASE_URL` in both `/opt/diet-app/.env` and the dev `.env`, and restart `diet-app-api.service`.
 - Core concepts: spoilage-first pantry, AI meal planning, constraint satisfaction, auto-deduct cooking
 
 ## Plans
