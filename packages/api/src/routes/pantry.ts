@@ -4,21 +4,7 @@ import { pantryItems } from '@diet-app/db';
 import { eq } from 'drizzle-orm';
 import { isUuid } from '../validation.js';
 import { getPagination } from '../pagination.js';
-
-type PantryStatus = 'fresh' | 'use_soon' | 'use_today' | 'expired';
-
-export function computeStatus(expiresDate: string, now: Date = new Date()): PantryStatus {
-  const today = new Date(now);
-  today.setHours(0, 0, 0, 0);
-  const expires = new Date(expiresDate);
-  expires.setHours(0, 0, 0, 0);
-  const diffDays = (expires.getTime() - today.getTime()) / (1000 * 60 * 60 * 24);
-
-  if (diffDays < 0) return 'expired';
-  if (diffDays <= 1) return 'use_today';
-  if (diffDays <= 3) return 'use_soon';
-  return 'fresh';
-}
+import { computeStatus } from '../pantry-status.js';
 
 export function pantryRoutes(db: Db): Hono {
   const app = new Hono();
