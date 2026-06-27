@@ -3,6 +3,8 @@
 // always passes) into explicit success and not-found cases.
 
 import { describe, test, expect } from 'vitest';
+import { desc, lte } from 'drizzle-orm';
+import { shoppingLists } from '@diet-app/db';
 import { shoppingListsRoutes } from '../routes/shopping-lists.js';
 
 const LIST = {
@@ -29,6 +31,25 @@ describe('shoppingListsRoutes', () => {
     expect(body.id).toBe(LIST.id);
     expect(Array.isArray(body.items)).toBe(true);
     expect(body.items[0].ingredient.name).toBe('Onion');
+  });
+
+  test('GET /current selects by week_starting, not createdAt', async () => {
+    // Regression for the audit finding: the old handler ordered by createdAt with
+    // no filter, so a future-week draft (higher createdAt) shadowed the real
+    // current list. The fix filters week_starting <= today and orders by it desc.
+    let captured: any;
+    const mockDb = {
+      query: { shoppingLists: { findFirst: async (config: any) => { captured = config; return LIST; } } },
+    } as any;
+    const app = shoppingListsRoutes(mockDb);
+    await app.request('/current');
+
+    // Filters out future-week drafts (week_starting <= today).
+    const today = new Date().toISOString().slice(0, 10);
+    expect(captured.where).toEqual(lte(shoppingLists.weekStarting, today));
+    // Orders by the week the list covers, newest first — not by createdAt.
+    expect(captured.orderBy).toEqual(desc(shoppingLists.weekStarting));
+    expect(captured.orderBy).not.toEqual(desc(shoppingLists.createdAt));
   });
 
   test('GET /current returns 404 with error body when none exist', async () => {
