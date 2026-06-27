@@ -31,4 +31,4 @@ export const recipeIngredients = pgTable('recipe_ingredients', {
   notes: text('notes'),
 });
 
-// Relations are defined in schema/index.ts to avoid circular imports
+// Relations are defined in schema/relations.ts to avoid circular imports

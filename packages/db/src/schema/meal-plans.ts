@@ -28,4 +28,4 @@ export const cookFeedback = pgTable('cook_feedback', {
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
-// Relations are defined in schema/index.ts to avoid circular imports
+// Relations are defined in schema/relations.ts to avoid circular imports

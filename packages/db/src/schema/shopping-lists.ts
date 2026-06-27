@@ -21,4 +21,4 @@ export const shoppingListItems = pgTable('shopping_list_items', {
   customNote: text('custom_note'),
 });
 
-// Relations are defined in schema/index.ts to avoid circular imports
+// Relations are defined in schema/relations.ts to avoid circular imports
