@@ -122,13 +122,18 @@ const COLUMN_SPECS: Record<string, Record<string, ColumnSpec>> = {
     calorieTargetMax: { type: 'PgInteger' },
     macroTargets: { type: 'PgJsonb' },
     dietaryRestrictions: { type: 'PgArray', hasDefault: true },
-    dislikedIngredientIds: { type: 'PgArray', hasDefault: true },
     cookingSkill: { type: 'PgText', notNull: true, hasDefault: true },
     kitchenEquipment: { type: 'PgArray', hasDefault: true },
     householdSize: { type: 'PgInteger', notNull: true, hasDefault: true },
     scheduleProfile: { type: 'PgJsonb', notNull: true, hasDefault: true },
     createdAt: { type: 'PgTimestamp', notNull: true, hasDefault: true },
     updatedAt: { type: 'PgTimestamp', notNull: true, hasDefault: true },
+  },
+  // Junction table: composite PK (user_id, ingredient_id), so neither column
+  // carries the column-level `primary` flag (that is set only by .primaryKey()).
+  userDislikedIngredients: {
+    userId: { type: 'PgUUID', notNull: true },
+    ingredientId: { type: 'PgUUID', notNull: true },
   },
 };
 
@@ -144,6 +149,8 @@ const FK_SPECS = [
   { table: 'cookFeedback', column: 'meal_plan_entry_id', refTable: 'meal_plan_entries', refColumn: 'id' },
   { table: 'shoppingListItems', column: 'list_id', refTable: 'shopping_lists', refColumn: 'id' },
   { table: 'shoppingListItems', column: 'ingredient_id', refTable: 'ingredients', refColumn: 'id' },
+  { table: 'userDislikedIngredients', column: 'user_id', refTable: 'user_profile', refColumn: 'id' },
+  { table: 'userDislikedIngredients', column: 'ingredient_id', refTable: 'ingredients', refColumn: 'id' },
 ];
 
 // Drizzle exposes each column as an enumerable own property carrying a columnType.
@@ -219,5 +226,7 @@ describe('schema exports', () => {
     expect(schema.cookFeedbackRelations).toBeDefined();
     expect(schema.shoppingListsRelations).toBeDefined();
     expect(schema.shoppingListItemsRelations).toBeDefined();
+    expect(schema.userProfileRelations).toBeDefined();
+    expect(schema.userDislikedIngredientsRelations).toBeDefined();
   });
 });

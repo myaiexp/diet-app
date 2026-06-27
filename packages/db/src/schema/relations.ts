@@ -7,11 +7,28 @@ import { recipes, recipeIngredients } from './recipes.js';
 import { pantryItems } from './pantry.js';
 import { mealPlanEntries, cookFeedback } from './meal-plans.js';
 import { shoppingLists, shoppingListItems } from './shopping-lists.js';
+import { userProfile, userDislikedIngredients } from './user-profile.js';
 
 export const ingredientsRelations = relations(ingredients, ({ many }) => ({
   recipeIngredients: many(recipeIngredients),
   pantryItems: many(pantryItems),
   shoppingListItems: many(shoppingListItems),
+  dislikedBy: many(userDislikedIngredients),
+}));
+
+export const userProfileRelations = relations(userProfile, ({ many }) => ({
+  dislikedIngredients: many(userDislikedIngredients),
+}));
+
+export const userDislikedIngredientsRelations = relations(userDislikedIngredients, ({ one }) => ({
+  profile: one(userProfile, {
+    fields: [userDislikedIngredients.userId],
+    references: [userProfile.id],
+  }),
+  ingredient: one(ingredients, {
+    fields: [userDislikedIngredients.ingredientId],
+    references: [ingredients.id],
+  }),
 }));
 
 export const recipesRelations = relations(recipes, ({ many, one }) => ({

@@ -245,13 +245,20 @@ export const userProfile = pgTable('user_profile', {
   calorieTargetMax: integer nullable,
   macroTargets: jsonb nullable,       // { protein_g, carbs_g, fat_g } as ranges
   dietaryRestrictions: text[].default([]),
-  dislikedIngredientIds: uuid[].default([]),
   cookingSkill: text notNull.default('competent'),
   kitchenEquipment: text[].default([]),
   householdSize: integer notNull.default(1),
   scheduleProfile: jsonb notNull.default({}),
   createdAt, updatedAt
 })
+```
+
+**`userDislikedIngredients` junction table** (replaces a `uuid[]` so the FK is enforceable):
+```typescript
+export const userDislikedIngredients = pgTable('user_disliked_ingredients', {
+  userId: uuid notNull references(userProfile.id, onDelete cascade),
+  ingredientId: uuid notNull references(ingredients.id, onDelete cascade),
+}, composite PK (userId, ingredientId))
 ```
 
 **`schema/index.ts`** — re-exports all tables.
@@ -262,6 +269,8 @@ export const userProfile = pgTable('user_profile', {
 - ingredients ↔ pantryItems (one-to-many)
 - recipes ↔ mealPlanEntries (one-to-many)
 - mealPlanEntries ↔ cookFeedback (one-to-one)
+- userProfile ↔ userDislikedIngredients (one-to-many)
+- ingredients ↔ userDislikedIngredients (one-to-many)
 - shoppingLists ↔ shoppingListItems (one-to-many)
 - ingredients ↔ shoppingListItems (one-to-many)
 - recipes → recipes (self-referential parentRecipeId)
