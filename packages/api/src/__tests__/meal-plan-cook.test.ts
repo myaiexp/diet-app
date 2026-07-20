@@ -380,6 +380,18 @@ describe('mealPlanCookRoutes', () => {
     expect(await res.json()).toEqual({ error: 'Not found' });
   });
 
+  test('returns 400 when servings scale is non-finite', async () => {
+    const { db } = makeCookMock({
+      entry: PLANNED_ENTRY,
+      recipe: { ...RECIPE, servings: 0 },
+    });
+    const res = await mealPlanCookRoutes(db).request(`/${ENTRY_ID}/cook`, {
+      method: 'POST',
+    });
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({ error: 'Invalid servings scale' });
+  });
+
   test('scales the deduction by entry servings over recipe servings', async () => {
     // recipe.servings 2, entry.servings 4 → scale 2; line 500g → need 1000g
     const entry = { ...PLANNED_ENTRY, servings: '4' };
