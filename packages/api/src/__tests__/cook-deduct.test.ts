@@ -141,4 +141,36 @@ describe('planDeduction', () => {
     expect(deductions).toHaveLength(2);
     expect(deductions[1]!.pantryItems[0]).toMatchObject({ unit: 'l', after: 0.8 });
   });
+
+  test('shares depleted stock across two lines of the same ingredient', () => {
+    // 400 + 400 g needed vs 600 g stock — second line must see residual only
+    const lines = [
+      LINE({ quantity: 400 }),
+      LINE({ quantity: 400 }),
+    ];
+    const { deductions, shortfalls } = planDeduction(lines, [ROW({ quantity: 600 })], 1);
+    expect(deductions).toHaveLength(2);
+    expect(deductions[0]!.deducted).toBe(400);
+    expect(deductions[0]!.pantryItems[0]).toMatchObject({ after: 200, deleted: false });
+    expect(deductions[1]!.deducted).toBe(200);
+    expect(deductions[1]!.pantryItems[0]).toMatchObject({ before: 200, after: 0, deleted: true });
+    expect(shortfalls).toEqual([
+      {
+        ingredientId: 'i1',
+        dimension: 'mass',
+        requested: 400,
+        available: 200,
+        reason: 'insufficient_stock',
+      },
+    ]);
+  });
+
+  test('prefers older createdAt when expiry and opened tie', () => {
+    const rows = [
+      ROW({ id: 'newer', quantity: 600, createdAt: '2026-07-10T00:00:00Z' }),
+      ROW({ id: 'older', quantity: 600, createdAt: '2026-07-01T00:00:00Z' }),
+    ];
+    const { deductions } = planDeduction([LINE()], rows, 1);
+    expect(deductions[0]!.pantryItems[0]!.id).toBe('older');
+  });
 });
