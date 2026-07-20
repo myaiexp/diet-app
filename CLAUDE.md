@@ -24,5 +24,5 @@
 
 ## Plans
 
-- **Active design docs**: `docs/plans/` — `2026-03-05-project-init-design.md` (authoritative architecture), `2026-03-05-phase0-skeleton.md` (Phase 0), `2026-07-20-pantry-recipe-writes-design.md` + `-plan.md` (Phase 1 pantry/recipe write endpoints).
+- **Active design docs**: `docs/plans/` — `2026-03-05-project-init-design.md` (authoritative architecture), `2026-03-05-phase0-skeleton.md` (Phase 0), `2026-07-20-pantry-recipe-writes-design.md` + `-plan.md` (Phase 1 pantry/recipe write endpoints), `2026-07-20-cook-flow-design.md` + `-plan.md` (meal plan writes, auto-deduct on cook, cook feedback — #379/#241/#377, not yet implemented).
 - **Archived**: `docs/plans/archived/` — pre-implementation synthesized brainstorming. Historical only; some assumes a stack that was never adopted (Next.js/Vercel/Supabase). See its `README.md`.
