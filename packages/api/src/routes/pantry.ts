@@ -12,6 +12,7 @@ import { resolveExpiresDate } from '../pantry-expiry.js';
 import { notFound, badRequest } from '../responses.js';
 import { readJsonBody } from '../json-body.js';
 import { pantryCreateSchema, pantryPatchSchema } from '../schemas/pantry.js';
+import { isFkViolation } from '../pg-errors.js';
 
 function todayUtc(): string {
   return new Date().toISOString().slice(0, 10);
@@ -90,14 +91,7 @@ export function pantryRoutes(db: Db): Hono {
       return c.json(withStatus(row), 201);
     } catch (err) {
       // Race: ingredient deleted between pre-check and insert.
-      if (
-        typeof err === 'object' &&
-        err !== null &&
-        'code' in err &&
-        (err as { code: string }).code === '23503'
-      ) {
-        return badRequest(c, 'Invalid reference');
-      }
+      if (isFkViolation(err)) return badRequest(c, 'Invalid reference');
       throw err;
     }
   });
