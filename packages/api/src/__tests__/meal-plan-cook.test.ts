@@ -1,8 +1,19 @@
 // Mock-based tests for POST /meal-plans/:id/cook (FEFO auto-deduct)
 
 import { describe, test, expect } from 'vitest';
+import { PgDialect } from 'drizzle-orm/pg-core';
 import { mealPlansRoutes } from '../routes/meal-plans.js';
 import { mealPlanCookRoutes } from '../routes/meal-plan-cook.js';
+
+const dialect = new PgDialect();
+
+function whereParams(where: unknown): unknown[] {
+  try {
+    return dialect.sqlToQuery(where as any).params;
+  } catch {
+    return [];
+  }
+}
 
 const ENTRY_ID = '11111111-1111-4111-8111-111111111111';
 const RECIPE_ID = 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee';
@@ -136,6 +147,7 @@ function makeCookMock(opts: CookMockOpts = {}) {
         },
         then: (resolve: (v: unknown) => unknown) => {
           selectMeta.push({ forUpdate, from: fromTable });
+          const params = whereParams(whereArg);
 
           // Order-based resolution matching the route's query sequence
           if (idx === 0) {
@@ -145,35 +157,18 @@ function makeCookMock(opts: CookMockOpts = {}) {
           }
 
           // After entry: recipe load (no for), lines (no for), pantry (for)
-          // Determine by forUpdate flag and remaining call phase.
-          // Freeform only does entry then update — no more selects.
           if (!forUpdate) {
-            // Could be recipe or lines. Recipe is first non-for after entry;
-            // lines second. Track non-for selects after entry via count.
             const nonForAfterEntry = selectMeta.filter(
               (m, i) => i > 0 && !m.forUpdate,
             ).length;
-            // selectMeta already includes current (just pushed), so:
-            // first non-for → recipe, second → lines
+            // Use the actual eq() param the route passed — proves which recipe id was loaded
+            const queriedId =
+              typeof params[0] === 'string' ? params[0] : undefined;
             if (nonForAfterEntry <= 1) {
-              // recipe — try to pull id from where is hard; use entry's resolved id
-              const entry = resolveEntry() as {
-                substituteRecipeId?: string | null;
-                recipeId?: string | null;
-              } | null;
-              const rid =
-                entry?.substituteRecipeId ?? entry?.recipeId ?? RECIPE_ID;
-              const recipe = resolveRecipe(rid);
+              const recipe = resolveRecipe(queriedId ?? RECIPE_ID);
               return resolve(recipe == null ? [] : [recipe]);
             }
-            // lines
-            const entry = resolveEntry() as {
-              substituteRecipeId?: string | null;
-              recipeId?: string | null;
-            } | null;
-            const rid =
-              entry?.substituteRecipeId ?? entry?.recipeId ?? RECIPE_ID;
-            return resolve(resolveLines(rid));
+            return resolve(resolveLines(queriedId ?? RECIPE_ID));
           }
 
           // pantry FOR UPDATE
@@ -190,12 +185,18 @@ function makeCookMock(opts: CookMockOpts = {}) {
   const makeWriteSide = () => {
     const update = (_table: unknown) => {
       const tName = tableName(_table);
+      let whereArg: unknown;
       const builder: any = {
         set: (v: unknown) => {
-          updates.push({ table: tName, set: v });
+          updates.push({ table: tName, set: v, where: undefined });
           return builder;
         },
-        where: () => builder,
+        where: (w: unknown) => {
+          whereArg = w;
+          const last = updates[updates.length - 1];
+          if (last) last.where = w;
+          return builder;
+        },
         returning: async () => {
           const last = updates[updates.length - 1]?.set as Record<string, unknown>;
           const base =
@@ -204,13 +205,14 @@ function makeCookMock(opts: CookMockOpts = {}) {
           return [{ ...base, ...last, status: last?.status ?? 'cooked' }];
         },
       };
+      void whereArg;
       return builder;
     };
     const del = (_table: unknown) => {
       const tName = tableName(_table);
       const builder: any = {
-        where: () => {
-          deletes.push({ table: tName });
+        where: (w: unknown) => {
+          deletes.push({ table: tName, id: whereParams(w)[0] });
           return builder;
         },
       };
@@ -338,14 +340,44 @@ describe('mealPlanCookRoutes', () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     // scale = 2/2 = 1; sub line 100g from 500g pantry → after 400
+    // (primary recipe line is 9999g — would not yield requested 100 if used)
     expect(body.deductions).toHaveLength(1);
     expect(body.deductions[0].requested).toBe(100);
     expect(body.deductions[0].pantryItems[0].after).toBe('400');
-    // timesCooked bump present (sql expression on timesCooked column)
+    // timesCooked must target the substitute, not the primary recipe
     const recipeUpdates = updates.filter(
       (u) => (u.set as any).timesCooked !== undefined,
     );
-    expect(recipeUpdates.length).toBeGreaterThanOrEqual(1);
+    expect(recipeUpdates).toHaveLength(1);
+    expect(whereParams(recipeUpdates[0]!.where)).toContain(SUB_RECIPE_ID);
+    expect(whereParams(recipeUpdates[0]!.where)).not.toContain(RECIPE_ID);
+  });
+
+  test('entry and pantry selects use FOR UPDATE; recipe/lines do not', async () => {
+    const { db, selectMeta } = makeCookMock({
+      entry: { ...PLANNED_ENTRY, servings: '1' },
+      recipe: { ...RECIPE, servings: 1 },
+      lines: [{ ...LINE, quantity: '100', unit: 'g' }],
+      pantryRows: [{ ...PANTRY_ROW, quantity: '500' }],
+    });
+    const res = await mealPlanCookRoutes(db).request(`/${ENTRY_ID}/cook`, {
+      method: 'POST',
+    });
+    expect(res.status).toBe(200);
+    // [entry for], [recipe no], [lines no], [pantry for]
+    expect(selectMeta.map((m) => m.forUpdate)).toEqual([true, false, false, true]);
+  });
+
+  test('returns 404 when resolved recipe is missing', async () => {
+    const { db } = makeCookMock({
+      entry: PLANNED_ENTRY,
+      recipe: null,
+    });
+    const res = await mealPlanCookRoutes(db).request(`/${ENTRY_ID}/cook`, {
+      method: 'POST',
+    });
+    expect(res.status).toBe(404);
+    expect(await res.json()).toEqual({ error: 'Not found' });
   });
 
   test('scales the deduction by entry servings over recipe servings', async () => {
@@ -386,6 +418,7 @@ describe('mealPlanCookRoutes', () => {
     const body = await res.json();
     expect(body.deductions[0].pantryItems[0].deleted).toBe(true);
     expect(deletes).toHaveLength(1);
+    expect(deletes[0]!.id).toBe(PANTRY_ID);
 
     // partial update path: leftover stock
     const partial = makeCookMock({
