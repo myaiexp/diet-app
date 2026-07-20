@@ -8,7 +8,7 @@ import { z } from 'zod';
 import { isUuid } from '../validation.js';
 import { notFound, badRequest, conflict } from '../responses.js';
 import { readJsonBody } from '../json-body.js';
-import { isUniqueViolation } from '../pg-errors.js';
+import { isFkViolation, isUniqueViolation } from '../pg-errors.js';
 import {
   feedbackCreateSchema,
   feedbackPatchSchema,
@@ -84,6 +84,8 @@ export function mealPlanFeedbackRoutes(db: Db): Hono {
       if (isUniqueViolation(err)) {
         return conflict(c, 'Feedback already exists for this meal plan entry');
       }
+      // Race: entry deleted between pre-check and insert
+      if (isFkViolation(err)) return notFound(c);
       throw err;
     }
   });

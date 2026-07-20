@@ -3,7 +3,7 @@
 import { Hono } from 'hono';
 import type { Db } from '@diet-app/db';
 import { mealPlanEntries, recipes, recipeIngredients, pantryItems } from '@diet-app/db';
-import { eq, inArray, sql } from 'drizzle-orm';
+import { asc, eq, inArray, sql } from 'drizzle-orm';
 import { isUuid } from '../validation.js';
 import { notFound, badRequest, conflict } from '../responses.js';
 import {
@@ -102,6 +102,7 @@ export function mealPlanCookRoutes(db: Db): Hono {
                 .select()
                 .from(pantryItems)
                 .where(inArray(pantryItems.ingredientId, ingredientIds))
+                .orderBy(asc(pantryItems.id))
                 .for('update');
 
         // 4. Scale and plan (all arithmetic lives in cook-deduct)

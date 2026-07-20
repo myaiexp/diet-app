@@ -141,6 +141,7 @@ function makeCookMock(opts: CookMockOpts = {}) {
           whereArg = w;
           return builder;
         },
+        orderBy: () => builder,
         for: (_strength: string) => {
           forUpdate = true;
           return builder;

@@ -92,52 +92,78 @@ export function mealPlansRoutes(db: Db): Hono {
       return badRequest(c, 'Validation failed', { formErrors: ['Empty patch body'] });
     }
 
-    const existing = await db.query.mealPlanEntries.findFirst({
-      where: eq(mealPlanEntries.id, id),
-    });
-    if (!existing) return notFound(c);
+    type PatchOk = { kind: 'ok'; row: typeof mealPlanEntries.$inferSelect };
+    type PatchErr =
+      | { kind: 'not_found' }
+      | { kind: 'cook_owned' }
+      | { kind: 'cooked_immutable' }
+      | { kind: 'no_content' }
+      | { kind: 'fk' };
 
-    // cooked is terminal and only set via POST /:id/cook
-    if (data.status !== undefined) {
-      if (data.status === 'cooked' && existing.status !== 'cooked') {
-        return conflict(c, 'Use POST /meal-plans/:id/cook to mark an entry cooked');
-      }
-      if (existing.status === 'cooked' && data.status !== 'cooked') {
-        return conflict(c, 'Cooked meal plan entry status is immutable');
-      }
-    }
-
-    const mergedRecipeId =
-      data.recipeId !== undefined ? data.recipeId : existing.recipeId;
-    const mergedNote =
-      data.freeformNote !== undefined ? data.freeformNote : existing.freeformNote;
-    if (!hasContent(mergedRecipeId, mergedNote)) {
-      return badRequest(c, 'Validation failed', { formErrors: [CONTENT_MSG] });
-    }
-
-    const patch: Record<string, unknown> = { updatedAt: new Date() };
-    if (data.date !== undefined) patch.date = data.date;
-    if (data.slot !== undefined) patch.slot = data.slot;
-    if (data.recipeId !== undefined) patch.recipeId = data.recipeId;
-    if (data.freeformNote !== undefined) patch.freeformNote = data.freeformNote;
-    if (data.servings !== undefined) patch.servings = String(data.servings);
-    if (data.status !== undefined) patch.status = data.status;
-    if (data.substituteRecipeId !== undefined) {
-      patch.substituteRecipeId = data.substituteRecipeId;
-    }
-    if (data.notes !== undefined) patch.notes = data.notes;
-
+    let result: PatchOk | PatchErr;
     try {
-      const [row] = await db
-        .update(mealPlanEntries)
-        .set(patch)
-        .where(eq(mealPlanEntries.id, id))
-        .returning();
-      return c.json(row);
+      // FOR UPDATE so a concurrent cook cannot be overwritten after our guards
+      result = await db.transaction(async (tx) => {
+        const [existing] = await tx
+          .select()
+          .from(mealPlanEntries)
+          .where(eq(mealPlanEntries.id, id))
+          .for('update');
+        if (!existing) return { kind: 'not_found' as const };
+
+        // cooked is terminal and only set via POST /:id/cook
+        if (data.status !== undefined) {
+          if (data.status === 'cooked' && existing.status !== 'cooked') {
+            return { kind: 'cook_owned' as const };
+          }
+          if (existing.status === 'cooked' && data.status !== 'cooked') {
+            return { kind: 'cooked_immutable' as const };
+          }
+        }
+
+        const mergedRecipeId =
+          data.recipeId !== undefined ? data.recipeId : existing.recipeId;
+        const mergedNote =
+          data.freeformNote !== undefined ? data.freeformNote : existing.freeformNote;
+        if (!hasContent(mergedRecipeId, mergedNote)) {
+          return { kind: 'no_content' as const };
+        }
+
+        const patch: Record<string, unknown> = { updatedAt: new Date() };
+        if (data.date !== undefined) patch.date = data.date;
+        if (data.slot !== undefined) patch.slot = data.slot;
+        if (data.recipeId !== undefined) patch.recipeId = data.recipeId;
+        if (data.freeformNote !== undefined) patch.freeformNote = data.freeformNote;
+        if (data.servings !== undefined) patch.servings = String(data.servings);
+        if (data.status !== undefined) patch.status = data.status;
+        if (data.substituteRecipeId !== undefined) {
+          patch.substituteRecipeId = data.substituteRecipeId;
+        }
+        if (data.notes !== undefined) patch.notes = data.notes;
+
+        const [row] = await tx
+          .update(mealPlanEntries)
+          .set(patch)
+          .where(eq(mealPlanEntries.id, id))
+          .returning();
+        return { kind: 'ok' as const, row };
+      });
     } catch (err) {
       if (isFkViolation(err)) return badRequest(c, 'Invalid reference');
       throw err;
     }
+
+    if (result.kind === 'not_found') return notFound(c);
+    if (result.kind === 'cook_owned') {
+      return conflict(c, 'Use POST /meal-plans/:id/cook to mark an entry cooked');
+    }
+    if (result.kind === 'cooked_immutable') {
+      return conflict(c, 'Cooked meal plan entry status is immutable');
+    }
+    if (result.kind === 'no_content') {
+      return badRequest(c, 'Validation failed', { formErrors: [CONTENT_MSG] });
+    }
+    return c.json(result.row);
   });
 
   app.delete('/:id', async (c) => {

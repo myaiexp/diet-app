@@ -78,6 +78,38 @@ function makeWriteMock(opts: WriteMockOpts = {}) {
     },
   };
 
+  const selectForPatch = () => {
+    // PATCH locks via select().from().where().for('update')
+    const entry = opts.existing === undefined ? PLANNED_ENTRY : opts.existing;
+    const builder: any = {
+      from: () => builder,
+      where: () => builder,
+      for: () => builder,
+      then: (resolve: (v: unknown) => unknown) =>
+        resolve(entry == null ? [] : [entry]),
+    };
+    return builder;
+  };
+
+  const selectForDelete = () => {
+    // DELETE feedback pre-check uses select().from().where().limit()
+    const idx = selectCall++;
+    const rows = idx === 0 ? (opts.feedbackRows ?? []) : [];
+    const builder: any = {
+      from: () => builder,
+      where: () => builder,
+      limit: () => builder,
+      then: (resolve: (v: unknown) => unknown) => resolve(rows),
+    };
+    return builder;
+  };
+
+  const tx = {
+    select: selectForPatch,
+    update: () => updateBuilder,
+    delete: () => deleteBuilder,
+  };
+
   const db = {
     query: {
       mealPlanEntries: {
@@ -86,21 +118,11 @@ function makeWriteMock(opts: WriteMockOpts = {}) {
         ),
       },
     },
+    transaction: async (fn: (t: typeof tx) => Promise<unknown>) => fn(tx),
     insert: () => insertBuilder,
     update: () => updateBuilder,
     delete: () => deleteBuilder,
-    select: () => {
-      // DELETE feedback pre-check uses select().from().where().limit()
-      const idx = selectCall++;
-      const rows = idx === 0 ? (opts.feedbackRows ?? []) : [];
-      const builder: any = {
-        from: () => builder,
-        where: () => builder,
-        limit: () => builder,
-        then: (resolve: (v: unknown) => unknown) => resolve(rows),
-      };
-      return builder;
-    },
+    select: selectForDelete,
   } as any;
 
   return { db, inserts, updates, deletes };
