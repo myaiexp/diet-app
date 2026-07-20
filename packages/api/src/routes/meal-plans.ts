@@ -16,6 +16,7 @@ import {
   CONTENT_MSG,
   type MealPlanPatch,
 } from '../schemas/meal-plans.js';
+import { mealPlanCookRoutes } from './meal-plan-cook.js';
 
 function hasContent(
   recipeId: string | null | undefined,
@@ -167,6 +168,9 @@ export function mealPlansRoutes(db: Db): Hono {
     }
     return c.body(null, 204);
   });
+
+  app.route('/', mealPlanCookRoutes(db));
+  // feedback mount lands in Task 6 — do NOT add feedback routes yet
 
   return app;
 }
