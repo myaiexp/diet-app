@@ -24,5 +24,5 @@
 
 ## Plans
 
-- **Active design docs**: `docs/plans/` — `2026-03-05-project-init-design.md` (authoritative architecture) and `2026-03-05-phase0-skeleton.md` (Phase 0 implementation plan).
+- **Active design docs**: `docs/plans/` — `2026-03-05-project-init-design.md` (authoritative architecture), `2026-03-05-phase0-skeleton.md` (Phase 0), `2026-07-20-pantry-recipe-writes-design.md` + `-plan.md` (Phase 1 pantry/recipe write endpoints).
 - **Archived**: `docs/plans/archived/` — pre-implementation synthesized brainstorming. Historical only; some assumes a stack that was never adopted (Next.js/Vercel/Supabase). See its `README.md`.
