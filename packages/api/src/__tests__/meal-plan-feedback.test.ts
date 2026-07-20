@@ -231,6 +231,24 @@ describe('mealPlanFeedbackRoutes', () => {
     });
   });
 
+  test('PATCH usedAsIs true auto-clears a stored changesNote', async () => {
+    const stored = {
+      ...FEEDBACK,
+      usedAsIs: false,
+      changesNote: 'extra garlic',
+    };
+    const { db, updates } = makeMock({
+      feedback: stored,
+      updateRow: { ...stored, usedAsIs: true, changesNote: null },
+    });
+    const res = await mealPlanFeedbackRoutes(db).request(
+      `/${ENTRY_ID}/feedback`,
+      json('PATCH', { usedAsIs: true }),
+    );
+    expect(res.status).toBe(200);
+    expect(updates[0]).toMatchObject({ usedAsIs: true, changesNote: null });
+  });
+
   test('PATCH rejects an empty body and unknown keys', async () => {
     const empty = makeMock({ feedback: FEEDBACK });
     const resEmpty = await mealPlanFeedbackRoutes(empty.db).request(

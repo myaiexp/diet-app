@@ -2,7 +2,8 @@ import { config } from 'dotenv';
 config({ path: '../../.env' });
 
 import { describe, test, expect, afterAll } from 'vitest';
-import { createDb } from '@diet-app/db';
+import { createDb, cookFeedback } from '@diet-app/db';
+import { eq } from 'drizzle-orm';
 import { createApp } from '../app.js';
 
 // Integration suite — exercises every route against a REAL Postgres instance
@@ -254,6 +255,130 @@ describe.skipIf(!hasDb)('GET /api/meal-plans', () => {
       expect(entry).toHaveProperty('date');
       expect(entry).toHaveProperty('slot');
       expect(entry).toHaveProperty('status');
+    }
+  });
+});
+
+describe.skipIf(!hasDb)('cook flow', () => {
+  test('cooking an entry deducts pantry stock and increments timesCooked', async () => {
+    // 1. Real ingredient id from seed (never hardcode UUIDs)
+    const ingredientsRes = await app!.request('/api/ingredients?limit=1');
+    expect(ingredientsRes.status).toBe(200);
+    const ingredients = await ingredientsRes.json();
+    expect(ingredients.length).toBeGreaterThan(0);
+    const ingredientId = ingredients[0].id as string;
+
+    let recipeId: string | undefined;
+    let pantryId: string | undefined;
+    let entryId: string | undefined;
+
+    try {
+      // 2. Recipe: servings 2, one line 500 g
+      const recipeRes = await app!.request('/api/recipes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: 'Cook-flow smoke recipe',
+          servings: 2,
+          ingredients: [{ ingredientId, quantity: 500, unit: 'g' }],
+        }),
+      });
+      expect(recipeRes.status).toBe(201);
+      recipeId = (await recipeRes.json()).id as string;
+
+      // 3. Pantry: 1 kg of same ingredient (explicit expiresDate)
+      const pantryRes = await app!.request('/api/pantry', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ingredientId,
+          quantity: 1,
+          unit: 'kg',
+          location: 'pantry',
+          expiresDate: '2099-12-31',
+        }),
+      });
+      expect(pantryRes.status).toBe(201);
+      pantryId = (await pantryRes.json()).id as string;
+
+      // 4. Meal plan entry: servings 2, dinner
+      const entryRes = await app!.request('/api/meal-plans', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          date: '2026-07-20',
+          slot: 'dinner',
+          recipeId,
+          servings: 2,
+        }),
+      });
+      expect(entryRes.status).toBe(201);
+      entryId = (await entryRes.json()).id as string;
+
+      // 5. Cook → 200, cooked, no shortfalls
+      const cookRes = await app!.request(`/api/meal-plans/${entryId}/cook`, {
+        method: 'POST',
+      });
+      expect(cookRes.status).toBe(200);
+      const cookBody = await cookRes.json();
+      expect(cookBody.entry.status).toBe('cooked');
+      expect(cookBody.shortfalls).toEqual([]);
+
+      // 6. Pantry quantity 1 kg → 0.5 kg (scale = 2/2 = 1; 500 g from 1 kg)
+      const pantryGet = await app!.request(`/api/pantry/${pantryId}`);
+      expect(pantryGet.status).toBe(200);
+      expect((await pantryGet.json()).quantity).toBe('0.5');
+
+      // 7. timesCooked === 1
+      const recipeGet = await app!.request(`/api/recipes/${recipeId}`);
+      expect(recipeGet.status).toBe(200);
+      expect((await recipeGet.json()).timesCooked).toBe(1);
+
+      // 8. Second cook → 409
+      const reCook = await app!.request(`/api/meal-plans/${entryId}/cook`, {
+        method: 'POST',
+      });
+      expect(reCook.status).toBe(409);
+      expect(await reCook.json()).toEqual({
+        error: 'Meal plan entry already cooked',
+      });
+
+      // 9. Feedback create + get
+      const fbRes = await app!.request(`/api/meal-plans/${entryId}/feedback`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          rating: 'thumbs_up',
+          effortCheck: 'felt_right',
+          makeAgain: 'yes',
+          usedAsIs: true,
+        }),
+      });
+      expect(fbRes.status).toBe(201);
+      const fbGet = await app!.request(`/api/meal-plans/${entryId}/feedback`);
+      expect(fbGet.status).toBe(200);
+      expect((await fbGet.json()).rating).toBe('thumbs_up');
+    } finally {
+      // feedback has no DELETE route — remove via db before entry delete
+      if (entryId && db) {
+        await db.delete(cookFeedback).where(eq(cookFeedback.mealPlanEntryId, entryId));
+        const delEntry = await app!.request(`/api/meal-plans/${entryId}`, {
+          method: 'DELETE',
+        });
+        expect([204, 404]).toContain(delEntry.status);
+      }
+      if (recipeId) {
+        const delRecipe = await app!.request(`/api/recipes/${recipeId}`, {
+          method: 'DELETE',
+        });
+        expect([204, 404]).toContain(delRecipe.status);
+      }
+      if (pantryId) {
+        const delPantry = await app!.request(`/api/pantry/${pantryId}`, {
+          method: 'DELETE',
+        });
+        expect([204, 404]).toContain(delPantry.status);
+      }
     }
   });
 });
