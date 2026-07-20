@@ -211,6 +211,38 @@ describe('mealPlansRoutes', () => {
     expect((await res.json()).error).toBe('Validation failed');
   });
 
+  test('POST rejects status cooked (owned by cook endpoint)', async () => {
+    const { db, inserts } = makeWriteMock();
+    const res = await mealPlansRoutes(db).request(
+      '/',
+      jsonReq('POST', '/', {
+        date: '2026-07-21',
+        slot: 'dinner',
+        freeformNote: 'x',
+        status: 'cooked',
+      }),
+    );
+    expect(res.status).toBe(400);
+    expect((await res.json()).error).toBe('Validation failed');
+    expect(inserts).toHaveLength(0);
+  });
+
+  test('POST creates a freeform entry without recipeId', async () => {
+    const { db, inserts } = makeWriteMock({
+      insertRow: { ...FREEFORM_ENTRY, freeformNote: 'lunch out' },
+    });
+    const res = await mealPlansRoutes(db).request(
+      '/',
+      jsonReq('POST', '/', {
+        date: '2026-07-21',
+        slot: 'lunch',
+        freeformNote: 'lunch out',
+      }),
+    );
+    expect(res.status).toBe(201);
+    expect(inserts[0]).toMatchObject({ freeformNote: 'lunch out', recipeId: null });
+  });
+
   test('PATCH rejects an empty body', async () => {
     const { db } = makeWriteMock();
     const res = await mealPlansRoutes(db).request(
@@ -240,8 +272,22 @@ describe('mealPlansRoutes', () => {
       jsonReq('PATCH', '/', { freeformNote: null }),
     );
     expect(res.status).toBe(400);
-    expect((await res.json()).error).toBe('Validation failed');
+    const body = await res.json();
+    expect(body.error).toBe('Validation failed');
+    expect(body.details.formErrors).toEqual([
+      'Either recipeId or freeformNote is required',
+    ]);
     expect(updates).toHaveLength(0);
+  });
+
+  test('PATCH returns 404 when entry missing', async () => {
+    const { db } = makeWriteMock({ existing: null });
+    const res = await mealPlansRoutes(db).request(
+      `/${ENTRY_ID}`,
+      jsonReq('PATCH', '/', { notes: 'x' }),
+    );
+    expect(res.status).toBe(404);
+    expect(await res.json()).toEqual({ error: 'Not found' });
   });
 
   test('PATCH cannot mark an entry cooked', async () => {

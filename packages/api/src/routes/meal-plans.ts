@@ -13,10 +13,9 @@ import { isFkViolation } from '../pg-errors.js';
 import {
   mealPlanCreateSchema,
   mealPlanPatchSchema,
+  CONTENT_MSG,
   type MealPlanPatch,
 } from '../schemas/meal-plans.js';
-
-const CONTENT_MSG = 'Either recipeId or freeformNote is required';
 
 function hasContent(
   recipeId: string | null | undefined,
@@ -157,7 +156,15 @@ export function mealPlansRoutes(db: Db): Hono {
       return conflict(c, 'Meal plan entry has cook feedback');
     }
 
-    await db.delete(mealPlanEntries).where(eq(mealPlanEntries.id, id));
+    try {
+      await db.delete(mealPlanEntries).where(eq(mealPlanEntries.id, id));
+    } catch (err) {
+      // Race: feedback inserted between pre-check and delete.
+      if (isFkViolation(err)) {
+        return conflict(c, 'Meal plan entry has cook feedback');
+      }
+      throw err;
+    }
     return c.body(null, 204);
   });
 

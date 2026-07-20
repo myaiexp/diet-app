@@ -8,11 +8,13 @@ const isoDateField = z.string().refine(isIsoDate, { message: 'Invalid date' });
 
 export const SLOTS = ['breakfast', 'lunch', 'dinner', 'snack'] as const;
 export const STATUSES = ['planned', 'cooked', 'skipped', 'substituted'] as const;
+// Create cannot set cooked — that status is owned exclusively by POST /:id/cook.
+export const CREATE_STATUSES = ['planned', 'skipped', 'substituted'] as const;
 export const RATINGS = ['thumbs_up', 'thumbs_down'] as const;
 export const EFFORT_CHECKS = ['felt_right', 'too_hard', 'too_easy'] as const;
 export const MAKE_AGAIN = ['yes', 'maybe', 'no'] as const;
 
-const CONTENT_MSG = 'Either recipeId or freeformNote is required';
+export const CONTENT_MSG = 'Either recipeId or freeformNote is required';
 
 export const mealPlanCreateSchema = z
   .object({
@@ -21,7 +23,7 @@ export const mealPlanCreateSchema = z
     recipeId: uuidField.nullable().optional(),
     freeformNote: z.string().trim().min(1).nullable().optional(),
     servings: z.coerce.number().positive().optional(),
-    status: z.enum(STATUSES).optional(),
+    status: z.enum(CREATE_STATUSES).optional(),
     substituteRecipeId: uuidField.nullable().optional(),
     notes: z.string().nullable().optional(),
   })
