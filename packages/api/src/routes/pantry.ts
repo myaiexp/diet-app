@@ -73,20 +73,33 @@ export function pantryRoutes(db: Db): Hono {
       expiresDate = resolved;
     }
 
-    const [row] = await db
-      .insert(pantryItems)
-      .values({
-        ingredientId: data.ingredientId,
-        quantity: String(data.quantity),
-        unit: data.unit,
-        location: data.location,
-        addedDate,
-        expiresDate,
-        opened,
-      })
-      .returning();
+    try {
+      const [row] = await db
+        .insert(pantryItems)
+        .values({
+          ingredientId: data.ingredientId,
+          quantity: String(data.quantity),
+          unit: data.unit,
+          location: data.location,
+          addedDate,
+          expiresDate,
+          opened,
+        })
+        .returning();
 
-    return c.json(withStatus(row), 201);
+      return c.json(withStatus(row), 201);
+    } catch (err) {
+      // Race: ingredient deleted between pre-check and insert.
+      if (
+        typeof err === 'object' &&
+        err !== null &&
+        'code' in err &&
+        (err as { code: string }).code === '23503'
+      ) {
+        return badRequest(c, 'Invalid reference');
+      }
+      throw err;
+    }
   });
 
   app.patch('/:id', async (c) => {

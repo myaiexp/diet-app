@@ -12,7 +12,7 @@
 - **List filtering**: build a `conditions` array, then pass `conditions.length ? and(...conditions) : undefined` to a single `.where()` — Drizzle treats `undefined` as no clause, so never fork into a separate unfiltered query.
 - **List pagination**: unbounded list endpoints take `?limit`/`?offset` via `getPagination(c)` (`pagination.ts`) — default 50, clamped to ≤200. Bounded endpoints (e.g. meal-plans by week) don't paginate.
 - **`/:id` routes** validate the param with `isUuid(id)` (`validation.ts`) and return `400 {error:'Invalid id format'}` before querying, so a malformed id never reaches Postgres as an unhandled `invalid input syntax for type uuid`.
-- **Shared responses**: GET-by-id misses return `notFound(c)` from `responses.ts` (`{error:'Not found'}`, 404) — don't re-inline the body. Any future change to the error shape lands in that one helper.
+- **Shared responses**: `notFound` / `badRequest` / `conflict` in `responses.ts`; write bodies via `readJsonBody` (`json-body.ts`) → Zod schemas under `schemas/`. Don't re-inline error shapes.
 - **Deployment**: Forgejo git hooks (push to deploy) → `diet-app-api.service` (systemd, user `mase`)
 - **Public URL**: `https://mase.fi/diet/api/` (nginx proxy on VPS, port 3300)
 - **Database**: PostgreSQL `dietapp`

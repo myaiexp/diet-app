@@ -112,6 +112,49 @@ describe.skipIf(!hasDb)('GET /api/recipes', () => {
   });
 });
 
+describe.skipIf(!hasDb)('recipe write cycle', () => {
+  test('ingredient from seed → POST → GET → PATCH → DELETE', async () => {
+    const ingredientsRes = await app!.request('/api/ingredients?limit=1');
+    expect(ingredientsRes.status).toBe(200);
+    const ingredients = await ingredientsRes.json();
+    expect(ingredients.length).toBeGreaterThan(0);
+    const ingredientId = ingredients[0].id as string;
+
+    let recipeId: string | undefined;
+    try {
+      const createRes = await app!.request('/api/recipes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: 'Integration smoke recipe',
+          ingredients: [{ ingredientId, quantity: 100, unit: 'g' }],
+        }),
+      });
+      expect(createRes.status).toBe(201);
+      const created = await createRes.json();
+      recipeId = created.id;
+      expect(created.recipeIngredients).toHaveLength(1);
+
+      const getRes = await app!.request(`/api/recipes/${recipeId}`);
+      expect(getRes.status).toBe(200);
+      expect((await getRes.json()).title).toBe('Integration smoke recipe');
+
+      const patchRes = await app!.request(`/api/recipes/${recipeId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: 'Updated smoke recipe' }),
+      });
+      expect(patchRes.status).toBe(200);
+      expect((await patchRes.json()).title).toBe('Updated smoke recipe');
+    } finally {
+      if (recipeId) {
+        const delRes = await app!.request(`/api/recipes/${recipeId}`, { method: 'DELETE' });
+        expect([204, 404]).toContain(delRes.status);
+      }
+    }
+  });
+});
+
 describe.skipIf(!hasDb)('GET /api/pantry', () => {
   test('returns array with status field', async () => {
     const res = await app!.request('/api/pantry');
