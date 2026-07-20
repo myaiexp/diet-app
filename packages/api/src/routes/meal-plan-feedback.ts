@@ -111,8 +111,13 @@ export function mealPlanFeedbackRoutes(db: Db): Hono {
 
     const mergedUsedAsIs =
       data.usedAsIs !== undefined ? data.usedAsIs : existing.usedAsIs;
-    const mergedNote =
+    // Flipping to usedAsIs:true auto-clears the note (see patch write below), so
+    // treat an omitted changesNote as null when validating the merge.
+    let mergedNote =
       data.changesNote !== undefined ? data.changesNote : existing.changesNote;
+    if (mergedUsedAsIs === true && data.changesNote === undefined) {
+      mergedNote = null;
+    }
     if (!mergedUsedAsIsValid(mergedUsedAsIs, mergedNote)) {
       return badRequest(c, 'Validation failed', {
         formErrors: [
@@ -129,8 +134,8 @@ export function mealPlanFeedbackRoutes(db: Db): Hono {
     if (data.makeAgain !== undefined) patch.makeAgain = data.makeAgain;
     if (data.usedAsIs !== undefined) patch.usedAsIs = data.usedAsIs;
     if (data.changesNote !== undefined) patch.changesNote = data.changesNote;
-    // When flipping to usedAsIs true without clearing note, force null
-    if (data.usedAsIs === true && data.changesNote === undefined) {
+    // When usedAsIs is true and note not supplied, force null (matches merge rule)
+    if (mergedUsedAsIs === true && data.changesNote === undefined) {
       patch.changesNote = null;
     }
 
