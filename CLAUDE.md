@@ -13,6 +13,8 @@
 - **List pagination**: unbounded list endpoints take `?limit`/`?offset` via `getPagination(c)` (`pagination.ts`) — default 50, clamped to ≤200. Bounded endpoints (e.g. meal-plans by week) don't paginate.
 - **`/:id` routes** validate the param with `isUuid(id)` (`validation.ts`) and return `400 {error:'Invalid id format'}` before querying, so a malformed id never reaches Postgres as an unhandled `invalid input syntax for type uuid`.
 - **Shared responses**: `notFound` / `badRequest` / `conflict` in `responses.ts`; write bodies via `readJsonBody` (`json-body.ts`) → Zod schemas under `schemas/`. Don't re-inline error shapes.
+- **Postgres errors**: `isFkViolation` / `isUniqueViolation` in `pg-errors.ts` — use for 23503/23505; don't re-inline the code checks.
+- **Cook flow**: `cooked` is terminal and reachable only via `POST /meal-plans/:id/cook` (PATCH cannot set or leave it). Unit conversion lives in `units.ts` and never crosses dimensions. FEFO deduction is pure in `cook-deduct.ts` (`planDeduction`); the cook route loads rows, plans, and applies inside one `FOR UPDATE` transaction.
 - **Deployment**: Forgejo git hooks (push to deploy) → `diet-app-api.service` (systemd, user `mase`)
 - **Public URL**: `https://mase.fi/diet/api/` (nginx proxy on VPS, port 3300)
 - **Database**: PostgreSQL `dietapp`
@@ -24,5 +26,5 @@
 
 ## Plans
 
-- **Active design docs**: `docs/plans/` — `2026-03-05-project-init-design.md` (authoritative architecture), `2026-03-05-phase0-skeleton.md` (Phase 0), `2026-07-20-pantry-recipe-writes-design.md` + `-plan.md` (Phase 1 pantry/recipe write endpoints), `2026-07-20-cook-flow-design.md` + `-plan.md` (meal plan writes, auto-deduct on cook, cook feedback — #379/#241/#377, not yet implemented).
+- **Active design docs**: `docs/plans/` — `2026-03-05-project-init-design.md` (authoritative architecture), `2026-03-05-phase0-skeleton.md` (Phase 0), `2026-07-20-pantry-recipe-writes-design.md` + `-plan.md` (Phase 1 pantry/recipe write endpoints), `2026-07-20-cook-flow-design.md` + `-plan.md` (meal plan writes, auto-deduct on cook, cook feedback — #379/#241/#377, shipped).
 - **Archived**: `docs/plans/archived/` — pre-implementation synthesized brainstorming. Historical only; some assumes a stack that was never adopted (Next.js/Vercel/Supabase). See its `README.md`.
