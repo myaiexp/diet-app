@@ -1,7 +1,7 @@
 // Mock-based route tests for pantryRoutes (computeStatus has its own suite in
 // pantry-status.test.ts).
 
-import { describe, test, expect } from 'vitest';
+import { describe, test, expect, vi } from 'vitest';
 import { pantryRoutes } from '../routes/pantry.js';
 import { makeSelectMock } from './select-mock.js';
 import { DEFAULT_LIMIT } from '../pagination.js';
@@ -9,8 +9,81 @@ import { DEFAULT_LIMIT } from '../pagination.js';
 // Mock-based route tests for pantryRoutes — deterministic, Postgres-free.
 // The GET handlers use the real `new Date()`, so far-future / far-past expiry
 // dates keep computeStatus deterministic on any run date and in any timezone.
-const FRESH_ROW = { id: '11111111-1111-1111-1111-111111111111', expiresDate: '2099-12-31' };
-const EXPIRED_ROW = { id: '22222222-2222-2222-2222-222222222222', expiresDate: '2000-01-01' };
+const FRESH_ROW = {
+  id: '11111111-1111-4111-8111-111111111111',
+  ingredientId: '22222222-2222-4222-8222-222222222222',
+  quantity: '2',
+  unit: 'pcs',
+  location: 'fridge',
+  addedDate: '2026-07-01',
+  expiresDate: '2099-12-31',
+  opened: false,
+};
+const EXPIRED_ROW = {
+  id: '33333333-3333-4333-8333-333333333333',
+  expiresDate: '2000-01-01',
+};
+
+const INGREDIENT_ID = '22222222-2222-4222-8222-222222222222';
+const ITEM_ID = '11111111-1111-4111-8111-111111111111';
+
+function makeWriteMock(opts: {
+  ingredient?: { id: string; shelfLife: Record<string, number | null> } | null;
+  /** Existing pantry row for PATCH; use null for 404. Default: FRESH_ROW. */
+  existingItem?: unknown | null;
+  insertRow?: unknown;
+  updateRow?: unknown;
+  deleteRows?: unknown[];
+}) {
+  const insertValues: unknown[] = [];
+  const updateSets: unknown[] = [];
+  const deleteWheres: unknown[] = [];
+
+  const insertBuilder: any = {
+    values: (v: unknown) => {
+      insertValues.push(v);
+      return insertBuilder;
+    },
+    returning: async () => [opts.insertRow ?? FRESH_ROW],
+  };
+  const updateBuilder: any = {
+    set: (v: unknown) => {
+      updateSets.push(v);
+      return updateBuilder;
+    },
+    where: () => updateBuilder,
+    returning: async () => [opts.updateRow ?? { ...FRESH_ROW, ...(updateSets[0] as object) }],
+  };
+  const deleteBuilder: any = {
+    where: (w: unknown) => {
+      deleteWheres.push(w);
+      return deleteBuilder;
+    },
+    returning: async () => opts.deleteRows ?? [{ id: ITEM_ID }],
+  };
+
+  const db = {
+    query: {
+      ingredients: {
+        findFirst: vi.fn(async () =>
+          opts.ingredient === undefined
+            ? { id: INGREDIENT_ID, shelfLife: { fridge_days: 7 } }
+            : opts.ingredient,
+        ),
+      },
+      pantryItems: {
+        findFirst: vi.fn(async () =>
+          opts.existingItem === undefined ? FRESH_ROW : opts.existingItem,
+        ),
+      },
+    },
+    insert: () => insertBuilder,
+    update: () => updateBuilder,
+    delete: () => deleteBuilder,
+  } as any;
+
+  return { db, insertValues, updateSets, deleteWheres };
+}
 
 describe('pantryRoutes', () => {
   test('GET / maps each row to a computed status field', async () => {
@@ -41,7 +114,7 @@ describe('pantryRoutes', () => {
   test('GET /:id returns 200 with a computed status field when found', async () => {
     const mockDb = { query: { pantryItems: { findFirst: async () => FRESH_ROW } } } as any;
     const app = pantryRoutes(mockDb);
-    const res = await app.request('/11111111-1111-1111-1111-111111111111');
+    const res = await app.request(`/${ITEM_ID}`);
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.id).toBe(FRESH_ROW.id);
@@ -51,8 +124,187 @@ describe('pantryRoutes', () => {
   test('GET /:id returns 404 with error body when missing', async () => {
     const mockDb = { query: { pantryItems: { findFirst: async () => undefined } } } as any;
     const app = pantryRoutes(mockDb);
-    const res = await app.request('/22222222-2222-2222-2222-222222222222');
+    const res = await app.request('/22222222-2222-4222-8222-222222222222');
     expect(res.status).toBe(404);
     expect(await res.json()).toEqual({ error: 'Not found' });
+  });
+
+  test('POST / creates item and returns status field', async () => {
+    const { db, insertValues } = makeWriteMock({
+      insertRow: { ...FRESH_ROW, quantity: '3', expiresDate: '2099-12-31' },
+    });
+    const res = await pantryRoutes(db).request('/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ingredientId: INGREDIENT_ID,
+        quantity: 3,
+        unit: 'pcs',
+        location: 'fridge',
+        expiresDate: '2099-12-31',
+      }),
+    });
+    expect(res.status).toBe(201);
+    const body = await res.json();
+    expect(body.status).toBe('fresh');
+    expect(body.quantity).toBe('3');
+    expect(insertValues[0]).toMatchObject({
+      ingredientId: INGREDIENT_ID,
+      quantity: '3',
+      unit: 'pcs',
+      location: 'fridge',
+      expiresDate: '2099-12-31',
+      opened: false,
+    });
+  });
+
+  test('POST / rejects invalid location with 400 Validation failed', async () => {
+    const { db } = makeWriteMock({});
+    const res = await pantryRoutes(db).request('/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ingredientId: INGREDIENT_ID,
+        quantity: 1,
+        unit: 'g',
+        location: 'garage',
+      }),
+    });
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error).toBe('Validation failed');
+    expect(body.details).toBeDefined();
+  });
+
+  test('POST / without expiresDate when shelf life missing returns 400', async () => {
+    const { db } = makeWriteMock({
+      ingredient: { id: INGREDIENT_ID, shelfLife: {} },
+    });
+    const res = await pantryRoutes(db).request('/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ingredientId: INGREDIENT_ID,
+        quantity: 1,
+        unit: 'g',
+        location: 'counter',
+      }),
+    });
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error).toMatch(/expiresDate/i);
+  });
+
+  test('POST / invalid JSON returns 400 Invalid JSON body', async () => {
+    const { db } = makeWriteMock({});
+    const res = await pantryRoutes(db).request('/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: 'not-json',
+    });
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({ error: 'Invalid JSON body' });
+  });
+
+  test('POST / missing ingredient returns 400 Invalid reference', async () => {
+    const { db } = makeWriteMock({ ingredient: null });
+    const res = await pantryRoutes(db).request('/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ingredientId: INGREDIENT_ID,
+        quantity: 1,
+        unit: 'g',
+        location: 'fridge',
+        expiresDate: '2099-01-01',
+      }),
+    });
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({ error: 'Invalid reference' });
+  });
+
+  test('POST / resolves expiresDate from shelf life when omitted', async () => {
+    const { db, insertValues } = makeWriteMock({
+      ingredient: { id: INGREDIENT_ID, shelfLife: { fridge_days: 5 } },
+      insertRow: { ...FRESH_ROW, expiresDate: '2026-07-15' },
+    });
+    const res = await pantryRoutes(db).request('/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ingredientId: INGREDIENT_ID,
+        quantity: 1,
+        unit: 'g',
+        location: 'fridge',
+        addedDate: '2026-07-10',
+      }),
+    });
+    expect(res.status).toBe(201);
+    expect(insertValues[0]).toMatchObject({ expiresDate: '2026-07-15', addedDate: '2026-07-10' });
+  });
+
+  test('PATCH /:id returns 404 when missing', async () => {
+    const { db } = makeWriteMock({ existingItem: null });
+    const res = await pantryRoutes(db).request(`/${ITEM_ID}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ quantity: 5 }),
+    });
+    expect(res.status).toBe(404);
+    expect(await res.json()).toEqual({ error: 'Not found' });
+  });
+
+  test('PATCH /:id rejects empty body', async () => {
+    const { db } = makeWriteMock({});
+    const res = await pantryRoutes(db).request(`/${ITEM_ID}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({}),
+    });
+    expect(res.status).toBe(400);
+    expect((await res.json()).error).toBe('Validation failed');
+  });
+
+  test('PATCH /:id does not recompute expiresDate when only location changes', async () => {
+    const { db, updateSets } = makeWriteMock({
+      updateRow: { ...FRESH_ROW, location: 'freezer' },
+    });
+    const res = await pantryRoutes(db).request(`/${ITEM_ID}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ location: 'freezer' }),
+    });
+    expect(res.status).toBe(200);
+    expect(updateSets[0]).toMatchObject({ location: 'freezer' });
+    expect(updateSets[0]).not.toHaveProperty('expiresDate');
+  });
+
+  test('DELETE /:id returns 204 when deleted', async () => {
+    const { db } = makeWriteMock({ deleteRows: [{ id: ITEM_ID }] });
+    const res = await pantryRoutes(db).request(`/${ITEM_ID}`, { method: 'DELETE' });
+    expect(res.status).toBe(204);
+    expect(await res.text()).toBe('');
+  });
+
+  test('DELETE /:id returns 404 when missing', async () => {
+    const { db } = makeWriteMock({ deleteRows: [] });
+    const res = await pantryRoutes(db).request(`/${ITEM_ID}`, { method: 'DELETE' });
+    expect(res.status).toBe(404);
+    expect(await res.json()).toEqual({ error: 'Not found' });
+  });
+
+  test('PATCH/DELETE reject non-uuid with 400 before DB', async () => {
+    const app = pantryRoutes({} as any);
+    const patch = await app.request('/not-a-uuid', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ quantity: 1 }),
+    });
+    expect(patch.status).toBe(400);
+    expect(await patch.json()).toEqual({ error: 'Invalid id format' });
+
+    const del = await app.request('/not-a-uuid', { method: 'DELETE' });
+    expect(del.status).toBe(400);
+    expect(await del.json()).toEqual({ error: 'Invalid id format' });
   });
 });

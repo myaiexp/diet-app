@@ -29,11 +29,9 @@ const hasDb = Boolean(TEST_DB_URL);
 const db = hasDb ? createDb(TEST_DB_URL!) : null;
 const app = db ? createApp(db) : null;
 
-// Write-path tests: all routes are currently GET-only, so no mutation coverage
-// exists yet. When adding write tests against dietapp_test, isolate them so they
-// don't leave state behind for later tests — wrap each in a transaction that is
-// rolled back, or truncate + reseed in a beforeEach/afterAll. The DB is isolated
-// from prod (guarded above), so writes here are safe regardless.
+// Write-path smokes mutate dietapp_test and clean up in try/finally so leftover
+// rows do not accumulate across runs. The DB is isolated from prod (guarded
+// above), so writes here are safe regardless.
 
 afterAll(async () => {
   // Close the underlying pg pool so the test process exits cleanly.
@@ -114,6 +112,49 @@ describe.skipIf(!hasDb)('GET /api/recipes', () => {
   });
 });
 
+describe.skipIf(!hasDb)('recipe write cycle', () => {
+  test('ingredient from seed → POST → GET → PATCH → DELETE', async () => {
+    const ingredientsRes = await app!.request('/api/ingredients?limit=1');
+    expect(ingredientsRes.status).toBe(200);
+    const ingredients = await ingredientsRes.json();
+    expect(ingredients.length).toBeGreaterThan(0);
+    const ingredientId = ingredients[0].id as string;
+
+    let recipeId: string | undefined;
+    try {
+      const createRes = await app!.request('/api/recipes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: 'Integration smoke recipe',
+          ingredients: [{ ingredientId, quantity: 100, unit: 'g' }],
+        }),
+      });
+      expect(createRes.status).toBe(201);
+      const created = await createRes.json();
+      recipeId = created.id;
+      expect(created.recipeIngredients).toHaveLength(1);
+
+      const getRes = await app!.request(`/api/recipes/${recipeId}`);
+      expect(getRes.status).toBe(200);
+      expect((await getRes.json()).title).toBe('Integration smoke recipe');
+
+      const patchRes = await app!.request(`/api/recipes/${recipeId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ title: 'Updated smoke recipe' }),
+      });
+      expect(patchRes.status).toBe(200);
+      expect((await patchRes.json()).title).toBe('Updated smoke recipe');
+    } finally {
+      if (recipeId) {
+        const delRes = await app!.request(`/api/recipes/${recipeId}`, { method: 'DELETE' });
+        expect([204, 404]).toContain(delRes.status);
+      }
+    }
+  });
+});
+
 describe.skipIf(!hasDb)('GET /api/pantry', () => {
   test('returns array with status field', async () => {
     const res = await app!.request('/api/pantry');
@@ -123,6 +164,53 @@ describe.skipIf(!hasDb)('GET /api/pantry', () => {
     const validStatuses = ['fresh', 'use_soon', 'use_today', 'expired'];
     for (const item of body) {
       expect(validStatuses).toContain(item.status);
+    }
+  });
+});
+
+describe.skipIf(!hasDb)('pantry write cycle', () => {
+  test('resolve ingredient → POST → GET → PATCH → DELETE', async () => {
+    const ingredientsRes = await app!.request('/api/ingredients?limit=1');
+    expect(ingredientsRes.status).toBe(200);
+    const ingredients = await ingredientsRes.json();
+    expect(ingredients.length).toBeGreaterThan(0);
+    const ingredientId = ingredients[0].id as string;
+
+    let itemId: string | undefined;
+    try {
+      const createRes = await app!.request('/api/pantry', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ingredientId,
+          quantity: 2,
+          unit: 'pcs',
+          location: 'fridge',
+          expiresDate: '2099-12-31',
+        }),
+      });
+      expect(createRes.status).toBe(201);
+      const created = await createRes.json();
+      itemId = created.id;
+      expect(created.status).toBeDefined();
+      expect(created.quantity).toBe('2');
+
+      const getRes = await app!.request(`/api/pantry/${itemId}`);
+      expect(getRes.status).toBe(200);
+      expect((await getRes.json()).id).toBe(itemId);
+
+      const patchRes = await app!.request(`/api/pantry/${itemId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ quantity: 5, unit: 'pcs' }),
+      });
+      expect(patchRes.status).toBe(200);
+      expect((await patchRes.json()).quantity).toBe('5');
+    } finally {
+      if (itemId) {
+        const delRes = await app!.request(`/api/pantry/${itemId}`, { method: 'DELETE' });
+        expect([204, 404]).toContain(delRes.status);
+      }
     }
   });
 });
