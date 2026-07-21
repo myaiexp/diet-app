@@ -1,7 +1,17 @@
 // SSRF-safe URL fetch + HTML→plain-text strip for recipe import
+//
+// Residual risk: after block-on-resolve we fetch by hostname, so undici may
+// re-resolve at connect time (DNS-rebinding TOCTOU). Pinning the TCP connect to
+// the resolved address (Host/SNI = original name) needs a custom agent and is
+// left as a follow-up; literals + DNS answers are still blocked aggressively.
 
-import { lookup } from 'node:dns/promises';
-import { BlockList, isIP } from 'node:net';
+import { lookup as defaultDnsLookup } from 'node:dns/promises';
+import { isIP } from 'node:net';
+import {
+  isBlockedAddress,
+  isBlockedHostname,
+  normalizeHostname,
+} from './ssrf-host.js';
 
 /** Shared char budget for import model input (URL path truncates; paste path rejects). */
 export const IMPORT_TEXT_MAX_CHARS = 100_000;
@@ -10,89 +20,59 @@ export type FetchUrlResult =
   | { ok: true; text: string; finalUrl: string; truncated: boolean }
   | { ok: false; error: 'invalid_url' | 'blocked_url' | 'fetch_failed' };
 
+/** Injectable DNS (tests mock this — production uses node:dns/promises.lookup). */
+export type DnsLookupFn = (
+  hostname: string,
+  options: { all: true; verbatim: true },
+) => Promise<ReadonlyArray<{ address: string; family: number }>>;
+
+export type FetchUrlOpts = {
+  fetchImpl?: typeof fetch;
+  dnsLookup?: DnsLookupFn;
+  timeoutMs?: number;
+  maxBytes?: number;
+};
+
 const DEFAULT_TIMEOUT_MS = 10_000;
 const DEFAULT_MAX_BYTES = 1_500_000; // ~1.5 MiB
 const MAX_REDIRECTS = 5;
 const TRUNCATION_MARKER = '\n\n[truncated]';
-
+const OK_STATUSES = new Set([200, 203]);
 const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
 
-/** Private / non-routable nets — fail closed for SSRF. */
-const BLOCKED_NETS = new BlockList();
-// IPv4 special-use / private
-BLOCKED_NETS.addSubnet('0.0.0.0', 8, 'ipv4');
-BLOCKED_NETS.addSubnet('10.0.0.0', 8, 'ipv4');
-BLOCKED_NETS.addSubnet('100.64.0.0', 10, 'ipv4'); // CGNAT
-BLOCKED_NETS.addSubnet('127.0.0.0', 8, 'ipv4');
-BLOCKED_NETS.addSubnet('169.254.0.0', 16, 'ipv4'); // link-local + cloud metadata
-BLOCKED_NETS.addSubnet('172.16.0.0', 12, 'ipv4');
-BLOCKED_NETS.addSubnet('192.0.0.0', 24, 'ipv4');
-BLOCKED_NETS.addSubnet('192.168.0.0', 16, 'ipv4');
-BLOCKED_NETS.addSubnet('198.18.0.0', 15, 'ipv4'); // benchmarking
-BLOCKED_NETS.addSubnet('224.0.0.0', 4, 'ipv4'); // multicast
-BLOCKED_NETS.addSubnet('240.0.0.0', 4, 'ipv4'); // reserved
-// IPv6
-BLOCKED_NETS.addAddress('::', 'ipv6');
-BLOCKED_NETS.addAddress('::1', 'ipv6');
-BLOCKED_NETS.addSubnet('fc00::', 7, 'ipv6'); // unique local
-BLOCKED_NETS.addSubnet('fe80::', 10, 'ipv6'); // link-local
-BLOCKED_NETS.addSubnet('ff00::', 8, 'ipv6'); // multicast
-
-const BLOCKED_HOSTNAMES = new Set([
-  'localhost',
-  'metadata',
-  'metadata.google',
-  'metadata.google.internal',
-  'metadata.goog',
-]);
-
-function isBlockedAddress(addr: string): boolean {
-  const version = isIP(addr);
-  if (version === 4) return BLOCKED_NETS.check(addr, 'ipv4');
-  if (version === 6) {
-    const lower = addr.toLowerCase();
-    // IPv4-mapped ::ffff:a.b.c.d
-    const dotted = lower.match(/^::ffff:(\d{1,3}(?:\.\d{1,3}){3})$/);
-    if (dotted) return isBlockedAddress(dotted[1]!);
-    // IPv4-mapped ::ffff:aabb:ccdd
-    const hex = lower.match(/^::ffff:([0-9a-f]{1,4}):([0-9a-f]{1,4})$/);
-    if (hex) {
-      const hi = parseInt(hex[1]!, 16);
-      const lo = parseInt(hex[2]!, 16);
-      const v4 = `${(hi >> 8) & 255}.${hi & 255}.${(lo >> 8) & 255}.${lo & 255}`;
-      return isBlockedAddress(v4);
-    }
-    return BLOCKED_NETS.check(addr, 'ipv6');
-  }
-  return true; // fail closed on unparseable
+function abortedError(): Error {
+  const e = new Error('The operation was aborted');
+  e.name = 'AbortError';
+  return e;
 }
 
-function normalizeHostname(hostname: string): string {
-  // Node's URL.hostname keeps brackets on IPv6 literals; strip them + FQDN dot
-  let h = hostname.toLowerCase();
-  if (h.startsWith('[') && h.endsWith(']')) h = h.slice(1, -1);
-  return h.replace(/\.$/, '');
+/** Race a promise against AbortSignal so DNS shares the overall timeout. */
+function withSignal<T>(p: Promise<T>, signal: AbortSignal): Promise<T> {
+  if (signal.aborted) return Promise.reject(abortedError());
+  return new Promise<T>((resolve, reject) => {
+    const onAbort = () => reject(abortedError());
+    signal.addEventListener('abort', onAbort, { once: true });
+    p.then(
+      (v) => {
+        signal.removeEventListener('abort', onAbort);
+        resolve(v);
+      },
+      (err: unknown) => {
+        signal.removeEventListener('abort', onAbort);
+        reject(err);
+      },
+    );
+  });
 }
 
-function isBlockedHostname(hostname: string): boolean {
-  const h = normalizeHostname(hostname);
-  if (!h) return true;
-  if (BLOCKED_HOSTNAMES.has(h)) return true;
-  if (h.endsWith('.localhost')) return true;
-  if (h.endsWith('.local') || h.endsWith('.internal') || h.endsWith('.lan')) return true;
-  if (h.endsWith('.home') || h.endsWith('.localdomain')) return true;
-  const ipVersion = isIP(h);
-  if (ipVersion) return isBlockedAddress(h);
-  return false;
-}
+type SafeOk = { ok: true; url: URL };
+type SafeErr = { ok: false; error: 'invalid_url' | 'blocked_url' | 'fetch_failed' };
 
-/**
- * Validate scheme/userinfo/host and, for non-literal hosts, resolve DNS and
- * block if any address is private (reduces DNS-rebinding risk).
- */
 async function assertUrlSafe(
   raw: string,
-): Promise<{ ok: true; url: URL } | { ok: false; error: 'invalid_url' | 'blocked_url' | 'fetch_failed' }> {
+  dnsLookup: DnsLookupFn,
+  signal: AbortSignal,
+): Promise<SafeOk | SafeErr> {
   let url: URL;
   try {
     url = new URL(raw);
@@ -103,37 +83,25 @@ async function assertUrlSafe(
   if (url.protocol !== 'http:' && url.protocol !== 'https:') {
     return { ok: false, error: 'invalid_url' };
   }
-
-  // Reject credentials in URL (userinfo)
   if (url.username !== '' || url.password !== '') {
     return { ok: false, error: 'invalid_url' };
   }
 
   const host = normalizeHostname(url.hostname);
   if (!host) return { ok: false, error: 'invalid_url' };
+  if (isBlockedHostname(host)) return { ok: false, error: 'blocked_url' };
+  if (isIP(host)) return { ok: true, url };
 
-  if (isBlockedHostname(host)) {
-    return { ok: false, error: 'blocked_url' };
-  }
-
-  // IP literal already checked in isBlockedHostname
-  if (isIP(host)) {
-    return { ok: true, url };
-  }
-
-  // Block-on-resolve: any private/link-local answer ⇒ blocked
   try {
-    const answers = await lookup(host, { all: true, verbatim: true });
-    if (answers.length === 0) {
-      return { ok: false, error: 'blocked_url' }; // fail closed
-    }
+    const answers = await withSignal(
+      dnsLookup(host, { all: true, verbatim: true }),
+      signal,
+    );
+    if (answers.length === 0) return { ok: false, error: 'blocked_url' };
     for (const a of answers) {
-      if (isBlockedAddress(a.address)) {
-        return { ok: false, error: 'blocked_url' };
-      }
+      if (isBlockedAddress(a.address)) return { ok: false, error: 'blocked_url' };
     }
   } catch {
-    // DNS failure is a network problem, not a confirmed block
     return { ok: false, error: 'fetch_failed' };
   }
 
@@ -143,14 +111,11 @@ async function assertUrlSafe(
 /** Strip scripts/styles/tags and collapse whitespace — no browser. */
 export function htmlToPlainText(html: string): string {
   let s = html;
-  // Remove script/style/noscript blocks (including content)
   s = s.replace(/<script\b[\s\S]*?<\/script>/gi, ' ');
   s = s.replace(/<style\b[\s\S]*?<\/style>/gi, ' ');
   s = s.replace(/<noscript\b[\s\S]*?<\/noscript>/gi, ' ');
   s = s.replace(/<!--[\s\S]*?-->/g, ' ');
-  // Drop remaining tags
   s = s.replace(/<[^>]+>/g, ' ');
-  // Common entities
   s = s.replace(/&nbsp;/gi, ' ');
   s = s.replace(/&amp;/gi, '&');
   s = s.replace(/&lt;/gi, '<');
@@ -173,30 +138,84 @@ export function htmlToPlainText(html: string): string {
 }
 
 function truncateText(text: string): { text: string; truncated: boolean } {
-  if (text.length <= IMPORT_TEXT_MAX_CHARS) {
-    return { text, truncated: false };
-  }
+  if (text.length <= IMPORT_TEXT_MAX_CHARS) return { text, truncated: false };
   const budget = Math.max(0, IMPORT_TEXT_MAX_CHARS - TRUNCATION_MARKER.length);
-  return {
-    text: text.slice(0, budget) + TRUNCATION_MARKER,
-    truncated: true,
-  };
+  return { text: text.slice(0, budget) + TRUNCATION_MARKER, truncated: true };
 }
 
+/**
+ * Read body with a hard byte ceiling. Content-Length pre-check + stream cancel
+ * if the running total exceeds maxBytes (never buffers a multi-GB body).
+ */
 async function readBodyCapped(
   res: Response,
   maxBytes: number,
-): Promise<string> {
-  const buf = new Uint8Array(await res.arrayBuffer());
-  const slice = buf.byteLength > maxBytes ? buf.subarray(0, maxBytes) : buf;
-  return new TextDecoder('utf-8', { fatal: false }).decode(slice);
+  signal: AbortSignal,
+): Promise<{ ok: true; text: string } | { ok: false }> {
+  const cl = res.headers.get('content-length');
+  if (cl !== null) {
+    const n = Number(cl);
+    if (Number.isFinite(n) && n > maxBytes) {
+      try {
+        await res.body?.cancel();
+      } catch {
+        /* ignore */
+      }
+      return { ok: false };
+    }
+  }
+
+  if (!res.body) {
+    try {
+      const t = await res.text();
+      if (new TextEncoder().encode(t).byteLength > maxBytes) return { ok: false };
+      return { ok: true, text: t };
+    } catch {
+      return { ok: false };
+    }
+  }
+
+  const reader = res.body.getReader();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  try {
+    for (;;) {
+      if (signal.aborted) {
+        await reader.cancel().catch(() => undefined);
+        return { ok: false };
+      }
+      const { done, value } = await reader.read();
+      if (done) break;
+      if (!value?.byteLength) continue;
+      total += value.byteLength;
+      if (total > maxBytes) {
+        await reader.cancel().catch(() => undefined);
+        return { ok: false };
+      }
+      chunks.push(value);
+    }
+  } catch {
+    return { ok: false };
+  }
+
+  const out = new Uint8Array(total);
+  let off = 0;
+  for (const c of chunks) {
+    out.set(c, off);
+    off += c.byteLength;
+  }
+  return { ok: true, text: new TextDecoder('utf-8', { fatal: false }).decode(out) };
 }
+
+const defaultLookup: DnsLookupFn = (hostname, options) =>
+  defaultDnsLookup(hostname, options);
 
 export async function fetchUrlAsText(
   url: string,
-  opts?: { fetchImpl?: typeof fetch; timeoutMs?: number; maxBytes?: number },
+  opts?: FetchUrlOpts,
 ): Promise<FetchUrlResult> {
   const fetchImpl = opts?.fetchImpl ?? globalThis.fetch;
+  const dnsLookup = opts?.dnsLookup ?? defaultLookup;
   const timeoutMs = opts?.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   const maxBytes = opts?.maxBytes ?? DEFAULT_MAX_BYTES;
 
@@ -210,7 +229,9 @@ export async function fetchUrlAsText(
 
   try {
     for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
-      const safe = await assertUrlSafe(current);
+      if (controller.signal.aborted) return { ok: false, error: 'fetch_failed' };
+
+      const safe = await assertUrlSafe(current, dnsLookup, controller.signal);
       if (!safe.ok) return safe;
 
       let res: Response;
@@ -229,9 +250,7 @@ export async function fetchUrlAsText(
       }
 
       if (REDIRECT_STATUSES.has(res.status)) {
-        if (hop === MAX_REDIRECTS) {
-          return { ok: false, error: 'fetch_failed' };
-        }
+        if (hop === MAX_REDIRECTS) return { ok: false, error: 'fetch_failed' };
         const location = res.headers.get('location');
         if (!location) return { ok: false, error: 'fetch_failed' };
         let next: URL;
@@ -244,18 +263,15 @@ export async function fetchUrlAsText(
         continue;
       }
 
-      if (!res.ok) {
+      // Only success statuses that carry a body we want to parse (not 204/304).
+      if (!OK_STATUSES.has(res.status)) {
         return { ok: false, error: 'fetch_failed' };
       }
 
-      let body: string;
-      try {
-        body = await readBodyCapped(res, maxBytes);
-      } catch {
-        return { ok: false, error: 'fetch_failed' };
-      }
+      const body = await readBodyCapped(res, maxBytes, controller.signal);
+      if (!body.ok) return { ok: false, error: 'fetch_failed' };
 
-      const plain = htmlToPlainText(body);
+      const plain = htmlToPlainText(body.text);
       const { text, truncated } = truncateText(plain);
       return { ok: true, text, finalUrl: safe.url.href, truncated };
     }
