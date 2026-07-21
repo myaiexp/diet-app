@@ -1,11 +1,17 @@
-// SSRF-safe fetchUrlAsText + HTML strip coverage (mock fetch only)
+// SSRF-safe fetchUrlAsText + HTML strip coverage (mock fetch + mock DNS only)
 
 import { describe, test, expect } from 'vitest';
 import {
   fetchUrlAsText,
   htmlToPlainText,
   IMPORT_TEXT_MAX_CHARS,
+  type DnsLookupFn,
 } from '../ai/fetch-url.js';
+
+/** Public IPv4 — never hit real DNS in these tests. */
+const publicDns: DnsLookupFn = async () => [
+  { address: '93.184.216.34', family: 4 },
+];
 
 function htmlResponse(html: string, init?: ResponseInit): Response {
   return new Response(html, {
@@ -13,6 +19,12 @@ function htmlResponse(html: string, init?: ResponseInit): Response {
     headers: { 'content-type': 'text/html; charset=utf-8' },
     ...init,
   });
+}
+
+function mustNotFetch(): typeof fetch {
+  return async () => {
+    throw new Error('must not fetch');
+  };
 }
 
 describe('fetchUrlAsText', () => {
@@ -24,9 +36,8 @@ describe('fetchUrlAsText', () => {
       'data:text/html,hi',
     ]) {
       const result = await fetchUrlAsText(url, {
-        fetchImpl: async () => {
-          throw new Error('must not fetch');
-        },
+        fetchImpl: mustNotFetch(),
+        dnsLookup: publicDns,
       });
       expect(result).toEqual({ ok: false, error: 'invalid_url' });
     }
@@ -34,9 +45,8 @@ describe('fetchUrlAsText', () => {
 
   test('rejects credentials in URL', async () => {
     const result = await fetchUrlAsText('https://user:pass@example.com/recipe', {
-      fetchImpl: async () => {
-        throw new Error('must not fetch');
-      },
+      fetchImpl: mustNotFetch(),
+      dnsLookup: publicDns,
     });
     expect(result).toEqual({ ok: false, error: 'invalid_url' });
   });
@@ -48,9 +58,8 @@ describe('fetchUrlAsText', () => {
       'http://[::1]/secret',
     ]) {
       const result = await fetchUrlAsText(url, {
-        fetchImpl: async () => {
-          throw new Error('must not fetch');
-        },
+        fetchImpl: mustNotFetch(),
+        dnsLookup: publicDns,
       });
       expect(result).toEqual({ ok: false, error: 'blocked_url' });
     }
@@ -64,11 +73,29 @@ describe('fetchUrlAsText', () => {
       'http://169.254.169.254/latest/meta-data/',
     ]) {
       const result = await fetchUrlAsText(url, {
-        fetchImpl: async () => {
-          throw new Error('must not fetch');
-        },
+        fetchImpl: mustNotFetch(),
+        dnsLookup: publicDns,
       });
       expect(result).toEqual({ ok: false, error: 'blocked_url' });
+    }
+  });
+
+  test('rejects IPv6 ULA, link-local, mapped, and compatible embeds', async () => {
+    for (const url of [
+      'http://[fc00::1]/x',
+      'http://[fe80::1]/x',
+      'http://[::ffff:127.0.0.1]/x',
+      'http://[::ffff:7f00:1]/x',
+      'http://[::7f00:1]/x',
+      'http://[::127.0.0.1]/x',
+      'http://[64:ff9b::7f00:1]/x',
+      'http://[64:ff9b::127.0.0.1]/x',
+    ]) {
+      const result = await fetchUrlAsText(url, {
+        fetchImpl: mustNotFetch(),
+        dnsLookup: publicDns,
+      });
+      expect(result, url).toEqual({ ok: false, error: 'blocked_url' });
     }
   });
 
@@ -84,7 +111,10 @@ describe('fetchUrlAsText', () => {
       </body></html>
     `;
     const fetchImpl: typeof fetch = async () => htmlResponse(html);
-    const result = await fetchUrlAsText('https://example.com/soup', { fetchImpl });
+    const result = await fetchUrlAsText('https://example.com/soup', {
+      fetchImpl,
+      dnsLookup: publicDns,
+    });
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.text).toContain('Tomato Soup');
@@ -98,7 +128,10 @@ describe('fetchUrlAsText', () => {
     const big = 'a'.repeat(IMPORT_TEXT_MAX_CHARS + 5_000);
     const fetchImpl: typeof fetch = async () =>
       htmlResponse(`<html><body><p>${big}</p></body></html>`);
-    const result = await fetchUrlAsText('https://example.com/huge', { fetchImpl });
+    const result = await fetchUrlAsText('https://example.com/huge', {
+      fetchImpl,
+      dnsLookup: publicDns,
+    });
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.truncated).toBe(true);
@@ -110,7 +143,10 @@ describe('fetchUrlAsText', () => {
     const fetchImpl: typeof fetch = async () => {
       throw new TypeError('network down');
     };
-    const result = await fetchUrlAsText('https://example.com/x', { fetchImpl });
+    const result = await fetchUrlAsText('https://example.com/x', {
+      fetchImpl,
+      dnsLookup: publicDns,
+    });
     expect(result).toEqual({ ok: false, error: 'fetch_failed' });
   });
 
@@ -126,9 +162,78 @@ describe('fetchUrlAsText', () => {
       }
       throw new Error('must not follow blocked redirect');
     };
-    const result = await fetchUrlAsText('https://example.com/start', { fetchImpl });
+    const result = await fetchUrlAsText('https://example.com/start', {
+      fetchImpl,
+      dnsLookup: publicDns,
+    });
     expect(result).toEqual({ ok: false, error: 'blocked_url' });
     expect(calls).toBe(1);
+  });
+
+  test('rejects body when Content-Length exceeds maxBytes', async () => {
+    const fetchImpl: typeof fetch = async () =>
+      new Response('tiny', {
+        status: 200,
+        headers: {
+          'content-type': 'text/html',
+          'content-length': String(5_000_000),
+        },
+      });
+    const result = await fetchUrlAsText('https://example.com/big', {
+      fetchImpl,
+      dnsLookup: publicDns,
+      maxBytes: 1000,
+    });
+    expect(result).toEqual({ ok: false, error: 'fetch_failed' });
+  });
+
+  test('rejects streamed body once maxBytes is exceeded', async () => {
+    const fetchImpl: typeof fetch = async () => {
+      const chunk = new Uint8Array(600);
+      chunk.fill(65); // 'A'
+      const stream = new ReadableStream<Uint8Array>({
+        start(controller) {
+          controller.enqueue(chunk);
+          controller.enqueue(chunk); // 1200 > maxBytes 1000
+          controller.close();
+        },
+      });
+      return new Response(stream, {
+        status: 200,
+        headers: { 'content-type': 'text/html' },
+      });
+    };
+    const result = await fetchUrlAsText('https://example.com/stream', {
+      fetchImpl,
+      dnsLookup: publicDns,
+      maxBytes: 1000,
+    });
+    expect(result).toEqual({ ok: false, error: 'fetch_failed' });
+  });
+
+  test('does not call real DNS when dnsLookup is injected', async () => {
+    let lookedUp: string | null = null;
+    const dnsLookup: DnsLookupFn = async (hostname) => {
+      lookedUp = hostname;
+      return [{ address: '1.1.1.1', family: 4 }];
+    };
+    const fetchImpl: typeof fetch = async () => htmlResponse('<p>ok</p>');
+    const result = await fetchUrlAsText('https://example.com/r', {
+      fetchImpl,
+      dnsLookup,
+    });
+    expect(result.ok).toBe(true);
+    expect(lookedUp).toBe('example.com');
+  });
+
+  test('rejects 304 without treating as empty success', async () => {
+    const fetchImpl: typeof fetch = async () =>
+      new Response(null, { status: 304 });
+    const result = await fetchUrlAsText('https://example.com/n', {
+      fetchImpl,
+      dnsLookup: publicDns,
+    });
+    expect(result).toEqual({ ok: false, error: 'fetch_failed' });
   });
 });
 
