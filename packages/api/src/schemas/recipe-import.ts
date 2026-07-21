@@ -1,7 +1,7 @@
 // Zod body for POST /recipes/import — XOR of url | text
 
 import { z } from 'zod';
-import { IMPORT_TEXT_MAX_CHARS } from '../ai/fetch-url.js';
+import { IMPORT_TEXT_MAX_CHARS } from '../ai/import-limits.js';
 
 export const recipeImportBodySchema = z
   .object({

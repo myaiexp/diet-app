@@ -128,6 +128,7 @@ describe.skipIf(!hasDb)('recipe write cycle', () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           title: 'Integration smoke recipe',
+          servings: 2,
           ingredients: [{ ingredientId, quantity: 100, unit: 'g' }],
         }),
       });
@@ -139,6 +140,14 @@ describe.skipIf(!hasDb)('recipe write cycle', () => {
       const getRes = await app!.request(`/api/recipes/${recipeId}`);
       expect(getRes.status).toBe(200);
       expect((await getRes.json()).title).toBe('Integration smoke recipe');
+
+      const scaleRes = await app!.request(`/api/recipes/${recipeId}?servings=2`);
+      expect(scaleRes.status).toBe(200);
+      const scaled = await scaleRes.json();
+      expect(scaled.servings).toBe(2);
+      expect(scaled.baseServings).toBe(2);
+      expect(typeof scaled.recipeIngredients[0].quantity).toBe('string');
+      expect(scaled.recipeIngredients[0].quantity).toBe('100');
 
       const patchRes = await app!.request(`/api/recipes/${recipeId}`, {
         method: 'PATCH',
@@ -153,6 +162,19 @@ describe.skipIf(!hasDb)('recipe write cycle', () => {
         expect([204, 404]).toContain(delRes.status);
       }
     }
+  });
+});
+
+describe.skipIf(!hasDb)('POST /api/recipes/import', () => {
+  // createApp(db) without ai config → import must 503 (no real AI keys in CI).
+  test('returns 503 when AI is not configured', async () => {
+    const res = await app!.request('/api/recipes/import', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: '1 cup flour\nBake bread' }),
+    });
+    expect(res.status).toBe(503);
+    expect(await res.json()).toEqual({ error: 'AI not configured' });
   });
 });
 
@@ -223,6 +245,37 @@ describe.skipIf(!hasDb)('GET /api/profile', () => {
     const body = await res.json();
     expect(body).toHaveProperty('id');
     expect(body).toHaveProperty('name');
+    expect(Array.isArray(body.dislikedIngredientIds)).toBe(true);
+  });
+});
+
+describe.skipIf(!hasDb)('PATCH /api/profile', () => {
+  test('updates householdSize on real DB and restores', async () => {
+    const getRes = await app!.request('/api/profile');
+    expect(getRes.status).toBe(200);
+    const before = await getRes.json();
+    const originalSize = before.householdSize as number;
+    const nextSize = originalSize === 1 ? 2 : 1;
+
+    try {
+      const patchRes = await app!.request('/api/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ householdSize: nextSize }),
+      });
+      expect(patchRes.status).toBe(200);
+      const patched = await patchRes.json();
+      expect(patched.householdSize).toBe(nextSize);
+      expect(Array.isArray(patched.dislikedIngredientIds)).toBe(true);
+    } finally {
+      const restore = await app!.request('/api/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ householdSize: originalSize }),
+      });
+      expect(restore.status).toBe(200);
+      expect((await restore.json()).householdSize).toBe(originalSize);
+    }
   });
 });
 
