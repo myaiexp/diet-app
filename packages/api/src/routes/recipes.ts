@@ -17,6 +17,10 @@ import {
 } from '../schemas/recipes.js';
 import { isFkViolation } from '../pg-errors.js';
 import { scaleRecipeView } from '../recipe-scale.js';
+import {
+  recipeImportRoutes,
+  type RecipeImportRoutesOpts,
+} from './recipe-import.js';
 
 async function loadRecipeWithIngredients(db: Db, id: string) {
   return db.query.recipes.findFirst({
@@ -41,12 +45,32 @@ function lineValues(recipeId: string, lines: RecipeIngredientLine[]) {
 }
 
 export type RecipesRoutesOpts = {
-  /** Optional AI config for import route (wired in Task 7). */
+  /** Optional AI config for import route. Null/omitted → import returns 503. */
   ai?: import('../config.js').AiConfig | null;
-};
+} & Partial<
+  Pick<
+    RecipeImportRoutesOpts,
+    | 'fetchUrlAsText'
+    | 'extractRecipeFromText'
+    | 'createAiClient'
+    | 'matchIngredientNames'
+  >
+>;
 
-export function recipesRoutes(db: Db, _opts: RecipesRoutesOpts = {}): Hono {
+export function recipesRoutes(db: Db, opts: RecipesRoutesOpts = {}): Hono {
   const app = new Hono();
+
+  // Literal /import before /:id so "import" is never treated as a UUID param.
+  app.route(
+    '/',
+    recipeImportRoutes(db, {
+      ai: opts.ai ?? null,
+      fetchUrlAsText: opts.fetchUrlAsText,
+      extractRecipeFromText: opts.extractRecipeFromText,
+      createAiClient: opts.createAiClient,
+      matchIngredientNames: opts.matchIngredientNames,
+    }),
+  );
 
   app.get('/', async (c) => {
     const tags = c.req.query('tags');
