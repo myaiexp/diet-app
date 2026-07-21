@@ -1,10 +1,11 @@
 // Mock-based route tests for POST /recipes/import — no real AI or network
 
 import { describe, test, expect, vi } from 'vitest';
+import { recipeImportRoutes } from '../routes/recipe-import.js';
 import { recipesRoutes } from '../routes/recipes.js';
 import type { AiConfig } from '../config.js';
 import type { ExtractedRecipe } from '../ai/import-recipe.js';
-import { IMPORT_TEXT_MAX_CHARS } from '../ai/fetch-url.js';
+import { IMPORT_TEXT_MAX_CHARS } from '../ai/import-limits.js';
 import type { LineMatch } from '../ingredient-match.js';
 
 const AI: AiConfig = {
@@ -89,8 +90,9 @@ function makeApp(opts: {
     });
   const createAiClient = vi.fn(() => ({ mocked: true }) as any);
 
-  const app = recipesRoutes(db, {
+  const app = recipeImportRoutes(db, {
     ai: opts.ai === undefined ? AI : opts.ai,
+    // vi.fn mocks are structural stand-ins for the injectable deps.
     extractRecipeFromText: extractRecipeFromText as any,
     fetchUrlAsText: fetchUrlAsText as any,
     matchIngredientNames: matchIngredientNames as any,
@@ -108,7 +110,7 @@ function makeApp(opts: {
   };
 }
 
-async function postImport(app: ReturnType<typeof recipesRoutes>, body: unknown) {
+async function postImport(app: { request: (...args: any[]) => any }, body: unknown) {
   return app.request('/import', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
@@ -299,5 +301,19 @@ describe('POST /recipes/import', () => {
     expect(body.draft.totalTime).toBeNull();
     expect(body.draft.effortScore).toBeNull();
     expect(body.draft.cuisineType).toBeNull();
+  });
+
+  test('recipesRoutes mounts POST /import before /:id (503 without AI)', async () => {
+    const { db } = makeDb();
+    const app = recipesRoutes(db, { ai: null });
+    const res = await app.request('/import', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ text: 'x' }),
+    });
+    expect(res.status).toBe(503);
+    // Malformed UUID path still hits :id validation, not import.
+    const badId = await app.request('/not-a-uuid');
+    expect(badId.status).toBe(400);
   });
 });

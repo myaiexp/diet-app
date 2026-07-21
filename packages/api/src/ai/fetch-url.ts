@@ -13,8 +13,9 @@ import {
   normalizeHostname,
 } from './ssrf-host.js';
 
-/** Shared char budget for import model input (URL path truncates; paste path rejects). */
-export const IMPORT_TEXT_MAX_CHARS = 100_000;
+import { IMPORT_TEXT_MAX_CHARS } from './import-limits.js';
+
+export { IMPORT_TEXT_MAX_CHARS };
 
 export type FetchUrlResult =
   | { ok: true; text: string; finalUrl: string; truncated: boolean }
