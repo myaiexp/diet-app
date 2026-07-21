@@ -16,6 +16,7 @@ import {
   type RecipeIngredientLine,
 } from '../schemas/recipes.js';
 import { isFkViolation } from '../pg-errors.js';
+import { scaleRecipeView } from '../recipe-scale.js';
 
 async function loadRecipeWithIngredients(db: Db, id: string) {
   return db.query.recipes.findFirst({
@@ -39,7 +40,12 @@ function lineValues(recipeId: string, lines: RecipeIngredientLine[]) {
   }));
 }
 
-export function recipesRoutes(db: Db): Hono {
+export type RecipesRoutesOpts = {
+  /** Optional AI config for import route (wired in Task 7). */
+  ai?: import('../config.js').AiConfig | null;
+};
+
+export function recipesRoutes(db: Db, _opts: RecipesRoutesOpts = {}): Hono {
   const app = new Hono();
 
   app.get('/', async (c) => {
@@ -69,7 +75,23 @@ export function recipesRoutes(db: Db): Hono {
     if (!isUuid(id)) return badRequest(c, 'Invalid id format');
     const row = await loadRecipeWithIngredients(db, id);
     if (!row) return notFound(c);
-    return c.json(row);
+
+    const servingsRaw = c.req.query('servings');
+    if (servingsRaw === undefined) {
+      return c.json(row);
+    }
+
+    const target = Number(servingsRaw);
+    const scaled = scaleRecipeView(row, target);
+    if (!scaled.ok) {
+      if (scaled.error === 'invalid_target') {
+        return badRequest(c, 'Validation failed', {
+          formErrors: ['Invalid servings query'],
+        });
+      }
+      return badRequest(c, 'Invalid servings scale');
+    }
+    return c.json(scaled.recipe);
   });
 
   app.post('/', async (c) => {

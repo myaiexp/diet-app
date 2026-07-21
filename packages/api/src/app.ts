@@ -8,6 +8,7 @@ import { pantryRoutes } from './routes/pantry.js';
 import { mealPlansRoutes } from './routes/meal-plans.js';
 import { shoppingListsRoutes } from './routes/shopping-lists.js';
 import { profileRoutes } from './routes/profile.js';
+import type { AiConfig } from './config.js';
 
 export interface AppConfig {
   // When set, every /api/* route except /api/health requires `Bearer <authToken>`.
@@ -16,6 +17,8 @@ export interface AppConfig {
   // Allowed CORS origins. Defaults to dev origins; production passes a narrowed
   // list from CORS_ORIGINS (see config.ts / index.ts).
   corsOrigins?: string[];
+  // Optional AI client config for recipe import. Null/omitted → import returns 503.
+  ai?: AiConfig | null;
 }
 
 const DEFAULT_CORS_ORIGINS = ['https://mase.fi', 'http://localhost:5173'];
@@ -42,7 +45,7 @@ export function createApp(db: Db, config: AppConfig = {}) {
   }
 
   app.route('/api/ingredients', ingredientsRoutes(db));
-  app.route('/api/recipes', recipesRoutes(db));
+  app.route('/api/recipes', recipesRoutes(db, { ai: config.ai ?? null }));
   app.route('/api/pantry', pantryRoutes(db));
   app.route('/api/meal-plans', mealPlansRoutes(db));
   app.route('/api/shopping-lists', shoppingListsRoutes(db));

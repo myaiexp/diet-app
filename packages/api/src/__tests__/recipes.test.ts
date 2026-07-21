@@ -20,6 +20,7 @@ const RECIPE_WITH_RELATIONS = {
   id: RECIPE_ID,
   title: 'Roast chicken',
   sourceType: 'manual',
+  servings: 2,
   recipeIngredients: [
     {
       id: '22222222-2222-4222-8222-222222222222',
@@ -190,6 +191,41 @@ describe('recipesRoutes', () => {
     const res = await app.request(`/${RECIPE_ID}`);
     expect(res.status).toBe(404);
     expect(await res.json()).toEqual({ error: 'Not found' });
+  });
+
+  test('GET /:id without servings omits baseServings', async () => {
+    const mockDb = { query: { recipes: { findFirst: async () => RECIPE_WITH_RELATIONS } } } as any;
+    const res = await recipesRoutes(mockDb).request(`/${RECIPE_ID}`);
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.baseServings).toBeUndefined();
+    expect(body.recipeIngredients[0].quantity).toBe('500');
+  });
+
+  test('GET /:id?servings=4 scales lines and sets baseServings', async () => {
+    const mockDb = { query: { recipes: { findFirst: async () => RECIPE_WITH_RELATIONS } } } as any;
+    const res = await recipesRoutes(mockDb).request(`/${RECIPE_ID}?servings=4`);
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.servings).toBe(4);
+    expect(body.baseServings).toBe(2);
+    expect(body.recipeIngredients[0].quantity).toBe('1000');
+  });
+
+  test('GET /:id?servings=0 returns 400', async () => {
+    const mockDb = { query: { recipes: { findFirst: async () => RECIPE_WITH_RELATIONS } } } as any;
+    const res = await recipesRoutes(mockDb).request(`/${RECIPE_ID}?servings=0`);
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error).toBe('Validation failed');
+    expect(body.details.formErrors).toContain('Invalid servings query');
+  });
+
+  test('GET /:id?servings=abc returns 400', async () => {
+    const mockDb = { query: { recipes: { findFirst: async () => RECIPE_WITH_RELATIONS } } } as any;
+    const res = await recipesRoutes(mockDb).request(`/${RECIPE_ID}?servings=abc`);
+    expect(res.status).toBe(400);
+    expect((await res.json()).error).toBe('Validation failed');
   });
 
   test('POST / creates recipe and returns recipeIngredients', async () => {
