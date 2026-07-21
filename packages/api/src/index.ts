@@ -4,12 +4,13 @@ import { serve } from '@hono/node-server';
 import { createDb } from '@diet-app/db';
 import { createApp } from './app.js';
 import { assertEnv } from './env.js';
-import { parseCorsOrigins } from './config.js';
+import { parseCorsOrigins, parseAiConfig } from './config.js';
 
 const db = createDb(assertEnv('DATABASE_URL'));
 const app = createApp(db, {
   authToken: assertEnv('API_TOKEN'),
   corsOrigins: parseCorsOrigins(process.env.CORS_ORIGINS),
+  ai: parseAiConfig(process.env),
 });
 const PORT = parseInt(process.env.API_PORT ?? '3300', 10);
 

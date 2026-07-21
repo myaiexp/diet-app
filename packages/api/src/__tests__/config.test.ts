@@ -1,6 +1,6 @@
-// Unit tests for parseCorsOrigins — the env -> CORS allowlist parser
+// Unit tests for parseCorsOrigins and parseAiConfig
 import { describe, test, expect } from 'vitest';
-import { parseCorsOrigins } from '../config.js';
+import { parseCorsOrigins, parseAiConfig } from '../config.js';
 
 describe('parseCorsOrigins', () => {
   test('unset => production-safe default (mase.fi only)', () => {
@@ -21,5 +21,57 @@ describe('parseCorsOrigins', () => {
 
   test('drops empty segments', () => {
     expect(parseCorsOrigins('https://mase.fi,,')).toEqual(['https://mase.fi']);
+  });
+});
+
+describe('parseAiConfig', () => {
+  test('parseAiConfig returns null when any required field missing', () => {
+    expect(parseAiConfig({})).toBeNull();
+    expect(parseAiConfig({ AI_API_KEY: 'k' })).toBeNull();
+    expect(parseAiConfig({ AI_API_KEY: 'k', AI_BASE_URL: 'https://api.example' })).toBeNull();
+    expect(
+      parseAiConfig({
+        AI_API_KEY: 'k',
+        AI_BASE_URL: '',
+        AI_MODEL_CAPABLE: 'm',
+      }),
+    ).toBeNull();
+  });
+
+  test('parseAiConfig trims and returns config when all present', () => {
+    expect(
+      parseAiConfig({
+        AI_API_KEY: '  key  ',
+        AI_BASE_URL: ' https://api.example/v1 ',
+        AI_MODEL_CAPABLE: ' capable-model ',
+      }),
+    ).toEqual({
+      apiKey: 'key',
+      baseUrl: 'https://api.example/v1',
+      modelCapable: 'capable-model',
+    });
+  });
+
+  test('parseAiConfig ignores AI_MODEL_FAST for readiness', () => {
+    expect(
+      parseAiConfig({
+        AI_API_KEY: 'k',
+        AI_BASE_URL: 'https://api.example',
+        AI_MODEL_CAPABLE: 'm',
+        AI_MODEL_FAST: 'fast-only',
+      }),
+    ).toEqual({
+      apiKey: 'k',
+      baseUrl: 'https://api.example',
+      modelCapable: 'm',
+    });
+    // Fast alone never makes AI ready
+    expect(
+      parseAiConfig({
+        AI_API_KEY: 'k',
+        AI_BASE_URL: 'https://api.example',
+        AI_MODEL_FAST: 'fast',
+      }),
+    ).toBeNull();
   });
 });
