@@ -1,0 +1,6 @@
+[
+  {"pattern": "Missing explicit timeout/retry bounds on external HTTP clients", "count": 1, "lastSeen": "2026-07-21"},
+  {"pattern": "Test harness injectables leaking into production route signatures", "count": 1, "lastSeen": "2026-07-21"},
+  {"pattern": "Shared constants coupled to heavy modules instead of neutral homes", "count": 1, "lastSeen": "2026-07-21"},
+  {"pattern": "SSRF checks that resolve then re-connect by hostname (rebinding TOCTOU)", "count": 1, "lastSeen": "2026-07-21"}
+]
