@@ -2,7 +2,7 @@
 
 import { describe, test, expect } from 'vitest';
 import { Hono } from 'hono';
-import { badRequest, conflict, notFound } from '../responses.js';
+import { badRequest, badGateway, conflict, notFound, serviceUnavailable } from '../responses.js';
 import { readJsonBody } from '../json-body.js';
 
 function appWith(handler: (c: any) => Response | Promise<Response>) {
@@ -43,6 +43,20 @@ describe('responses', () => {
     const res = await app.request('/');
     expect(res.status).toBe(404);
     expect(await res.json()).toEqual({ error: 'Not found' });
+  });
+
+  test('badGateway returns 502 and error body', async () => {
+    const app = appWith((c) => badGateway(c, 'Failed to fetch URL'));
+    const res = await app.request('/');
+    expect(res.status).toBe(502);
+    expect(await res.json()).toEqual({ error: 'Failed to fetch URL' });
+  });
+
+  test('serviceUnavailable returns 503 and error body', async () => {
+    const app = appWith((c) => serviceUnavailable(c, 'AI not configured'));
+    const res = await app.request('/');
+    expect(res.status).toBe(503);
+    expect(await res.json()).toEqual({ error: 'AI not configured' });
   });
 });
 

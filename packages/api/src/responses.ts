@@ -20,3 +20,13 @@ export function badRequest(c: Context, error: string, details?: unknown) {
 export function conflict(c: Context, error: string) {
   return c.json({ error }, 409);
 }
+
+// 502 for upstream failures (URL fetch / AI extraction).
+export function badGateway(c: Context, error: string) {
+  return c.json({ error }, 502);
+}
+
+// 503 when an optional dependency is not configured (e.g. AI credentials).
+export function serviceUnavailable(c: Context, error: string) {
+  return c.json({ error }, 503);
+}
