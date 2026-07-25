@@ -15,10 +15,28 @@ import {
   type FeedbackPatch,
 } from '../schemas/meal-plans.js';
 
-function mergedUsedAsIsValid(
-  usedAsIs: boolean,
-  changesNote: string | null | undefined,
-): boolean {
+/** The two fields whose invariant ties them together: a note iff the cook changed something. */
+interface FeedbackPair {
+  usedAsIs: boolean;
+  changesNote: string | null;
+}
+
+/**
+ * The pair a patch resolves to. `usedAsIs: true` means "cooked as written", so
+ * flipping it true drops the stored note — but only when the patch didn't name
+ * a note itself: `{usedAsIs: true, changesNote: 'x'}` is a contradiction the
+ * caller has to hear about, not have silently repaired.
+ *
+ * Computing this once is what keeps the accepted body and the persisted row
+ * from drifting: the handler validates this value and writes this same value.
+ */
+function mergeFeedback(existing: FeedbackPair, patch: FeedbackPatch): FeedbackPair {
+  const usedAsIs = patch.usedAsIs ?? existing.usedAsIs;
+  if (patch.changesNote !== undefined) return { usedAsIs, changesNote: patch.changesNote };
+  return { usedAsIs, changesNote: usedAsIs ? null : existing.changesNote };
+}
+
+function isValidFeedbackPair({ usedAsIs, changesNote }: FeedbackPair): boolean {
   if (usedAsIs === false) {
     return changesNote != null && changesNote !== '';
   }
@@ -98,33 +116,24 @@ export function mealPlanFeedbackRoutes(db: Db): Hono {
     });
     if (!existing) return notFound(c);
 
-    const mergedUsedAsIs =
-      data.usedAsIs !== undefined ? data.usedAsIs : existing.usedAsIs;
-    // Flipping to usedAsIs:true auto-clears the note (see patch write below), so
-    // treat an omitted changesNote as null when validating the merge.
-    let mergedNote =
-      data.changesNote !== undefined ? data.changesNote : existing.changesNote;
-    if (mergedUsedAsIs === true && data.changesNote === undefined) {
-      mergedNote = null;
-    }
-    if (!mergedUsedAsIsValid(mergedUsedAsIs, mergedNote)) {
+    const merged = mergeFeedback(existing, data);
+    if (!isValidFeedbackPair(merged)) {
       return badRequest(c, 'Validation failed', {
         formErrors: [
-          mergedUsedAsIs
+          merged.usedAsIs
             ? 'changesNote must be absent when usedAsIs is true'
             : 'changesNote is required when usedAsIs is false',
         ],
       });
     }
 
+    // Persist exactly the pair that was validated: buildPatch carries the
+    // rating fields, `merged` owns usedAsIs/changesNote.
     const patch: Partial<typeof cookFeedback.$inferInsert> = {
       ...buildPatch(data, cookFeedback),
+      ...merged,
       updatedAt: new Date(),
     };
-    // When usedAsIs is true and note not supplied, force null (matches merge rule)
-    if (mergedUsedAsIs === true && data.changesNote === undefined) {
-      patch.changesNote = null;
-    }
 
     const [row] = await db
       .update(cookFeedback)

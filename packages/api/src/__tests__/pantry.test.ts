@@ -3,7 +3,7 @@
 
 import { describe, test, expect, vi } from 'vitest';
 import { pantryRoutes } from '../routes/pantry.js';
-import { makeDbMock, makeSelectMock, mergedRow } from './db-mock.js';
+import { makeDbMock, makeSelectMock, mergedRow, pgError } from './db-mock.js';
 import { DEFAULT_LIMIT } from '../pagination.js';
 
 // Mock-based route tests for pantryRoutes — deterministic, Postgres-free.
@@ -34,8 +34,11 @@ function makeWriteMock(opts: {
   insertRow?: unknown;
   updateRow?: unknown;
   deleteRows?: unknown[];
+  /** Driver-shaped error thrown at the handler's write (FK races). */
+  throwOnWrite?: unknown;
 }) {
   return makeDbMock({
+    throwOnWrite: () => opts.throwOnWrite,
     insertRows: () => [opts.insertRow ?? FRESH_ROW],
     updateRows: opts.updateRow ? () => [opts.updateRow] : mergedRow(FRESH_ROW),
     deleteRows: () => opts.deleteRows ?? [{ id: ITEM_ID }],
@@ -192,6 +195,42 @@ describe('pantryRoutes', () => {
     });
     expect(res.status).toBe(400);
     expect(await res.json()).toEqual({ error: 'Invalid reference' });
+  });
+
+  test('POST / maps an FK violation (23503) to the same 400 as the pre-check', async () => {
+    // The ingredient was deleted between the pre-check and the insert — the
+    // race has to be indistinguishable from the pre-check's own rejection.
+    const { db, inserts } = makeWriteMock({ throwOnWrite: pgError('23503') });
+    const res = await pantryRoutes(db).request('/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ingredientId: INGREDIENT_ID,
+        quantity: 1,
+        unit: 'g',
+        location: 'fridge',
+        expiresDate: '2099-01-01',
+      }),
+    });
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({ error: 'Invalid reference' });
+    expect(inserts).toHaveLength(1); // attempted, then mapped — not skipped
+  });
+
+  test('POST / lets a non-FK database error escape as a 500', async () => {
+    const { db } = makeWriteMock({ throwOnWrite: pgError('23514') });
+    const res = await pantryRoutes(db).request('/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ingredientId: INGREDIENT_ID,
+        quantity: 1,
+        unit: 'g',
+        location: 'fridge',
+        expiresDate: '2099-01-01',
+      }),
+    });
+    expect(res.status).toBe(500);
   });
 
   test('POST / resolves expiresDate from shelf life when omitted', async () => {

@@ -3,7 +3,7 @@
 import { describe, test, expect, vi } from 'vitest';
 import { mealPlanFeedbackRoutes } from '../routes/meal-plan-feedback.js';
 import { mealPlansRoutes } from '../routes/meal-plans.js';
-import { makeDbMock, mergedRow } from './db-mock.js';
+import { makeDbMock, mergedRow, pgError } from './db-mock.js';
 
 const ENTRY_ID = '11111111-1111-4111-8111-111111111111';
 const FB_ID = '22222222-2222-4222-8222-222222222222';
@@ -39,16 +39,16 @@ type MockOpts = {
   feedback?: unknown | null;
   insertRow?: unknown;
   updateRow?: unknown;
-  throwOnInsert?: unknown;
+  /** Driver-shaped error thrown at the handler's write (FK / unique races). */
+  throwOnWrite?: unknown;
 };
 
 function makeWriteMock(opts: MockOpts = {}) {
   return makeDbMock({
-    insertRows: (recorded, record) => {
-      if (opts.throwOnInsert) throw opts.throwOnInsert;
-      return opts.insertRow ? [opts.insertRow] : mergedRow(FEEDBACK)(recorded, record);
-    },
+    insertRows: (recorded, record) =>
+      opts.insertRow ? [opts.insertRow] : mergedRow(FEEDBACK)(recorded, record),
     updateRows: opts.updateRow ? () => [opts.updateRow] : mergedRow(FEEDBACK),
+    throwOnWrite: () => opts.throwOnWrite,
     query: {
       mealPlanEntries: {
         findFirst: vi.fn(async () =>
@@ -117,7 +117,7 @@ describe('mealPlanFeedbackRoutes', () => {
   test('POST maps a unique-violation race (23505) to the same 409', async () => {
     const { db } = makeWriteMock({
       feedback: null,
-      throwOnInsert: { code: '23505' },
+      throwOnWrite: pgError('23505'),
     });
     const res = await mealPlanFeedbackRoutes(db).request(
       `/${ENTRY_ID}/feedback`,
@@ -127,6 +127,30 @@ describe('mealPlanFeedbackRoutes', () => {
     expect(await res.json()).toEqual({
       error: 'Feedback already exists for this meal plan entry',
     });
+  });
+
+  test('POST maps an FK violation race (23503) to 404', async () => {
+    // The entry was deleted between the cooked-status check and the insert, so
+    // the feedback has nothing to attach to — 404, not the unique-violation 409.
+    const { db } = makeWriteMock({
+      feedback: null,
+      throwOnWrite: pgError('23503'),
+    });
+    const res = await mealPlanFeedbackRoutes(db).request(
+      `/${ENTRY_ID}/feedback`,
+      json('POST', VALID_CREATE),
+    );
+    expect(res.status).toBe(404);
+    expect(await res.json()).toEqual({ error: 'Not found' });
+  });
+
+  test('POST lets a non-constraint database error escape as a 500', async () => {
+    const { db } = makeWriteMock({ feedback: null, throwOnWrite: pgError('23502') });
+    const res = await mealPlanFeedbackRoutes(db).request(
+      `/${ENTRY_ID}/feedback`,
+      json('POST', VALID_CREATE),
+    );
+    expect(res.status).toBe(500);
   });
 
   test('POST requires changesNote when usedAsIs is false', async () => {
@@ -225,6 +249,42 @@ describe('mealPlanFeedbackRoutes', () => {
     );
     expect(res.status).toBe(200);
     expect(updates[0]).toMatchObject({ usedAsIs: true, changesNote: null });
+  });
+
+  test('PATCH rejects usedAsIs true sent together with a note', async () => {
+    // The auto-clear only applies to a note the patch didn't mention — an
+    // explicit note alongside usedAsIs:true is a contradiction, not something
+    // to quietly repair into a null.
+    const { db, updates } = makeWriteMock({
+      feedback: { ...FEEDBACK, usedAsIs: false, changesNote: 'extra garlic' },
+    });
+    const res = await mealPlanFeedbackRoutes(db).request(
+      `/${ENTRY_ID}/feedback`,
+      json('PATCH', { usedAsIs: true, changesNote: 'more salt' }),
+    );
+    expect(res.status).toBe(400);
+    expect((await res.json()).details.formErrors).toEqual([
+      'changesNote must be absent when usedAsIs is true',
+    ]);
+    expect(updates).toHaveLength(0);
+  });
+
+  test('PATCH writes the pair it validated, even when the body names neither field', async () => {
+    // The invariant the handler enforces is on the *merged* pair, so the write
+    // has to carry that same pair — validating one thing and persisting another
+    // is how the 1:1 rule would drift out of sync.
+    const stored = { ...FEEDBACK, usedAsIs: false, changesNote: 'extra garlic' };
+    const { db, updates } = makeWriteMock({ feedback: stored });
+    const res = await mealPlanFeedbackRoutes(db).request(
+      `/${ENTRY_ID}/feedback`,
+      json('PATCH', { rating: 'thumbs_down' }),
+    );
+    expect(res.status).toBe(200);
+    expect(updates[0]).toMatchObject({
+      rating: 'thumbs_down',
+      usedAsIs: false,
+      changesNote: 'extra garlic',
+    });
   });
 
   test('PATCH rejects an empty body and unknown keys', async () => {

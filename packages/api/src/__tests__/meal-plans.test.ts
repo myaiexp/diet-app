@@ -3,7 +3,7 @@
 import { describe, test, expect, vi } from 'vitest';
 import { mealPlansRoutes } from '../routes/meal-plans.js';
 import { cookFeedback } from '@diet-app/db';
-import { chainSelect, makeDbMock, makeSelectMock, mergedRow } from './db-mock.js';
+import { chainSelect, makeDbMock, makeSelectMock, mergedRow, pgError } from './db-mock.js';
 import { makeSelectRouter } from './select-router.js';
 
 const ENTRY_ID = '11111111-1111-4111-8111-111111111111';
@@ -38,22 +38,19 @@ type WriteMockOpts = {
   insertRow?: unknown;
   updateRow?: unknown;
   feedbackRows?: unknown[];
-  throwOnInsert?: unknown;
-  throwOnUpdate?: unknown;
+  /** Driver-shaped error thrown at the handler's write (FK / unique races). */
+  throwOnWrite?: unknown;
 };
 
 function makeWriteMock(opts: WriteMockOpts = {}) {
   const existing = opts.existing === undefined ? PLANNED_ENTRY : opts.existing;
 
   return makeDbMock({
-    insertRows: (recorded, record) => {
-      if (opts.throwOnInsert) throw opts.throwOnInsert;
-      return opts.insertRow ? [opts.insertRow] : mergedRow(PLANNED_ENTRY)(recorded, record);
-    },
-    updateRows: (recorded, record) => {
-      if (opts.throwOnUpdate) throw opts.throwOnUpdate;
-      return opts.updateRow ? [opts.updateRow] : mergedRow(PLANNED_ENTRY)(recorded, record);
-    },
+    insertRows: (recorded, record) =>
+      opts.insertRow ? [opts.insertRow] : mergedRow(PLANNED_ENTRY)(recorded, record),
+    updateRows: (recorded, record) =>
+      opts.updateRow ? [opts.updateRow] : mergedRow(PLANNED_ENTRY)(recorded, record),
+    throwOnWrite: () => opts.throwOnWrite,
     // PATCH locks the row inside the transaction: select().from().where().for('update')
     txSelect: () => chainSelect(existing == null ? [] : [existing]),
     // DELETE pre-checks cook feedback (select().from().where().limit()).
@@ -199,6 +196,32 @@ describe('mealPlansRoutes', () => {
     );
     expect(res.status).toBe(201);
     expect(inserts[0]).toMatchObject({ freeformNote: 'lunch out', recipeId: null });
+  });
+
+  test('POST maps an FK violation (23503) to 400 Invalid reference', async () => {
+    // The recipe is gone by the time the insert lands — the only signal is the
+    // driver error, so a predicate that stops recognising it turns this into a 500.
+    const { db, inserts } = makeWriteMock({ throwOnWrite: pgError('23503') });
+    const res = await mealPlansRoutes(db).request(
+      '/',
+      jsonReq('POST', '/', {
+        date: '2026-07-21',
+        slot: 'dinner',
+        recipeId: RECIPE_ID,
+      }),
+    );
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({ error: 'Invalid reference' });
+    expect(inserts).toHaveLength(1); // attempted, then mapped — not skipped
+  });
+
+  test('POST lets a non-FK database error escape as a 500', async () => {
+    const { db } = makeWriteMock({ throwOnWrite: pgError('08006') });
+    const res = await mealPlansRoutes(db).request(
+      '/',
+      jsonReq('POST', '/', { date: '2026-07-21', slot: 'dinner', recipeId: RECIPE_ID }),
+    );
+    expect(res.status).toBe(500);
   });
 
   test('PATCH rejects an empty body', async () => {
@@ -372,6 +395,19 @@ describe('mealPlansRoutes', () => {
     expect(updates[0]).toMatchObject({ status: 'skipped' });
   });
 
+  test('PATCH maps an FK violation (23503) to 400 Invalid reference', async () => {
+    // The update runs inside the FOR UPDATE transaction, so this also proves
+    // the mapping survives being thrown across the transaction boundary.
+    const { db, updates } = makeWriteMock({ throwOnWrite: pgError('23503') });
+    const res = await mealPlansRoutes(db).request(
+      `/${ENTRY_ID}`,
+      jsonReq('PATCH', '/', { recipeId: RECIPE_ID }),
+    );
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({ error: 'Invalid reference' });
+    expect(updates).toHaveLength(1);
+  });
+
   test('DELETE returns 409 when cook feedback exists', async () => {
     const { db, deletes } = makeWriteMock({
       existing: COOKED_ENTRY,
@@ -395,6 +431,20 @@ describe('mealPlansRoutes', () => {
     });
     expect(resMiss.status).toBe(404);
     expect(await resMiss.json()).toEqual({ error: 'Not found' });
+  });
+
+  test('DELETE maps an FK violation (23503) to the same 409 as the pre-check', async () => {
+    // Feedback inserted between the pre-check and the delete: the race has to
+    // land on the same message the pre-check would have produced.
+    const { db, deletes } = makeWriteMock({
+      existing: COOKED_ENTRY,
+      feedbackRows: [],
+      throwOnWrite: pgError('23503'),
+    });
+    const res = await mealPlansRoutes(db).request(`/${ENTRY_ID}`, { method: 'DELETE' });
+    expect(res.status).toBe(409);
+    expect(await res.json()).toEqual({ error: 'Meal plan entry has cook feedback' });
+    expect(deletes).toHaveLength(1);
   });
 
   test('write routes reject a malformed :id before touching the db', async () => {

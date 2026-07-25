@@ -7,11 +7,18 @@
 // in recipe-filters.test.ts.
 
 import { describe, test, expect, vi } from 'vitest';
-import { mealPlanEntries, recipes } from '@diet-app/db';
+import { type Table } from 'drizzle-orm';
+import { mealPlanEntries, recipeIngredients, recipes } from '@diet-app/db';
 import { recipesRoutes } from '../routes/recipes.js';
-import { makeDbMock, makeSelectMock, type DbMock } from './db-mock.js';
+import {
+  makeDbMock,
+  makeSelectMock,
+  pgError,
+  type DbMock,
+  type ThrowOnWrite,
+} from './db-mock.js';
 import { makeSelectRouter } from './select-router.js';
-import { renderWhere } from './drizzle-introspect.js';
+import { renderWhere, tableNameOf } from './drizzle-introspect.js';
 
 const RECIPE_ID = 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee';
 const INGREDIENT_ID = '11111111-1111-4111-8111-111111111111';
@@ -40,8 +47,20 @@ type WriteMockOpts = {
   findFirst?: unknown | null | (() => unknown);
   mealPlanRefs?: unknown[];
   childRecipes?: unknown[];
-  throwOnTransaction?: unknown;
+  /** Fail a matching write with a driver-shaped error (see db-mock). */
+  throwOnWrite?: ThrowOnWrite;
 };
+
+/**
+ * Fail the write that touches `table` with a Postgres FK violation. Every
+ * recipe write path spans two tables inside one transaction, so which one the
+ * database rejects is the whole point: an unknown ingredientId breaks the
+ * recipe_ingredients insert, a still-referenced recipe breaks the recipes delete.
+ */
+const fkViolationOn =
+  (table: Table): ThrowOnWrite =>
+  (record) =>
+    record.table === tableNameOf(table) ? pgError('23503') : undefined;
 
 function makeWriteMock(opts: WriteMockOpts = {}) {
   let mock: DbMock;
@@ -70,9 +89,7 @@ function makeWriteMock(opts: WriteMockOpts = {}) {
         findFirst: vi.fn(async () => resolveFind()),
       },
     },
-    beforeTransaction: () => {
-      if (opts.throwOnTransaction) throw opts.throwOnTransaction;
-    },
+    throwOnWrite: opts.throwOnWrite,
   });
   return mock;
 }
@@ -196,6 +213,35 @@ describe('recipesRoutes', () => {
     expect(body.recipeIngredients[0].ingredient.name).toBe('Chicken');
   });
 
+  test('POST / maps an unknown ingredientId (23503) to 400 Invalid reference', async () => {
+    // Nothing pre-checks the ingredient ids — the FK is the only guard, so this
+    // branch is what stands between a bad id and an unhandled 500.
+    const { db, writes } = makeWriteMock({
+      throwOnWrite: fkViolationOn(recipeIngredients),
+    });
+    const res = await recipesRoutes(db).request('/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(VALID_CREATE),
+    });
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({ error: 'Invalid reference' });
+    // The recipe insert landed first; the lines insert is what failed.
+    expect(writes.map((w) => w.table)).toEqual(['recipes', 'recipe_ingredients']);
+  });
+
+  test('POST / lets a non-FK database error escape as a 500', async () => {
+    const { db } = makeWriteMock({
+      throwOnWrite: () => pgError('40001'), // serialization failure
+    });
+    const res = await recipesRoutes(db).request('/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(VALID_CREATE),
+    });
+    expect(res.status).toBe(500);
+  });
+
   test('POST / rejects empty ingredients array', async () => {
     const { db } = makeWriteMock();
     const res = await recipesRoutes(db).request('/', {
@@ -272,6 +318,22 @@ describe('recipesRoutes', () => {
     expect(inserts.length).toBeGreaterThan(0);
   });
 
+  test('PATCH /:id maps an unknown ingredientId (23503) to 400 Invalid reference', async () => {
+    const { db } = makeWriteMock({
+      findFirst: () => RECIPE_WITH_RELATIONS,
+      throwOnWrite: fkViolationOn(recipeIngredients),
+    });
+    const res = await recipesRoutes(db).request(`/${RECIPE_ID}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ingredients: [{ ingredientId: INGREDIENT_ID, quantity: 1, unit: 'kg' }],
+      }),
+    });
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({ error: 'Invalid reference' });
+  });
+
   test('DELETE /:id 204 when free', async () => {
     const { db } = makeWriteMock({
       findFirst: { id: RECIPE_ID },
@@ -309,5 +371,23 @@ describe('recipesRoutes', () => {
     const { db } = makeWriteMock({ findFirst: null });
     const res = await recipesRoutes(db).request(`/${RECIPE_ID}`, { method: 'DELETE' });
     expect(res.status).toBe(404);
+  });
+
+  test('DELETE /:id maps an FK violation (23503) to the same 409 as the pre-check', async () => {
+    // A meal plan entry claimed the recipe after both pre-checks passed; the
+    // race must land on the pre-check's message, not a 500.
+    const { db, writes } = makeWriteMock({
+      findFirst: { id: RECIPE_ID },
+      mealPlanRefs: [],
+      childRecipes: [],
+      throwOnWrite: fkViolationOn(recipes),
+    });
+    const res = await recipesRoutes(db).request(`/${RECIPE_ID}`, { method: 'DELETE' });
+    expect(res.status).toBe(409);
+    expect(await res.json()).toEqual({
+      error: 'Recipe is referenced by meal plan entries',
+    });
+    // Lines deleted first, then the recipe delete is the statement that failed.
+    expect(writes.map((w) => w.table)).toEqual(['recipe_ingredients', 'recipes']);
   });
 });

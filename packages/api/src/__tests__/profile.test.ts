@@ -3,7 +3,7 @@
 import { describe, test, expect, vi } from 'vitest';
 import { ingredients, userDislikedIngredients } from '@diet-app/db';
 import { profileRoutes } from '../routes/profile.js';
-import { makeDbMock } from './db-mock.js';
+import { makeDbMock, pgError } from './db-mock.js';
 import { makeSelectRouter } from './select-router.js';
 
 const PROFILE_ID = '11111111-1111-1111-1111-111111111111';
@@ -34,6 +34,7 @@ type MockOpts = {
   ingredientIds?: string[];
   /** Junction ids the post-write reload returns; defaults to dislikedIds. */
   afterDislikedIds?: string[];
+  /** Driver-shaped error thrown at the handler's write (FK races). */
   throwOnWrite?: unknown;
 };
 
@@ -60,9 +61,7 @@ function makeWriteMock(opts: MockOpts = {}) {
         findFirst: vi.fn(async () => resolveProfile()),
       },
     },
-    beforeTransaction: () => {
-      if (opts.throwOnWrite) throw opts.throwOnWrite;
-    },
+    throwOnWrite: () => opts.throwOnWrite,
   });
 }
 
@@ -216,6 +215,49 @@ describe('profileRoutes', () => {
     });
     expect(res.status).toBe(400);
     expect(await res.json()).toEqual({ error: 'Invalid reference' });
+  });
+
+  test('PATCH maps an FK violation (23503) to 400 Invalid reference', async () => {
+    // The ingredient existence pre-check passed, then the row was deleted before
+    // the junction insert landed. Same 400 as the pre-check, not a 500.
+    const { db, inserts } = makeWriteMock({
+      ingredientIds: [ING_A],
+      throwOnWrite: pgError('23503'),
+    });
+    const app = profileRoutes(db);
+    const res = await app.request('/', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ dislikedIngredientIds: [ING_A] }),
+    });
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({ error: 'Invalid reference' });
+    expect(inserts).toHaveLength(0); // failed at the profile update, before the junction insert
+  });
+
+  test('PATCH maps an FK violation on the plain (no-junction) update too', async () => {
+    // A body without dislikedIngredientIds skips the transaction entirely and
+    // updates directly — a separate write path reaching the same catch.
+    const { db } = makeWriteMock({ throwOnWrite: pgError('23503') });
+    const app = profileRoutes(db);
+    const res = await app.request('/', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: 'Marcus' }),
+    });
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({ error: 'Invalid reference' });
+  });
+
+  test('PATCH lets a non-FK database error escape as a 500', async () => {
+    const { db } = makeWriteMock({ throwOnWrite: pgError('23502') });
+    const app = profileRoutes(db);
+    const res = await app.request('/', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: 'Marcus' }),
+    });
+    expect(res.status).toBe(500);
   });
 
   test('PATCH 404 when no profile', async () => {

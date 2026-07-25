@@ -13,7 +13,9 @@
 // fixtures and relational stubs are what makes each suite different.
 //
 // Reads are dispatched by table in select-router.ts; writes record the table
-// they targeted here, so neither side has to key on statement order.
+// they targeted here, so neither side has to key on statement order. A write
+// can also be made to fail (`throwOnWrite`), which is the only way to reach a
+// route's Postgres error mapping (isFkViolation / isUniqueViolation).
 
 import { tableNameOf } from './drizzle-introspect.js';
 
@@ -72,9 +74,32 @@ export interface WriteRecord {
  * builder so far, plus the record for *this* statement — key on `record.table`
  * or `record.values` when a handler writes to several tables through the same
  * builder, so the fixture doesn't depend on which write happened to be last.
- * Throw from here to simulate a failing write.
  */
 export type Returning = (recorded: unknown[], record: WriteRecord) => unknown[];
+
+/**
+ * Decides whether a write fails: return a driver-shaped error
+ * (`{ code: '23503' }`) to throw it, or undefined to let the write proceed.
+ *
+ * Called once per statement, at the moment it is recorded — the only point
+ * every write shape shares, since a handler that doesn't need the written row
+ * back never calls `.returning()` (`await db.delete(x).where(y)`). The
+ * statement is recorded in `writes` before the throw, so a test can assert the
+ * write was attempted and *then* mapped to a status.
+ *
+ * `record.where` is only populated when `.where()` ran first (deletes) — an
+ * update records at `.set()`, so key on `kind`/`table`.
+ */
+export type ThrowOnWrite = (record: WriteRecord) => unknown;
+
+/**
+ * A constraint violation shaped the way postgres.js and node-pg raise one: an
+ * Error carrying the SQLSTATE as `code`. It has to be a real Error — Hono
+ * rethrows any non-Error a handler throws instead of turning it into a 500, so
+ * a bare `{ code }` object would make the unmapped case look like a crash.
+ */
+export const pgError = (code: string): Error =>
+  Object.assign(new Error(`postgres error ${code}`), { code });
 
 interface Recorder {
   /** One builder per insert(t)/update(t)/delete(t) call. */
@@ -95,6 +120,7 @@ function makeRecorder(
   recordOn: 'values' | 'set' | 'where',
   writes: WriteRecord[],
   returning?: Returning,
+  throwOnWrite?: ThrowOnWrite,
 ): Recorder {
   const recorded: unknown[] = [];
 
@@ -106,6 +132,8 @@ function makeRecorder(
       if (logged) return;
       writes.push(record);
       logged = true;
+      const err = throwOnWrite?.(record);
+      if (err !== undefined) throw err;
     };
 
     const builder: any = {
@@ -146,6 +174,8 @@ export interface DbMockOptions {
   updateRows?: Returning;
   /** Rows DELETE reads back from delete().returning(). */
   deleteRows?: Returning;
+  /** Fail a write with a driver-shaped error — see ThrowOnWrite. */
+  throwOnWrite?: ThrowOnWrite;
   /** Relational stubs: `{ pantryItems: { findFirst: vi.fn(...) } }`. */
   query?: Record<string, unknown>;
   /** db.select() — defaults to an empty result. */
@@ -178,9 +208,10 @@ export interface DbMock {
  */
 export function makeDbMock(opts: DbMockOptions = {}): DbMock {
   const writes: WriteRecord[] = [];
-  const insert = makeRecorder('insert', 'values', writes, opts.insertRows);
-  const update = makeRecorder('update', 'set', writes, opts.updateRows);
-  const remove = makeRecorder('delete', 'where', writes, opts.deleteRows);
+  const fail = opts.throwOnWrite;
+  const insert = makeRecorder('insert', 'values', writes, opts.insertRows, fail);
+  const update = makeRecorder('update', 'set', writes, opts.updateRows, fail);
+  const remove = makeRecorder('delete', 'where', writes, opts.deleteRows, fail);
   const emptySelect = () => chainSelect([]);
 
   const tx = {

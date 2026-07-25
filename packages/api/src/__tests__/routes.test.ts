@@ -442,6 +442,46 @@ describe.skipIf(!hasDb)('cook flow', () => {
       const fbGet = await app!.request(`/api/meal-plans/${entryId}/feedback`);
       expect(fbGet.status).toBe(200);
       expect((await fbGet.json()).rating).toBe('thumbs_up');
+
+      // 9b. The usedAsIs/changesNote pair round-trips through Postgres: the row
+      // that comes back has to be the pair the handler validated, including on
+      // a patch that names neither field.
+      const patchFeedback = async (body: unknown) =>
+        app!.request(`/api/meal-plans/${entryId}/feedback`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+
+      const withNote = await patchFeedback({ usedAsIs: false, changesNote: 'less salt' });
+      expect(withNote.status).toBe(200);
+      expect(await withNote.json()).toMatchObject({
+        usedAsIs: false,
+        changesNote: 'less salt',
+      });
+
+      // Only the rating changes — the stored pair must survive untouched.
+      const ratingOnly = await patchFeedback({ rating: 'thumbs_down' });
+      expect(ratingOnly.status).toBe(200);
+      expect(await ratingOnly.json()).toMatchObject({
+        rating: 'thumbs_down',
+        usedAsIs: false,
+        changesNote: 'less salt',
+      });
+
+      // Flipping back to "cooked as written" drops the note it no longer allows.
+      const cleared = await patchFeedback({ usedAsIs: true });
+      expect(cleared.status).toBe(200);
+      expect(await cleared.json()).toMatchObject({ usedAsIs: true, changesNote: null });
+
+      // A note sent alongside usedAsIs:true is a contradiction, not an auto-clear.
+      const contradiction = await patchFeedback({ usedAsIs: true, changesNote: 'x' });
+      expect(contradiction.status).toBe(400);
+      const stillCleared = await app!.request(`/api/meal-plans/${entryId}/feedback`);
+      expect(await stillCleared.json()).toMatchObject({
+        usedAsIs: true,
+        changesNote: null,
+      });
     } finally {
       // feedback has no DELETE route — remove via db before entry delete
       if (entryId && db) {
