@@ -16,7 +16,7 @@
 - **AI config**: optional `parseAiConfig` (`AI_API_KEY` + `AI_BASE_URL` + `AI_MODEL_CAPABLE`); missing any → `null` and `POST /recipes/import` returns 503. Never required at boot.
 - **Recipe import**: draft-only (`POST /api/recipes/import`); never inserts — client confirms via `POST /recipes`. SSRF-safe URL fetch in `ai/fetch-url.ts`; extract in `ai/import-recipe.ts`; exact catalog match in `ingredient-match.ts`.
 - **Postgres errors**: `isFkViolation` / `isUniqueViolation` in `pg-errors.ts` — use for 23503/23505; don't re-inline the code checks.
-- **Cook flow**: `cooked` is terminal and reachable only via `POST /meal-plans/:id/cook` (PATCH cannot set or leave it). Unit conversion lives in `units.ts` and never crosses dimensions. FEFO deduction is pure in `cook-deduct.ts` (`planDeduction`); the cook route loads rows, plans, and applies inside one `FOR UPDATE` transaction.
+- **Cook flow**: `cooked` is terminal and reachable only via `POST /meal-plans/:id/cook` (PATCH cannot set or leave it). PATCH also cannot *change* `recipeId`, `substituteRecipeId`, or `servings` on a cooked entry — those are the exact inputs the deduction was computed from, and cook 409s so it can't be re-run to reconcile; re-sending an unchanged value passes, and `date`/`slot`/`notes`/`freeformNote` stay editable. Unit conversion lives in `units.ts` and never crosses dimensions. FEFO deduction is pure in `cook-deduct.ts` (`planDeduction`); the cook route loads rows, plans, and applies inside one `FOR UPDATE` transaction.
 - **Deployment**: Forgejo git hooks (push to deploy) → `diet-app-api.service` (systemd, user `mase`)
 - **Public URL**: `https://mase.fi/diet/api/` (nginx proxy on VPS, port 3300)
 - **Database**: PostgreSQL `dietapp`

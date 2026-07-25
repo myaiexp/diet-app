@@ -97,6 +97,7 @@ export function mealPlansRoutes(db: Db): Hono {
       | { kind: 'not_found' }
       | { kind: 'cook_owned' }
       | { kind: 'cooked_immutable' }
+      | { kind: 'cooked_inputs_immutable' }
       | { kind: 'no_content' }
       | { kind: 'fk' };
 
@@ -118,6 +119,23 @@ export function mealPlansRoutes(db: Db): Hono {
           }
           if (existing.status === 'cooked' && data.status !== 'cooked') {
             return { kind: 'cooked_immutable' as const };
+          }
+        }
+
+        // The cook deducted pantry stock from (substituteRecipeId ?? recipeId)
+        // scaled by servings. Changing any of those three afterwards would leave
+        // the entry claiming a meal that was never cooked that way, and the cook
+        // route 409s on a cooked entry so it cannot be re-run to reconcile.
+        // Re-sending an unchanged value is fine — only real changes are blocked.
+        if (existing.status === 'cooked') {
+          const changesCookInputs =
+            (data.recipeId !== undefined && data.recipeId !== existing.recipeId) ||
+            (data.substituteRecipeId !== undefined &&
+              data.substituteRecipeId !== existing.substituteRecipeId) ||
+            (data.servings !== undefined &&
+              Number(data.servings) !== Number(existing.servings));
+          if (changesCookInputs) {
+            return { kind: 'cooked_inputs_immutable' as const };
           }
         }
 
@@ -159,6 +177,9 @@ export function mealPlansRoutes(db: Db): Hono {
     }
     if (result.kind === 'cooked_immutable') {
       return conflict(c, 'Cooked meal plan entry status is immutable');
+    }
+    if (result.kind === 'cooked_inputs_immutable') {
+      return conflict(c, 'Cooked meal plan entry recipe and servings are immutable');
     }
     if (result.kind === 'no_content') {
       return badRequest(c, 'Validation failed', { formErrors: [CONTENT_MSG] });
