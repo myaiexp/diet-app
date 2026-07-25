@@ -7,7 +7,7 @@
 // in recipe-filters.test.ts.
 
 import { describe, test, expect, vi } from 'vitest';
-import { type Table } from 'drizzle-orm';
+import { asc, desc, type Table } from 'drizzle-orm';
 import { mealPlanEntries, recipeIngredients, recipes } from '@diet-app/db';
 import { recipesRoutes } from '../routes/recipes.js';
 import {
@@ -124,6 +124,21 @@ describe('recipesRoutes', () => {
     const q = renderWhere(calls.where);
     expect(q.sql).toContain('@> ARRAY[$1, $2]::text[]');
     expect(q.params).toEqual(['pasta', 'italian']);
+  });
+
+  // Finding #5450: paging a LIMIT/OFFSET query with no ORDER BY can repeat and
+  // skip rows. createdAt alone is not a total order (a bulk import stamps many
+  // rows in one tick), hence the id tie-break.
+  test('GET / orders newest-first with an id tie-break before paging', async () => {
+    const { db, calls } = makeSelectMock([]);
+    await recipesRoutes(db).request('/');
+    expect(calls.orderBy).toEqual([desc(recipes.createdAt), asc(recipes.id)]);
+  });
+
+  test('GET / orders on the filtered path too', async () => {
+    const { db, calls } = makeSelectMock([]);
+    await recipesRoutes(db).request('/?cuisine=italian&tags=pasta');
+    expect(calls.orderBy).toEqual([desc(recipes.createdAt), asc(recipes.id)]);
   });
 
   test('GET /?tags=&cuisine= combines both filters with AND', async () => {

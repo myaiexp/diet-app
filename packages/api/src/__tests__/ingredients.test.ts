@@ -3,6 +3,8 @@
 // with 400 BEFORE any DB query runs, so these tests never open a connection.
 
 import { describe, test, expect } from 'vitest';
+import { asc } from 'drizzle-orm';
+import { ingredients } from '@diet-app/db';
 import { ingredientsRoutes } from '../routes/ingredients.js';
 import { isUuid } from '../validation.js';
 import { makeSelectMock } from './db-mock.js';
@@ -84,6 +86,23 @@ describe('GET /api/ingredients — pagination', () => {
     const { db, calls } = makeSelectMock([]);
     await ingredientsRoutes(db).request('/?limit=abc');
     expect(calls.limit).toBe(DEFAULT_LIMIT);
+  });
+
+  // Finding #5450: LIMIT/OFFSET without ORDER BY has no ordering guarantee —
+  // the catalog is 462 rows, so paging is the only way to read it, and a plan
+  // switch or a concurrent write is enough to repeat one row across two pages
+  // while another is never returned. The id tie-break is what makes the order
+  // total; asserting the exact columns keeps a later edit from dropping it.
+  test('orders by name with an id tie-break so paging is deterministic', async () => {
+    const { db, calls } = makeSelectMock([]);
+    await ingredientsRoutes(db).request('/');
+    expect(calls.orderBy).toEqual([asc(ingredients.name), asc(ingredients.id)]);
+  });
+
+  test('orders on the filtered path too', async () => {
+    const { db, calls } = makeSelectMock([]);
+    await ingredientsRoutes(db).request('/?q=chicken&category=meat');
+    expect(calls.orderBy).toEqual([asc(ingredients.name), asc(ingredients.id)]);
   });
 });
 

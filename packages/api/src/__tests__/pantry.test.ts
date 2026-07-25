@@ -2,6 +2,8 @@
 // pantry-status.test.ts).
 
 import { describe, test, expect, vi } from 'vitest';
+import { asc } from 'drizzle-orm';
+import { pantryItems } from '@diet-app/db';
 import { pantryRoutes } from '../routes/pantry.js';
 import { makeDbMock, makeSelectMock, mergedRow, pgError } from './db-mock.js';
 import { DEFAULT_LIMIT } from '../pagination.js';
@@ -76,6 +78,15 @@ describe('pantryRoutes', () => {
     await pantryRoutes(db).request('/');
     expect(calls.limit).toBe(DEFAULT_LIMIT);
     expect(calls.offset).toBe(0);
+  });
+
+  // Finding #5450: PATCH /pantry/:id rewrites rows in place, so paging this
+  // list without a total order can hand the client the same item twice and
+  // never show another. Spoilage-first ordering also matches the app's framing.
+  test('GET / orders by expiry with an id tie-break before paging', async () => {
+    const { db, calls } = makeSelectMock([FRESH_ROW]);
+    await pantryRoutes(db).request('/');
+    expect(calls.orderBy).toEqual([asc(pantryItems.expiresDate), asc(pantryItems.id)]);
   });
 
   test('GET /:id rejects a malformed id with 400 before touching the DB', async () => {

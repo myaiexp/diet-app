@@ -1,4 +1,10 @@
-export { createDb, type Db } from './connection.js';
+export {
+  createDb,
+  createPool,
+  POOL_DEFAULTS,
+  type Db,
+  type PoolOverrides,
+} from './connection.js';
 export * from './schema/index.js';
 export {
   seedDatabase,

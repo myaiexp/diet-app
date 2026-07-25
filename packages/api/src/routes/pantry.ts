@@ -3,7 +3,7 @@
 import { Hono } from 'hono';
 import type { Db } from '@diet-app/db';
 import { pantryItems, ingredients } from '@diet-app/db';
-import { eq } from 'drizzle-orm';
+import { eq, asc } from 'drizzle-orm';
 import { isUuid } from '../validation.js';
 import { getPagination } from '../pagination.js';
 import { computeStatus } from '../pantry-status.js';
@@ -27,7 +27,15 @@ export function pantryRoutes(db: Db): Hono {
 
   app.get('/', async (c) => {
     const { limit, offset } = getPagination(c);
-    const rows = await db.select().from(pantryItems).limit(limit).offset(offset);
+    const rows = await db
+      .select()
+      .from(pantryItems)
+      // Spoilage-first, tie-broken on id. PATCH /pantry/:id rewrites rows in
+      // place while a client is paging, so without a total order the same item
+      // can appear on two pages and another never appear at all.
+      .orderBy(asc(pantryItems.expiresDate), asc(pantryItems.id))
+      .limit(limit)
+      .offset(offset);
     return c.json(rows.map(withStatus));
   });
 

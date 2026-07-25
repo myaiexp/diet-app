@@ -3,7 +3,7 @@
 import { Hono } from 'hono';
 import type { Db } from '@diet-app/db';
 import { recipes, recipeIngredients, mealPlanEntries } from '@diet-app/db';
-import { eq, and, or } from 'drizzle-orm';
+import { eq, and, or, asc, desc } from 'drizzle-orm';
 import { isUuid } from '../validation.js';
 import { getPagination } from '../pagination.js';
 import { buildTagsCondition } from './recipe-filters.js';
@@ -69,6 +69,9 @@ export function recipesRoutes(db: Db, opts: RecipesRoutesOpts = {}): Hono {
       .select()
       .from(recipes)
       .where(conditions.length ? and(...conditions) : undefined)
+      // Newest first, tie-broken on id so paging can't repeat or skip a row
+      // (createdAt is not unique — a bulk import writes many rows in one tick).
+      .orderBy(desc(recipes.createdAt), asc(recipes.id))
       .limit(limit)
       .offset(offset);
 

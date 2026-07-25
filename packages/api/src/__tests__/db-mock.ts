@@ -21,19 +21,31 @@ import { tableNameOf } from './drizzle-introspect.js';
 
 export interface SelectMock {
   db: any;
-  calls: { where?: unknown; limit?: number; offset?: number };
+  calls: {
+    where?: unknown;
+    limit?: number;
+    offset?: number;
+    /** The columns passed to .orderBy(), so a list test can assert paging is
+     * deterministic. Undefined means the handler never ordered at all — which
+     * for a LIMIT/OFFSET query is the bug, not a detail. */
+    orderBy?: unknown[];
+  };
 }
 
 /**
- * One chainable select() builder. from/where/limit/offset/for return the
- * builder, and awaiting it at any chain depth resolves to `rows`. Pass `calls`
- * to record the args the handler applied.
+ * One chainable select() builder. from/where/orderBy/limit/offset/for return
+ * the builder, and awaiting it at any chain depth resolves to `rows`. Pass
+ * `calls` to record the args the handler applied.
  */
 export function chainSelect(rows: unknown[], calls: SelectMock['calls'] = {}): any {
   const builder: any = {
     from: () => builder,
     where: (w: unknown) => {
       calls.where = w;
+      return builder;
+    },
+    orderBy: (...cols: unknown[]) => {
+      calls.orderBy = cols;
       return builder;
     },
     limit: (n: number) => {

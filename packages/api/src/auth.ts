@@ -1,6 +1,7 @@
 // Bearer-token auth middleware: gates the API behind a single shared secret
 import type { MiddlewareHandler } from 'hono';
 import { createHash, timingSafeEqual } from 'node:crypto';
+import { unauthorized } from './responses.js';
 
 // SHA-256 the input so the timing-safe compare always sees equal-length buffers
 // (timingSafeEqual throws on length mismatch) and the secret's length never
@@ -21,7 +22,7 @@ export function bearerAuth(token: string): MiddlewareHandler {
   return async (c, next) => {
     const header = c.req.header('Authorization');
     if (!header || !constantTimeEquals(header, expected)) {
-      return c.json({ error: 'Unauthorized' }, 401);
+      return unauthorized(c);
     }
     await next();
   };

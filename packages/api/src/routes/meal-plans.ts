@@ -3,7 +3,7 @@
 import { Hono } from 'hono';
 import type { Db } from '@diet-app/db';
 import { mealPlanEntries, cookFeedback } from '@diet-app/db';
-import { and, eq, gte, lte } from 'drizzle-orm';
+import { and, asc, eq, gte, lte } from 'drizzle-orm';
 import { getISOWeekBounds } from '../date.js';
 import { isIsoDate, isUuid } from '../validation.js';
 import { notFound, badRequest, conflict } from '../responses.js';
@@ -31,15 +31,24 @@ export function mealPlansRoutes(db: Db): Hono {
 
   app.get('/week/:date', async (c) => {
     const dateStr = c.req.param('date');
-    if (!isIsoDate(dateStr)) return c.json({ error: 'Invalid date format' }, 400);
+    if (!isIsoDate(dateStr)) return badRequest(c, 'Invalid date format');
     const { monday, sunday } = getISOWeekBounds(dateStr);
 
-    const rows = await db.select().from(mealPlanEntries).where(
-      and(
-        gte(mealPlanEntries.date, monday),
-        lte(mealPlanEntries.date, sunday)
+    // Chronological, tie-broken on id. The week is bounded so paging can't skip
+    // rows here, but without an ORDER BY two GETs of the same week can return
+    // the same entries in different orders and jitter the client's rendering.
+    // Slot order is the client's business — an alphabetical `slot` sort would
+    // read as breakfast/dinner/lunch/snack, which is worse than none.
+    const rows = await db
+      .select()
+      .from(mealPlanEntries)
+      .where(
+        and(
+          gte(mealPlanEntries.date, monday),
+          lte(mealPlanEntries.date, sunday)
+        )
       )
-    );
+      .orderBy(asc(mealPlanEntries.date), asc(mealPlanEntries.id));
 
     return c.json(rows);
   });

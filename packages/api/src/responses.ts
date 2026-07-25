@@ -16,6 +16,12 @@ export function badRequest(c: Context, error: string, details?: unknown) {
   return c.json({ error, details }, 400);
 }
 
+// 401 for a missing/wrong bearer token (auth middleware). Deliberately says
+// nothing about which half was wrong.
+export function unauthorized(c: Context) {
+  return c.json({ error: 'Unauthorized' }, 401);
+}
+
 // 409 for conflict guards (e.g. recipe referenced by meal plan / child forks).
 export function conflict(c: Context, error: string) {
   return c.json({ error }, 409);

@@ -1,10 +1,10 @@
 import { Hono } from 'hono';
 import type { Db } from '@diet-app/db';
 import { ingredients } from '@diet-app/db';
-import { eq, ilike, and, or, sql } from 'drizzle-orm';
+import { eq, ilike, and, or, sql, asc } from 'drizzle-orm';
 import { isUuid } from '../validation.js';
 import { getPagination } from '../pagination.js';
-import { notFound } from '../responses.js';
+import { notFound, badRequest } from '../responses.js';
 
 export function ingredientsRoutes(db: Db): Hono {
   const app = new Hono();
@@ -31,6 +31,10 @@ export function ingredientsRoutes(db: Db): Hono {
       .select()
       .from(ingredients)
       .where(conditions.length ? and(...conditions) : undefined)
+      // Alphabetical catalog browse. The id tie-break is what makes paging
+      // safe: without a total order Postgres may return the same row on two
+      // pages and never return another (see the ordering rule in CLAUDE.md).
+      .orderBy(asc(ingredients.name), asc(ingredients.id))
       .limit(limit)
       .offset(offset);
 
@@ -39,7 +43,7 @@ export function ingredientsRoutes(db: Db): Hono {
 
   app.get('/:id', async (c) => {
     const id = c.req.param('id');
-    if (!isUuid(id)) return c.json({ error: 'Invalid id format' }, 400);
+    if (!isUuid(id)) return badRequest(c, 'Invalid id format');
     const row = await db.query.ingredients.findFirst({
       where: eq(ingredients.id, id),
     });

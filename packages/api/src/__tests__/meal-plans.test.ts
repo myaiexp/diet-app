@@ -1,8 +1,9 @@
 // Mock-based route tests for mealPlansRoutes — week GET + write paths
 
 import { describe, test, expect, vi } from 'vitest';
+import { asc } from 'drizzle-orm';
 import { mealPlansRoutes } from '../routes/meal-plans.js';
-import { cookFeedback } from '@diet-app/db';
+import { cookFeedback, mealPlanEntries } from '@diet-app/db';
 import { chainSelect, makeDbMock, makeSelectMock, mergedRow, pgError } from './db-mock.js';
 import { makeSelectRouter } from './select-router.js';
 
@@ -82,6 +83,16 @@ describe('mealPlansRoutes', () => {
       expect(entry).toHaveProperty('status');
     }
     expect(body.map((e: { slot: string }) => e.slot)).toEqual(['dinner', 'lunch']);
+  });
+
+  // The week is bounded so paging can't skip rows here, but two GETs of the
+  // same week must not return the entries in different orders (finding #5450's
+  // class). Slot order is left to the client — sorting `slot` as text would
+  // read breakfast/dinner/lunch/snack.
+  test('GET /week/:date orders chronologically with an id tie-break', async () => {
+    const { db, calls } = makeSelectMock(ENTRIES);
+    await mealPlansRoutes(db).request('/week/2026-03-05');
+    expect(calls.orderBy).toEqual([asc(mealPlanEntries.date), asc(mealPlanEntries.id)]);
   });
 
   test('GET /week/:date returns an empty array for a week with no entries', async () => {
