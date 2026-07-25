@@ -20,6 +20,7 @@
 - **Deployment**: Forgejo git hooks (push to deploy) → `diet-app-api.service` (systemd, user `mase`)
 - **Public URL**: `https://mase.fi/diet/api/` (nginx proxy on VPS, port 3300)
 - **Database**: PostgreSQL `dietapp`
+- **Build vs type-check**: each package's `tsconfig.json` excludes `src/__tests__` so tests never land in `dist` (vitest 4 dropped `**/dist/**` from its default exclude, so an emitted copy would run as a second, stale suite — `vitest.config.ts` re-adds that exclusion as the belt-and-braces half). Consequence: `tsc --noEmit` skips tests — type-check with `pnpm --filter @diet-app/{api,db} typecheck` (`tsconfig.typecheck.json`, all of `src` including tests). `build` is `rm -rf dist && tsc` so stale artifacts can't survive a rebuild.
 - **Test DB**: integration suite (`packages/api` routes.test.ts) needs `TEST_DATABASE_URL` pointing at `dietapp_test` (name must end in `_test`). Provision with `pnpm --filter @diet-app/db setup:test-db` (create + migrate + seed + grant the `dietapp` role on mase-owned tables). Without `TEST_DATABASE_URL` the suite skips.
 - **Secrets & env**: all secrets live in a gitignored `.env` (`chmod 600`, owned by the run user) — never committed; `.env.example` holds placeholders only. Each Helm worktree keeps its own gitignored `.env` copy for dev.
 - **DB password rotation**: runbook (superuser `ALTER ROLE` → update `DATABASE_URL` in every checkout's `.env` → restart service → verify) lives in `docs/db-rotation.md`.
