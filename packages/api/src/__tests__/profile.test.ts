@@ -2,6 +2,7 @@
 
 import { describe, test, expect, vi } from 'vitest';
 import { profileRoutes } from '../routes/profile.js';
+import { makeDbMock, sequentialSelect } from './db-mock.js';
 
 const PROFILE_ID = '11111111-1111-1111-1111-111111111111';
 const ING_A = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
@@ -36,13 +37,9 @@ type MockOpts = {
   throwOnWrite?: unknown;
 };
 
-function makeProfileMock(opts: MockOpts = {}) {
+function makeWriteMock(opts: MockOpts = {}) {
   const dislikedIds = opts.dislikedIds ?? [];
   const afterDislikedIds = opts.afterDislikedIds ?? dislikedIds;
-  const insertValues: unknown[] = [];
-  const updateSets: unknown[] = [];
-  const deleteCalls: unknown[] = [];
-  let selectCall = 0;
 
   const resolveProfile = () => {
     if (typeof opts.profile === 'function') return opts.profile();
@@ -50,73 +47,29 @@ function makeProfileMock(opts: MockOpts = {}) {
     return opts.profile;
   };
 
-  const selectBuilder: any = {
-    from: () => selectBuilder,
-    where: () => {
-      selectCall += 1;
-      // PATCH with dislikedIngredientIds: call 1 = ingredient existence, rest = junction.
-      const isIngredientCheck = opts.hasDislikedKey === true && selectCall === 1;
-      const result = isIngredientCheck
-        ? (opts.ingredientIds ?? []).map((id) => ({ id }))
-        : (opts.hasDislikedKey && selectCall > 1 ? afterDislikedIds : dislikedIds).map(
-            (id) => ({ ingredientId: id }),
-          );
-      return {
-        then: (resolve: (v: unknown) => unknown) => resolve(result),
-      };
-    },
-  };
-
-  const updateBuilder: any = {
-    set: (v: unknown) => {
-      updateSets.push(v);
-      return updateBuilder;
-    },
-    where: () => updateBuilder,
-  };
-
-  const deleteBuilder: any = {
-    where: (w: unknown) => {
-      deleteCalls.push(w);
-      return deleteBuilder;
-    },
-  };
-
-  const insertBuilder: any = {
-    values: (v: unknown) => {
-      insertValues.push(v);
-      return insertBuilder;
-    },
-  };
-
-  const tx = {
-    update: () => updateBuilder,
-    delete: () => deleteBuilder,
-    insert: () => insertBuilder,
-  };
-
-  const db = {
+  return makeDbMock({
+    select: sequentialSelect((call) => {
+      // PATCH with dislikedIngredientIds: call 0 = ingredient existence, rest = junction.
+      if (opts.hasDislikedKey === true && call === 0) {
+        return (opts.ingredientIds ?? []).map((id) => ({ id }));
+      }
+      const ids = opts.hasDislikedKey && call > 0 ? afterDislikedIds : dislikedIds;
+      return ids.map((id) => ({ ingredientId: id }));
+    }),
     query: {
       userProfile: {
         findFirst: vi.fn(async () => resolveProfile()),
       },
     },
-    select: () => selectBuilder,
-    update: () => updateBuilder,
-    delete: () => deleteBuilder,
-    insert: () => insertBuilder,
-    transaction: async (fn: (t: typeof tx) => Promise<void>) => {
+    beforeTransaction: () => {
       if (opts.throwOnWrite) throw opts.throwOnWrite;
-      await fn(tx);
     },
-  } as any;
-
-  return { db, insertValues, updateSets, deleteCalls };
+  });
 }
 
 describe('profileRoutes', () => {
   test('GET includes dislikedIngredientIds from junction', async () => {
-    const { db } = makeProfileMock({ dislikedIds: [ING_B, ING_A] });
+    const { db } = makeWriteMock({ dislikedIds: [ING_B, ING_A] });
     const app = profileRoutes(db);
     const res = await app.request('/');
     expect(res.status).toBe(200);
@@ -126,7 +79,7 @@ describe('profileRoutes', () => {
   });
 
   test('GET 404 when no profile', async () => {
-    const { db } = makeProfileMock({ profile: null });
+    const { db } = makeWriteMock({ profile: null });
     const app = profileRoutes(db);
     const res = await app.request('/');
     expect(res.status).toBe(404);
@@ -134,7 +87,7 @@ describe('profileRoutes', () => {
   });
 
   test('PATCH updates name and householdSize', async () => {
-    const { db, updateSets } = makeProfileMock();
+    const { db, updates } = makeWriteMock();
     const app = profileRoutes(db);
     const res = await app.request('/', {
       method: 'PATCH',
@@ -142,13 +95,13 @@ describe('profileRoutes', () => {
       body: JSON.stringify({ name: 'Marcus', householdSize: 2 }),
     });
     expect(res.status).toBe(200);
-    expect(updateSets[0]).toMatchObject({ name: 'Marcus', householdSize: 2 });
+    expect(updates[0]).toMatchObject({ name: 'Marcus', householdSize: 2 });
     const body = await res.json();
     expect(body.dislikedIngredientIds).toEqual([]);
   });
 
   test('PATCH null clears calorieTargetMin', async () => {
-    const { db, updateSets } = makeProfileMock();
+    const { db, updates } = makeWriteMock();
     const app = profileRoutes(db);
     const res = await app.request('/', {
       method: 'PATCH',
@@ -156,11 +109,11 @@ describe('profileRoutes', () => {
       body: JSON.stringify({ calorieTargetMin: null }),
     });
     expect(res.status).toBe(200);
-    expect(updateSets[0]).toMatchObject({ calorieTargetMin: null });
+    expect(updates[0]).toMatchObject({ calorieTargetMin: null });
   });
 
   test('PATCH null on name returns 400', async () => {
-    const { db } = makeProfileMock();
+    const { db } = makeWriteMock();
     const app = profileRoutes(db);
     const res = await app.request('/', {
       method: 'PATCH',
@@ -172,7 +125,7 @@ describe('profileRoutes', () => {
   });
 
   test('PATCH empty body returns 400 Empty patch body', async () => {
-    const { db } = makeProfileMock();
+    const { db } = makeWriteMock();
     const app = profileRoutes(db);
     const res = await app.request('/', {
       method: 'PATCH',
@@ -186,7 +139,7 @@ describe('profileRoutes', () => {
   });
 
   test('PATCH calorie min > max after merge returns 400', async () => {
-    const { db } = makeProfileMock();
+    const { db } = makeWriteMock();
     const app = profileRoutes(db);
     const res = await app.request('/', {
       method: 'PATCH',
@@ -198,7 +151,7 @@ describe('profileRoutes', () => {
   });
 
   test('PATCH dislikedIngredientIds full replace', async () => {
-    const { db, insertValues, deleteCalls } = makeProfileMock({
+    const { db, inserts, deletes } = makeWriteMock({
       hasDislikedKey: true,
       ingredientIds: [ING_A, ING_B],
       afterDislikedIds: [ING_A, ING_B],
@@ -211,8 +164,8 @@ describe('profileRoutes', () => {
       body: JSON.stringify({ dislikedIngredientIds: [ING_A, ING_B] }),
     });
     expect(res.status).toBe(200);
-    expect(deleteCalls.length).toBe(1);
-    expect(insertValues[0]).toEqual([
+    expect(deletes.length).toBe(1);
+    expect(inserts[0]).toEqual([
       { userId: PROFILE_ID, ingredientId: ING_A },
       { userId: PROFILE_ID, ingredientId: ING_B },
     ]);
@@ -221,7 +174,7 @@ describe('profileRoutes', () => {
   });
 
   test('PATCH dislikedIngredientIds empty array clears all', async () => {
-    const { db, insertValues, deleteCalls } = makeProfileMock({
+    const { db, inserts, deletes } = makeWriteMock({
       hasDislikedKey: true,
       ingredientIds: [],
       afterDislikedIds: [],
@@ -234,13 +187,13 @@ describe('profileRoutes', () => {
       body: JSON.stringify({ dislikedIngredientIds: [] }),
     });
     expect(res.status).toBe(200);
-    expect(deleteCalls.length).toBe(1);
-    expect(insertValues).toHaveLength(0);
+    expect(deletes.length).toBe(1);
+    expect(inserts).toHaveLength(0);
     expect((await res.json()).dislikedIngredientIds).toEqual([]);
   });
 
   test('PATCH dislikedIngredientIds dedupes duplicates', async () => {
-    const { db, insertValues } = makeProfileMock({
+    const { db, inserts } = makeWriteMock({
       hasDislikedKey: true,
       ingredientIds: [ING_A],
       afterDislikedIds: [ING_A],
@@ -252,11 +205,11 @@ describe('profileRoutes', () => {
       body: JSON.stringify({ dislikedIngredientIds: [ING_A, ING_A, ING_A] }),
     });
     expect(res.status).toBe(200);
-    expect(insertValues[0]).toEqual([{ userId: PROFILE_ID, ingredientId: ING_A }]);
+    expect(inserts[0]).toEqual([{ userId: PROFILE_ID, ingredientId: ING_A }]);
   });
 
   test('PATCH unknown ingredient id returns 400 Invalid reference', async () => {
-    const { db } = makeProfileMock({
+    const { db } = makeWriteMock({
       hasDislikedKey: true,
       ingredientIds: [],
     });
@@ -271,7 +224,7 @@ describe('profileRoutes', () => {
   });
 
   test('PATCH 404 when no profile', async () => {
-    const { db } = makeProfileMock({ profile: null });
+    const { db } = makeWriteMock({ profile: null });
     const app = profileRoutes(db);
     const res = await app.request('/', {
       method: 'PATCH',

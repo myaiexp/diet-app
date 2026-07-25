@@ -2,6 +2,7 @@
 
 import { describe, test, expect, vi } from 'vitest';
 import { mealPlansRoutes } from '../routes/meal-plans.js';
+import { chainSelect, makeDbMock, makeSelectMock, mergedRow, sequentialSelect } from './db-mock.js';
 
 const ENTRY_ID = '11111111-1111-4111-8111-111111111111';
 const RECIPE_ID = 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee';
@@ -30,11 +31,6 @@ const FREEFORM_ENTRY = {
   freeformNote: 'takeaway',
 };
 
-// The week handler calls db.select().from(mealPlanEntries).where(...).
-function mockDbReturning(rows: unknown[]) {
-  return { select: () => ({ from: () => ({ where: async () => rows }) }) } as any;
-}
-
 type WriteMockOpts = {
   existing?: unknown | null;
   insertRow?: unknown;
@@ -45,87 +41,25 @@ type WriteMockOpts = {
 };
 
 function makeWriteMock(opts: WriteMockOpts = {}) {
-  const inserts: unknown[] = [];
-  const updates: unknown[] = [];
-  const deletes: unknown[] = [];
-  let selectCall = 0;
+  const existing = opts.existing === undefined ? PLANNED_ENTRY : opts.existing;
 
-  const insertBuilder: any = {
-    values: (v: unknown) => {
-      inserts.push(v);
-      return insertBuilder;
-    },
-    returning: async () => {
+  return makeDbMock({
+    insertRows: (recorded) => {
       if (opts.throwOnInsert) throw opts.throwOnInsert;
-      return [opts.insertRow ?? { ...PLANNED_ENTRY, ...(inserts[0] as object) }];
+      return opts.insertRow ? [opts.insertRow] : mergedRow(PLANNED_ENTRY)(recorded);
     },
-  };
-  const updateBuilder: any = {
-    set: (v: unknown) => {
-      updates.push(v);
-      return updateBuilder;
-    },
-    where: () => updateBuilder,
-    returning: async () => {
+    updateRows: (recorded) => {
       if (opts.throwOnUpdate) throw opts.throwOnUpdate;
-      return [opts.updateRow ?? { ...PLANNED_ENTRY, ...(updates[0] as object) }];
+      return opts.updateRow ? [opts.updateRow] : mergedRow(PLANNED_ENTRY)(recorded);
     },
-  };
-  const deleteBuilder: any = {
-    where: () => {
-      deletes.push('delete');
-      return deleteBuilder;
-    },
-  };
-
-  const selectForPatch = () => {
-    // PATCH locks via select().from().where().for('update')
-    const entry = opts.existing === undefined ? PLANNED_ENTRY : opts.existing;
-    const builder: any = {
-      from: () => builder,
-      where: () => builder,
-      for: () => builder,
-      then: (resolve: (v: unknown) => unknown) =>
-        resolve(entry == null ? [] : [entry]),
-    };
-    return builder;
-  };
-
-  const selectForDelete = () => {
-    // DELETE feedback pre-check uses select().from().where().limit()
-    const idx = selectCall++;
-    const rows = idx === 0 ? (opts.feedbackRows ?? []) : [];
-    const builder: any = {
-      from: () => builder,
-      where: () => builder,
-      limit: () => builder,
-      then: (resolve: (v: unknown) => unknown) => resolve(rows),
-    };
-    return builder;
-  };
-
-  const tx = {
-    select: selectForPatch,
-    update: () => updateBuilder,
-    delete: () => deleteBuilder,
-  };
-
-  const db = {
+    // PATCH locks the row inside the transaction: select().from().where().for('update')
+    txSelect: () => chainSelect(existing == null ? [] : [existing]),
+    // DELETE pre-checks cook feedback once (select().from().where().limit()).
+    select: sequentialSelect((call) => (call === 0 ? (opts.feedbackRows ?? []) : [])),
     query: {
-      mealPlanEntries: {
-        findFirst: vi.fn(async () =>
-          opts.existing === undefined ? PLANNED_ENTRY : opts.existing,
-        ),
-      },
+      mealPlanEntries: { findFirst: vi.fn(async () => existing) },
     },
-    transaction: async (fn: (t: typeof tx) => Promise<unknown>) => fn(tx),
-    insert: () => insertBuilder,
-    update: () => updateBuilder,
-    delete: () => deleteBuilder,
-    select: selectForDelete,
-  } as any;
-
-  return { db, inserts, updates, deletes };
+  });
 }
 
 function jsonReq(method: string, path: string, body?: unknown) {
@@ -138,7 +72,7 @@ function jsonReq(method: string, path: string, body?: unknown) {
 
 describe('mealPlansRoutes', () => {
   test('GET /week/:date returns the week entries with date/slot/status', async () => {
-    const app = mealPlansRoutes(mockDbReturning(ENTRIES));
+    const app = mealPlansRoutes(makeSelectMock(ENTRIES).db);
     const res = await app.request('/week/2026-03-05');
     expect(res.status).toBe(200);
     const body = await res.json();
@@ -152,7 +86,7 @@ describe('mealPlansRoutes', () => {
   });
 
   test('GET /week/:date returns an empty array for a week with no entries', async () => {
-    const app = mealPlansRoutes(mockDbReturning([]));
+    const app = mealPlansRoutes(makeSelectMock([]).db);
     const res = await app.request('/week/2026-03-05');
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual([]);

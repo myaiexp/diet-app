@@ -3,6 +3,7 @@
 import { describe, test, expect, vi } from 'vitest';
 import { mealPlanFeedbackRoutes } from '../routes/meal-plan-feedback.js';
 import { mealPlansRoutes } from '../routes/meal-plans.js';
+import { makeDbMock, mergedRow } from './db-mock.js';
 
 const ENTRY_ID = '11111111-1111-4111-8111-111111111111';
 const FB_ID = '22222222-2222-4222-8222-222222222222';
@@ -41,32 +42,13 @@ type MockOpts = {
   throwOnInsert?: unknown;
 };
 
-function makeMock(opts: MockOpts = {}) {
-  const inserts: unknown[] = [];
-  const updates: unknown[] = [];
-
-  const insertBuilder: any = {
-    values: (v: unknown) => {
-      inserts.push(v);
-      return insertBuilder;
-    },
-    returning: async () => {
+function makeWriteMock(opts: MockOpts = {}) {
+  return makeDbMock({
+    insertRows: (recorded) => {
       if (opts.throwOnInsert) throw opts.throwOnInsert;
-      return [opts.insertRow ?? { ...FEEDBACK, ...(inserts[0] as object) }];
+      return opts.insertRow ? [opts.insertRow] : mergedRow(FEEDBACK)(recorded);
     },
-  };
-  const updateBuilder: any = {
-    set: (v: unknown) => {
-      updates.push(v);
-      return updateBuilder;
-    },
-    where: () => updateBuilder,
-    returning: async () => [
-      opts.updateRow ?? { ...FEEDBACK, ...(updates[0] as object) },
-    ],
-  };
-
-  const db = {
+    updateRows: opts.updateRow ? () => [opts.updateRow] : mergedRow(FEEDBACK),
     query: {
       mealPlanEntries: {
         findFirst: vi.fn(async () =>
@@ -79,11 +61,7 @@ function makeMock(opts: MockOpts = {}) {
         ),
       },
     },
-    insert: () => insertBuilder,
-    update: () => updateBuilder,
-  } as any;
-
-  return { db, inserts, updates };
+  });
 }
 
 function json(method: string, body?: unknown) {
@@ -96,7 +74,7 @@ function json(method: string, body?: unknown) {
 
 describe('mealPlanFeedbackRoutes', () => {
   test('POST creates feedback for a cooked entry', async () => {
-    const { db, inserts } = makeMock({
+    const { db, inserts } = makeWriteMock({
       feedback: null,
       insertRow: { ...FEEDBACK },
     });
@@ -115,7 +93,7 @@ describe('mealPlanFeedbackRoutes', () => {
   });
 
   test('POST returns 409 when the entry is not cooked', async () => {
-    const { db } = makeMock({ entry: PLANNED_ENTRY, feedback: null });
+    const { db } = makeWriteMock({ entry: PLANNED_ENTRY, feedback: null });
     const res = await mealPlanFeedbackRoutes(db).request(
       `/${ENTRY_ID}/feedback`,
       json('POST', VALID_CREATE),
@@ -125,7 +103,7 @@ describe('mealPlanFeedbackRoutes', () => {
   });
 
   test('POST returns 409 when feedback already exists', async () => {
-    const { db } = makeMock({ feedback: FEEDBACK });
+    const { db } = makeWriteMock({ feedback: FEEDBACK });
     const res = await mealPlanFeedbackRoutes(db).request(
       `/${ENTRY_ID}/feedback`,
       json('POST', VALID_CREATE),
@@ -137,7 +115,7 @@ describe('mealPlanFeedbackRoutes', () => {
   });
 
   test('POST maps a unique-violation race (23505) to the same 409', async () => {
-    const { db } = makeMock({
+    const { db } = makeWriteMock({
       feedback: null,
       throwOnInsert: { code: '23505' },
     });
@@ -152,7 +130,7 @@ describe('mealPlanFeedbackRoutes', () => {
   });
 
   test('POST requires changesNote when usedAsIs is false', async () => {
-    const { db, inserts } = makeMock({ feedback: null });
+    const { db, inserts } = makeWriteMock({ feedback: null });
     const res = await mealPlanFeedbackRoutes(db).request(
       `/${ENTRY_ID}/feedback`,
       json('POST', { ...VALID_CREATE, usedAsIs: false }),
@@ -163,7 +141,7 @@ describe('mealPlanFeedbackRoutes', () => {
   });
 
   test('POST rejects changesNote when usedAsIs is true', async () => {
-    const { db, inserts } = makeMock({ feedback: null });
+    const { db, inserts } = makeWriteMock({ feedback: null });
     const res = await mealPlanFeedbackRoutes(db).request(
       `/${ENTRY_ID}/feedback`,
       json('POST', { ...VALID_CREATE, changesNote: 'nope' }),
@@ -174,7 +152,7 @@ describe('mealPlanFeedbackRoutes', () => {
   });
 
   test('POST rejects values outside the enum vocabularies', async () => {
-    const { db } = makeMock({ feedback: null });
+    const { db } = makeWriteMock({ feedback: null });
     const res = await mealPlanFeedbackRoutes(db).request(
       `/${ENTRY_ID}/feedback`,
       json('POST', {
@@ -189,14 +167,14 @@ describe('mealPlanFeedbackRoutes', () => {
   });
 
   test('GET returns the feedback, 404 when absent', async () => {
-    const found = makeMock({ feedback: FEEDBACK });
+    const found = makeWriteMock({ feedback: FEEDBACK });
     const resOk = await mealPlanFeedbackRoutes(found.db).request(
       `/${ENTRY_ID}/feedback`,
     );
     expect(resOk.status).toBe(200);
     expect((await resOk.json()).id).toBe(FB_ID);
 
-    const miss = makeMock({ feedback: null });
+    const miss = makeWriteMock({ feedback: null });
     const resMiss = await mealPlanFeedbackRoutes(miss.db).request(
       `/${ENTRY_ID}/feedback`,
     );
@@ -207,7 +185,7 @@ describe('mealPlanFeedbackRoutes', () => {
   test('PATCH enforces the usedAsIs rule against the merged row', async () => {
     const stored = { ...FEEDBACK, usedAsIs: true, changesNote: null };
 
-    const bad = makeMock({ feedback: stored });
+    const bad = makeWriteMock({ feedback: stored });
     const resBad = await mealPlanFeedbackRoutes(bad.db).request(
       `/${ENTRY_ID}/feedback`,
       json('PATCH', { usedAsIs: false }),
@@ -216,7 +194,7 @@ describe('mealPlanFeedbackRoutes', () => {
     expect((await resBad.json()).error).toBe('Validation failed');
     expect(bad.updates).toHaveLength(0);
 
-    const ok = makeMock({
+    const ok = makeWriteMock({
       feedback: stored,
       updateRow: { ...stored, usedAsIs: false, changesNote: 'less salt' },
     });
@@ -237,7 +215,7 @@ describe('mealPlanFeedbackRoutes', () => {
       usedAsIs: false,
       changesNote: 'extra garlic',
     };
-    const { db, updates } = makeMock({
+    const { db, updates } = makeWriteMock({
       feedback: stored,
       updateRow: { ...stored, usedAsIs: true, changesNote: null },
     });
@@ -250,7 +228,7 @@ describe('mealPlanFeedbackRoutes', () => {
   });
 
   test('PATCH rejects an empty body and unknown keys', async () => {
-    const empty = makeMock({ feedback: FEEDBACK });
+    const empty = makeWriteMock({ feedback: FEEDBACK });
     const resEmpty = await mealPlanFeedbackRoutes(empty.db).request(
       `/${ENTRY_ID}/feedback`,
       json('PATCH', {}),
@@ -260,7 +238,7 @@ describe('mealPlanFeedbackRoutes', () => {
       'Empty patch body',
     ]);
 
-    const unknown = makeMock({ feedback: FEEDBACK });
+    const unknown = makeWriteMock({ feedback: FEEDBACK });
     const resUnknown = await mealPlanFeedbackRoutes(unknown.db).request(
       `/${ENTRY_ID}/feedback`,
       json('PATCH', { rating: 'thumbs_up', extra: 1 }),
@@ -306,7 +284,7 @@ describe('mealPlanFeedbackRoutes', () => {
   });
 
   test('is mounted on mealPlansRoutes', async () => {
-    const { db } = makeMock({ feedback: FEEDBACK });
+    const { db } = makeWriteMock({ feedback: FEEDBACK });
     // mealPlansRoutes needs select for week etc.; only hit feedback path
     const res = await mealPlansRoutes(db).request(`/${ENTRY_ID}/feedback`);
     expect(res.status).toBe(200);

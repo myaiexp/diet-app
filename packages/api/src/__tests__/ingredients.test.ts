@@ -5,7 +5,7 @@
 import { describe, test, expect } from 'vitest';
 import { ingredientsRoutes } from '../routes/ingredients.js';
 import { isUuid } from '../validation.js';
-import { makeSelectMock } from './select-mock.js';
+import { makeSelectMock } from './db-mock.js';
 import { DEFAULT_LIMIT, MAX_LIMIT } from '../pagination.js';
 
 describe('isUuid', () => {

@@ -3,7 +3,7 @@
 
 import { describe, test, expect, vi } from 'vitest';
 import { pantryRoutes } from '../routes/pantry.js';
-import { makeSelectMock } from './select-mock.js';
+import { makeDbMock, makeSelectMock, mergedRow } from './db-mock.js';
 import { DEFAULT_LIMIT } from '../pagination.js';
 
 // Mock-based route tests for pantryRoutes — deterministic, Postgres-free.
@@ -35,34 +35,10 @@ function makeWriteMock(opts: {
   updateRow?: unknown;
   deleteRows?: unknown[];
 }) {
-  const insertValues: unknown[] = [];
-  const updateSets: unknown[] = [];
-  const deleteWheres: unknown[] = [];
-
-  const insertBuilder: any = {
-    values: (v: unknown) => {
-      insertValues.push(v);
-      return insertBuilder;
-    },
-    returning: async () => [opts.insertRow ?? FRESH_ROW],
-  };
-  const updateBuilder: any = {
-    set: (v: unknown) => {
-      updateSets.push(v);
-      return updateBuilder;
-    },
-    where: () => updateBuilder,
-    returning: async () => [opts.updateRow ?? { ...FRESH_ROW, ...(updateSets[0] as object) }],
-  };
-  const deleteBuilder: any = {
-    where: (w: unknown) => {
-      deleteWheres.push(w);
-      return deleteBuilder;
-    },
-    returning: async () => opts.deleteRows ?? [{ id: ITEM_ID }],
-  };
-
-  const db = {
+  return makeDbMock({
+    insertRows: () => [opts.insertRow ?? FRESH_ROW],
+    updateRows: opts.updateRow ? () => [opts.updateRow] : mergedRow(FRESH_ROW),
+    deleteRows: () => opts.deleteRows ?? [{ id: ITEM_ID }],
     query: {
       ingredients: {
         findFirst: vi.fn(async () =>
@@ -77,12 +53,7 @@ function makeWriteMock(opts: {
         ),
       },
     },
-    insert: () => insertBuilder,
-    update: () => updateBuilder,
-    delete: () => deleteBuilder,
-  } as any;
-
-  return { db, insertValues, updateSets, deleteWheres };
+  });
 }
 
 describe('pantryRoutes', () => {
@@ -130,7 +101,7 @@ describe('pantryRoutes', () => {
   });
 
   test('POST / creates item and returns status field', async () => {
-    const { db, insertValues } = makeWriteMock({
+    const { db, inserts } = makeWriteMock({
       insertRow: { ...FRESH_ROW, quantity: '3', expiresDate: '2099-12-31' },
     });
     const res = await pantryRoutes(db).request('/', {
@@ -148,7 +119,7 @@ describe('pantryRoutes', () => {
     const body = await res.json();
     expect(body.status).toBe('fresh');
     expect(body.quantity).toBe('3');
-    expect(insertValues[0]).toMatchObject({
+    expect(inserts[0]).toMatchObject({
       ingredientId: INGREDIENT_ID,
       quantity: '3',
       unit: 'pcs',
@@ -224,7 +195,7 @@ describe('pantryRoutes', () => {
   });
 
   test('POST / resolves expiresDate from shelf life when omitted', async () => {
-    const { db, insertValues } = makeWriteMock({
+    const { db, inserts } = makeWriteMock({
       ingredient: { id: INGREDIENT_ID, shelfLife: { fridge_days: 5 } },
       insertRow: { ...FRESH_ROW, expiresDate: '2026-07-15' },
     });
@@ -240,7 +211,7 @@ describe('pantryRoutes', () => {
       }),
     });
     expect(res.status).toBe(201);
-    expect(insertValues[0]).toMatchObject({ expiresDate: '2026-07-15', addedDate: '2026-07-10' });
+    expect(inserts[0]).toMatchObject({ expiresDate: '2026-07-15', addedDate: '2026-07-10' });
   });
 
   test('PATCH /:id returns 404 when missing', async () => {
@@ -266,7 +237,7 @@ describe('pantryRoutes', () => {
   });
 
   test('PATCH /:id does not recompute expiresDate when only location changes', async () => {
-    const { db, updateSets } = makeWriteMock({
+    const { db, updates } = makeWriteMock({
       updateRow: { ...FRESH_ROW, location: 'freezer' },
     });
     const res = await pantryRoutes(db).request(`/${ITEM_ID}`, {
@@ -275,8 +246,8 @@ describe('pantryRoutes', () => {
       body: JSON.stringify({ location: 'freezer' }),
     });
     expect(res.status).toBe(200);
-    expect(updateSets[0]).toMatchObject({ location: 'freezer' });
-    expect(updateSets[0]).not.toHaveProperty('expiresDate');
+    expect(updates[0]).toMatchObject({ location: 'freezer' });
+    expect(updates[0]).not.toHaveProperty('expiresDate');
   });
 
   test('DELETE /:id returns 204 when deleted', async () => {

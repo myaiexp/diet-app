@@ -5,7 +5,7 @@ import { describe, test, expect } from 'vitest';
 import { Hono } from 'hono';
 import { bearerAuth } from '../auth.js';
 import { createApp } from '../app.js';
-import { makeSelectMock } from './select-mock.js';
+import { makeSelectMock } from './db-mock.js';
 
 const TOKEN = 'super-secret-token';
 const AUTH = { Authorization: `Bearer ${TOKEN}` };

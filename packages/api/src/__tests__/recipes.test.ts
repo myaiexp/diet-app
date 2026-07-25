@@ -9,7 +9,7 @@
 import { describe, test, expect, vi } from 'vitest';
 import { PgDialect } from 'drizzle-orm/pg-core';
 import { recipesRoutes } from '../routes/recipes.js';
-import { makeSelectMock } from './select-mock.js';
+import { makeDbMock, makeSelectMock, sequentialSelect } from './db-mock.js';
 
 const dialect = new PgDialect();
 
@@ -44,9 +44,6 @@ type WriteMockOpts = {
 };
 
 function makeWriteMock(opts: WriteMockOpts = {}) {
-  const inserts: { table: string; values: unknown }[] = [];
-  const updates: unknown[] = [];
-  const deletes: string[] = [];
   let findCalls = 0;
 
   const resolveFind = () => {
@@ -59,69 +56,21 @@ function makeWriteMock(opts: WriteMockOpts = {}) {
     return opts.findFirst;
   };
 
-  const tx: any = {
-    insert: (_table: unknown) => {
-      const builder: any = {
-        values: (v: unknown) => {
-          inserts.push({ table: 'entity', values: v });
-          return builder;
-        },
-        returning: async () => [{ id: RECIPE_ID, title: VALID_CREATE.title, sourceType: 'manual' }],
-      };
-      return builder;
-    },
-    update: () => {
-      const builder: any = {
-        set: (v: unknown) => {
-          updates.push(v);
-          return builder;
-        },
-        where: () => builder,
-      };
-      return builder;
-    },
-    delete: () => {
-      const builder: any = {
-        where: () => {
-          deletes.push('delete');
-          return builder;
-        },
-      };
-      return builder;
-    },
-  };
-
-  // Track select chains for meal-plan / child checks via call order.
-  let selectCall = 0;
+  // DELETE pre-checks meal-plan references first, then forked child recipes.
   const selectResults = [opts.mealPlanRefs ?? [], opts.childRecipes ?? []];
 
-  const db = {
+  return makeDbMock({
+    insertRows: () => [{ id: RECIPE_ID, title: VALID_CREATE.title, sourceType: 'manual' }],
+    select: sequentialSelect((call) => selectResults[call] ?? []),
     query: {
       recipes: {
         findFirst: vi.fn(async () => resolveFind()),
       },
     },
-    transaction: async (fn: (t: any) => Promise<unknown>) => {
+    beforeTransaction: () => {
       if (opts.throwOnTransaction) throw opts.throwOnTransaction;
-      return fn(tx);
     },
-    insert: tx.insert,
-    update: tx.update,
-    delete: tx.delete,
-    select: () => {
-      const idx = selectCall++;
-      const rows = selectResults[idx] ?? [];
-      const builder: any = {
-        from: () => builder,
-        where: () => builder,
-        limit: () => builder,
-        then: (resolve: (v: unknown) => unknown) => resolve(rows),
-      };
-      return builder;
-    },
-  } as any;
-
-  return { db, inserts, updates, deletes };
+  });
 }
 
 describe('recipesRoutes', () => {
