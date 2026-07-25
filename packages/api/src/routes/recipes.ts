@@ -4,12 +4,12 @@ import { Hono } from 'hono';
 import type { Db } from '@diet-app/db';
 import { recipes, recipeIngredients, mealPlanEntries } from '@diet-app/db';
 import { eq, and, or } from 'drizzle-orm';
-import { z } from 'zod';
 import { isUuid } from '../validation.js';
 import { getPagination } from '../pagination.js';
 import { buildTagsCondition } from './recipe-filters.js';
 import { notFound, badRequest, conflict } from '../responses.js';
-import { readJsonBody } from '../json-body.js';
+import { parseJsonBody } from '../json-body.js';
+import { buildPatch } from '../patch-builder.js';
 import {
   recipeCreateSchema,
   recipePatchSchema,
@@ -100,13 +100,8 @@ export function recipesRoutes(db: Db, opts: RecipesRoutesOpts = {}): Hono {
   });
 
   app.post('/', async (c) => {
-    const body = await readJsonBody(c);
-    if (!body.ok) return body.response;
-
-    const parsed = recipeCreateSchema.safeParse(body.data);
-    if (!parsed.success) {
-      return badRequest(c, 'Validation failed', z.flattenError(parsed.error));
-    }
+    const parsed = await parseJsonBody(c, recipeCreateSchema);
+    if (!parsed.ok) return parsed.response;
     const data = parsed.data;
 
     try {
@@ -145,37 +140,22 @@ export function recipesRoutes(db: Db, opts: RecipesRoutesOpts = {}): Hono {
     const id = c.req.param('id');
     if (!isUuid(id)) return badRequest(c, 'Invalid id format');
 
-    const body = await readJsonBody(c);
-    if (!body.ok) return body.response;
-
-    const parsed = recipePatchSchema.safeParse(body.data);
-    if (!parsed.success) {
-      return badRequest(c, 'Validation failed', z.flattenError(parsed.error));
-    }
+    const parsed = await parseJsonBody(c, recipePatchSchema, { requireNonEmpty: true });
+    if (!parsed.ok) return parsed.response;
     const data = parsed.data;
-    if (Object.keys(data).length === 0) {
-      return badRequest(c, 'Validation failed', { formErrors: ['Empty patch body'] });
-    }
 
     const existing = await db.query.recipes.findFirst({ where: eq(recipes.id, id) });
     if (!existing) return notFound(c);
 
-    const header: Record<string, unknown> = { updatedAt: new Date() };
-    if (data.title !== undefined) header.title = data.title;
-    if (data.sourceType !== undefined) header.sourceType = data.sourceType;
-    if (data.sourceUrl !== undefined) header.sourceUrl = data.sourceUrl;
-    if (data.parentRecipeId !== undefined) header.parentRecipeId = data.parentRecipeId;
-    if (data.steps !== undefined) header.steps = data.steps;
-    if (data.prepTime !== undefined) header.prepTime = data.prepTime;
-    if (data.totalTime !== undefined) header.totalTime = data.totalTime;
-    if (data.servings !== undefined) header.servings = data.servings;
-    if (data.effortScore !== undefined) header.effortScore = data.effortScore;
-    if (data.tags !== undefined) header.tags = data.tags;
-    if (data.cuisineType !== undefined) header.cuisineType = data.cuisineType;
+    // `ingredients` is not a recipes column — it rewrites recipe_ingredients below.
+    const patch: Partial<typeof recipes.$inferInsert> = {
+      ...buildPatch(data, recipes),
+      updatedAt: new Date(),
+    };
 
     try {
       await db.transaction(async (tx) => {
-        await tx.update(recipes).set(header).where(eq(recipes.id, id));
+        await tx.update(recipes).set(patch).where(eq(recipes.id, id));
 
         if (data.ingredients !== undefined) {
           await tx.delete(recipeIngredients).where(eq(recipeIngredients.recipeId, id));

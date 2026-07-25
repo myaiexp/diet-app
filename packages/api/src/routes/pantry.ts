@@ -4,13 +4,13 @@ import { Hono } from 'hono';
 import type { Db } from '@diet-app/db';
 import { pantryItems, ingredients } from '@diet-app/db';
 import { eq } from 'drizzle-orm';
-import { z } from 'zod';
 import { isUuid } from '../validation.js';
 import { getPagination } from '../pagination.js';
 import { computeStatus } from '../pantry-status.js';
 import { resolveExpiresDate } from '../pantry-expiry.js';
 import { notFound, badRequest } from '../responses.js';
-import { readJsonBody } from '../json-body.js';
+import { parseJsonBody } from '../json-body.js';
+import { buildPatch } from '../patch-builder.js';
 import { pantryCreateSchema, pantryPatchSchema } from '../schemas/pantry.js';
 import { isFkViolation } from '../pg-errors.js';
 
@@ -42,13 +42,8 @@ export function pantryRoutes(db: Db): Hono {
   });
 
   app.post('/', async (c) => {
-    const body = await readJsonBody(c);
-    if (!body.ok) return body.response;
-
-    const parsed = pantryCreateSchema.safeParse(body.data);
-    if (!parsed.success) {
-      return badRequest(c, 'Validation failed', z.flattenError(parsed.error));
-    }
+    const parsed = await parseJsonBody(c, pantryCreateSchema);
+    if (!parsed.ok) return parsed.response;
     const data = parsed.data;
     const addedDate = data.addedDate ?? todayUtc();
     const opened = data.opened ?? false;
@@ -100,30 +95,21 @@ export function pantryRoutes(db: Db): Hono {
     const id = c.req.param('id');
     if (!isUuid(id)) return badRequest(c, 'Invalid id format');
 
-    const body = await readJsonBody(c);
-    if (!body.ok) return body.response;
-
-    const parsed = pantryPatchSchema.safeParse(body.data);
-    if (!parsed.success) {
-      return badRequest(c, 'Validation failed', z.flattenError(parsed.error));
-    }
+    const parsed = await parseJsonBody(c, pantryPatchSchema, { requireNonEmpty: true });
+    if (!parsed.ok) return parsed.response;
     const data = parsed.data;
-    if (Object.keys(data).length === 0) {
-      return badRequest(c, 'Validation failed', { formErrors: ['Empty patch body'] });
-    }
 
     const existing = await db.query.pantryItems.findFirst({
       where: eq(pantryItems.id, id),
     });
     if (!existing) return notFound(c);
 
-    const patch: Record<string, unknown> = { updatedAt: new Date() };
+    // quantity is numeric in Postgres — Drizzle wants the string form.
+    const patch: Partial<typeof pantryItems.$inferInsert> = {
+      ...buildPatch(data, pantryItems, ['quantity']),
+      updatedAt: new Date(),
+    };
     if (data.quantity !== undefined) patch.quantity = String(data.quantity);
-    if (data.unit !== undefined) patch.unit = data.unit;
-    if (data.location !== undefined) patch.location = data.location;
-    if (data.addedDate !== undefined) patch.addedDate = data.addedDate;
-    if (data.expiresDate !== undefined) patch.expiresDate = data.expiresDate;
-    if (data.opened !== undefined) patch.opened = data.opened;
 
     const [row] = await db
       .update(pantryItems)

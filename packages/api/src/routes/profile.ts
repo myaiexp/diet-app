@@ -4,9 +4,9 @@ import { Hono } from 'hono';
 import type { Db } from '@diet-app/db';
 import { userProfile, userDislikedIngredients, ingredients } from '@diet-app/db';
 import { eq, inArray } from 'drizzle-orm';
-import { z } from 'zod';
 import { notFound, badRequest } from '../responses.js';
-import { readJsonBody } from '../json-body.js';
+import { parseJsonBody } from '../json-body.js';
+import { buildPatch } from '../patch-builder.js';
 import { profilePatchSchema } from '../schemas/profile.js';
 import { isFkViolation } from '../pg-errors.js';
 
@@ -44,17 +44,9 @@ export function profileRoutes(db: Db): Hono {
   });
 
   app.patch('/', async (c) => {
-    const body = await readJsonBody(c);
-    if (!body.ok) return body.response;
-
-    const parsed = profilePatchSchema.safeParse(body.data);
-    if (!parsed.success) {
-      return badRequest(c, 'Validation failed', z.flattenError(parsed.error));
-    }
+    const parsed = await parseJsonBody(c, profilePatchSchema, { requireNonEmpty: true });
+    if (!parsed.ok) return parsed.response;
     const data = parsed.data;
-    if (Object.keys(data).length === 0) {
-      return badRequest(c, 'Validation failed', { formErrors: ['Empty patch body'] });
-    }
 
     const existing = await db.query.userProfile.findFirst();
     if (!existing) return notFound(c);
@@ -69,16 +61,12 @@ export function profileRoutes(db: Db): Hono {
       });
     }
 
-    const updates: Record<string, unknown> = { updatedAt: new Date() };
-    if (data.name !== undefined) updates.name = data.name;
-    if (data.calorieTargetMin !== undefined) updates.calorieTargetMin = data.calorieTargetMin;
-    if (data.calorieTargetMax !== undefined) updates.calorieTargetMax = data.calorieTargetMax;
-    if (data.macroTargets !== undefined) updates.macroTargets = data.macroTargets;
-    if (data.dietaryRestrictions !== undefined) updates.dietaryRestrictions = data.dietaryRestrictions;
-    if (data.cookingSkill !== undefined) updates.cookingSkill = data.cookingSkill;
-    if (data.kitchenEquipment !== undefined) updates.kitchenEquipment = data.kitchenEquipment;
-    if (data.householdSize !== undefined) updates.householdSize = data.householdSize;
-    if (data.scheduleProfile !== undefined) updates.scheduleProfile = data.scheduleProfile;
+    // `dislikedIngredientIds` is not a user_profile column — the junction table
+    // is replaced in the transaction below.
+    const patch: Partial<typeof userProfile.$inferInsert> = {
+      ...buildPatch(data, userProfile),
+      updatedAt: new Date(),
+    };
 
     try {
       if (data.dislikedIngredientIds !== undefined) {
@@ -95,7 +83,7 @@ export function profileRoutes(db: Db): Hono {
         }
 
         await db.transaction(async (tx) => {
-          await tx.update(userProfile).set(updates).where(eq(userProfile.id, existing.id));
+          await tx.update(userProfile).set(patch).where(eq(userProfile.id, existing.id));
           await tx
             .delete(userDislikedIngredients)
             .where(eq(userDislikedIngredients.userId, existing.id));
@@ -109,7 +97,7 @@ export function profileRoutes(db: Db): Hono {
           }
         });
       } else {
-        await db.update(userProfile).set(updates).where(eq(userProfile.id, existing.id));
+        await db.update(userProfile).set(patch).where(eq(userProfile.id, existing.id));
       }
     } catch (err) {
       if (isFkViolation(err)) return badRequest(c, 'Invalid reference');

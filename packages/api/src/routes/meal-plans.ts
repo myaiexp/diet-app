@@ -4,11 +4,11 @@ import { Hono } from 'hono';
 import type { Db } from '@diet-app/db';
 import { mealPlanEntries, cookFeedback } from '@diet-app/db';
 import { and, eq, gte, lte } from 'drizzle-orm';
-import { z } from 'zod';
 import { getISOWeekBounds } from '../date.js';
 import { isIsoDate, isUuid } from '../validation.js';
 import { notFound, badRequest, conflict } from '../responses.js';
-import { readJsonBody } from '../json-body.js';
+import { parseJsonBody } from '../json-body.js';
+import { buildPatch } from '../patch-builder.js';
 import { isFkViolation } from '../pg-errors.js';
 import {
   mealPlanCreateSchema,
@@ -45,13 +45,8 @@ export function mealPlansRoutes(db: Db): Hono {
   });
 
   app.post('/', async (c) => {
-    const body = await readJsonBody(c);
-    if (!body.ok) return body.response;
-
-    const parsed = mealPlanCreateSchema.safeParse(body.data);
-    if (!parsed.success) {
-      return badRequest(c, 'Validation failed', z.flattenError(parsed.error));
-    }
+    const parsed = await parseJsonBody(c, mealPlanCreateSchema);
+    if (!parsed.ok) return parsed.response;
     const data = parsed.data;
 
     try {
@@ -80,17 +75,9 @@ export function mealPlansRoutes(db: Db): Hono {
     const id = c.req.param('id');
     if (!isUuid(id)) return badRequest(c, 'Invalid id format');
 
-    const body = await readJsonBody(c);
-    if (!body.ok) return body.response;
-
-    const parsed = mealPlanPatchSchema.safeParse(body.data);
-    if (!parsed.success) {
-      return badRequest(c, 'Validation failed', z.flattenError(parsed.error));
-    }
+    const parsed = await parseJsonBody(c, mealPlanPatchSchema, { requireNonEmpty: true });
+    if (!parsed.ok) return parsed.response;
     const data: MealPlanPatch = parsed.data;
-    if (Object.keys(data).length === 0) {
-      return badRequest(c, 'Validation failed', { formErrors: ['Empty patch body'] });
-    }
 
     type PatchOk = { kind: 'ok'; row: typeof mealPlanEntries.$inferSelect };
     type PatchErr =
@@ -147,17 +134,12 @@ export function mealPlansRoutes(db: Db): Hono {
           return { kind: 'no_content' as const };
         }
 
-        const patch: Record<string, unknown> = { updatedAt: new Date() };
-        if (data.date !== undefined) patch.date = data.date;
-        if (data.slot !== undefined) patch.slot = data.slot;
-        if (data.recipeId !== undefined) patch.recipeId = data.recipeId;
-        if (data.freeformNote !== undefined) patch.freeformNote = data.freeformNote;
+        // servings is numeric in Postgres — Drizzle wants the string form.
+        const patch: Partial<typeof mealPlanEntries.$inferInsert> = {
+          ...buildPatch(data, mealPlanEntries, ['servings']),
+          updatedAt: new Date(),
+        };
         if (data.servings !== undefined) patch.servings = String(data.servings);
-        if (data.status !== undefined) patch.status = data.status;
-        if (data.substituteRecipeId !== undefined) {
-          patch.substituteRecipeId = data.substituteRecipeId;
-        }
-        if (data.notes !== undefined) patch.notes = data.notes;
 
         const [row] = await tx
           .update(mealPlanEntries)

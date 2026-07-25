@@ -4,10 +4,10 @@ import { Hono } from 'hono';
 import type { Db } from '@diet-app/db';
 import { mealPlanEntries, cookFeedback } from '@diet-app/db';
 import { eq } from 'drizzle-orm';
-import { z } from 'zod';
 import { isUuid } from '../validation.js';
 import { notFound, badRequest, conflict } from '../responses.js';
-import { readJsonBody } from '../json-body.js';
+import { parseJsonBody } from '../json-body.js';
+import { buildPatch } from '../patch-builder.js';
 import { isFkViolation, isUniqueViolation } from '../pg-errors.js';
 import {
   feedbackCreateSchema,
@@ -43,13 +43,8 @@ export function mealPlanFeedbackRoutes(db: Db): Hono {
     const id = c.req.param('id');
     if (!isUuid(id)) return badRequest(c, 'Invalid id format');
 
-    const body = await readJsonBody(c);
-    if (!body.ok) return body.response;
-
-    const parsed = feedbackCreateSchema.safeParse(body.data);
-    if (!parsed.success) {
-      return badRequest(c, 'Validation failed', z.flattenError(parsed.error));
-    }
+    const parsed = await parseJsonBody(c, feedbackCreateSchema);
+    if (!parsed.ok) return parsed.response;
     const data = parsed.data;
 
     const entry = await db.query.mealPlanEntries.findFirst({
@@ -94,17 +89,9 @@ export function mealPlanFeedbackRoutes(db: Db): Hono {
     const id = c.req.param('id');
     if (!isUuid(id)) return badRequest(c, 'Invalid id format');
 
-    const body = await readJsonBody(c);
-    if (!body.ok) return body.response;
-
-    const parsed = feedbackPatchSchema.safeParse(body.data);
-    if (!parsed.success) {
-      return badRequest(c, 'Validation failed', z.flattenError(parsed.error));
-    }
+    const parsed = await parseJsonBody(c, feedbackPatchSchema, { requireNonEmpty: true });
+    if (!parsed.ok) return parsed.response;
     const data: FeedbackPatch = parsed.data;
-    if (Object.keys(data).length === 0) {
-      return badRequest(c, 'Validation failed', { formErrors: ['Empty patch body'] });
-    }
 
     const existing = await db.query.cookFeedback.findFirst({
       where: eq(cookFeedback.mealPlanEntryId, id),
@@ -130,12 +117,10 @@ export function mealPlanFeedbackRoutes(db: Db): Hono {
       });
     }
 
-    const patch: Record<string, unknown> = { updatedAt: new Date() };
-    if (data.rating !== undefined) patch.rating = data.rating;
-    if (data.effortCheck !== undefined) patch.effortCheck = data.effortCheck;
-    if (data.makeAgain !== undefined) patch.makeAgain = data.makeAgain;
-    if (data.usedAsIs !== undefined) patch.usedAsIs = data.usedAsIs;
-    if (data.changesNote !== undefined) patch.changesNote = data.changesNote;
+    const patch: Partial<typeof cookFeedback.$inferInsert> = {
+      ...buildPatch(data, cookFeedback),
+      updatedAt: new Date(),
+    };
     // When usedAsIs is true and note not supplied, force null (matches merge rule)
     if (mergedUsedAsIs === true && data.changesNote === undefined) {
       patch.changesNote = null;

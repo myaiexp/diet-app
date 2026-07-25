@@ -1,10 +1,9 @@
 // POST /import — AI extract recipe draft (never inserts)
 
 import { Hono } from 'hono';
-import { z } from 'zod';
 import type { Db } from '@diet-app/db';
 import type { AiConfig } from '../config.js';
-import { readJsonBody } from '../json-body.js';
+import { parseJsonBody } from '../json-body.js';
 import { badRequest, badGateway, serviceUnavailable } from '../responses.js';
 import { recipeImportBodySchema } from '../schemas/recipe-import.js';
 import { fetchUrlAsText } from '../ai/fetch-url.js';
@@ -75,13 +74,8 @@ export function recipeImportRoutes(db: Db, opts: RecipeImportRoutesOpts): Hono {
       return serviceUnavailable(c, 'AI not configured');
     }
 
-    const body = await readJsonBody(c);
-    if (!body.ok) return body.response;
-
-    const parsed = recipeImportBodySchema.safeParse(body.data);
-    if (!parsed.success) {
-      return badRequest(c, 'Validation failed', z.flattenError(parsed.error));
-    }
+    const parsed = await parseJsonBody(c, recipeImportBodySchema);
+    if (!parsed.ok) return parsed.response;
 
     let text: string;
     let sourceUrl: string | null = null;

@@ -2,8 +2,9 @@
 
 import { describe, test, expect } from 'vitest';
 import { Hono } from 'hono';
+import { z } from 'zod';
 import { badRequest, badGateway, conflict, notFound, serviceUnavailable } from '../responses.js';
-import { readJsonBody } from '../json-body.js';
+import { parseJsonBody, type ParseJsonBodyOpts } from '../json-body.js';
 
 function appWith(handler: (c: any) => Response | Promise<Response>) {
   const app = new Hono();
@@ -60,34 +61,54 @@ describe('responses', () => {
   });
 });
 
-describe('readJsonBody', () => {
-  test('returns ok:true with parsed data for valid JSON', async () => {
+describe('parseJsonBody', () => {
+  const schema = z.object({ a: z.number().optional() }).strict();
+
+  function postBody(body: string, opts?: ParseJsonBodyOpts) {
     const app = appWith(async (c) => {
-      const result = await readJsonBody(c);
-      if (!result.ok) return result.response;
-      return c.json({ got: result.data });
+      const parsed = await parseJsonBody(c, schema, opts);
+      if (!parsed.ok) return parsed.response;
+      return c.json({ got: parsed.data });
     });
-    const res = await app.request('/', {
+    return app.request('/', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ a: 1 }),
+      body,
     });
+  }
+
+  test('returns ok:true with parsed data for valid JSON', async () => {
+    const res = await postBody(JSON.stringify({ a: 1 }));
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ got: { a: 1 } });
   });
 
   test('returns ok:false for empty/non-JSON body', async () => {
-    const app = appWith(async (c) => {
-      const result = await readJsonBody(c);
-      if (!result.ok) return result.response;
-      return c.json({ got: result.data });
-    });
-    const res = await app.request('/', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: 'not-json',
-    });
+    const res = await postBody('not-json');
     expect(res.status).toBe(400);
     expect(await res.json()).toEqual({ error: 'Invalid JSON body' });
+  });
+
+  test('returns 400 with flattened Zod details when the schema rejects', async () => {
+    const res = await postBody(JSON.stringify({ a: 'nope' }));
+    expect(res.status).toBe(400);
+    const body = (await res.json()) as { error: string; details: { fieldErrors: unknown } };
+    expect(body.error).toBe('Validation failed');
+    expect(body.details.fieldErrors).toHaveProperty('a');
+  });
+
+  test('requireNonEmpty rejects {} with Empty patch body', async () => {
+    const res = await postBody('{}', { requireNonEmpty: true });
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({
+      error: 'Validation failed',
+      details: { formErrors: ['Empty patch body'] },
+    });
+  });
+
+  test('{} passes when requireNonEmpty is not set', async () => {
+    const res = await postBody('{}');
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ got: {} });
   });
 });
