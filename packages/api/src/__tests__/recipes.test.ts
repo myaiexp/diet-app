@@ -2,16 +2,16 @@
 // Covers the :id 200 path (including the recipeIngredients relation shape), the
 // 404 path, and the GET / list-filter wiring for ?tags=/?cuisine= (which the
 // integration suite cannot exercise — nothing is seeded). The filter tests
-// render the WHERE clause the handler builds (via PgDialect) to prove each
-// query param is actually applied; buildTagsCondition's own SQL shape is unit-
-// tested in recipe-filters.test.ts.
+// render the WHERE clause the handler builds (renderWhere) to prove each query
+// param is actually applied; buildTagsCondition's own SQL shape is unit-tested
+// in recipe-filters.test.ts.
 
 import { describe, test, expect, vi } from 'vitest';
-import { PgDialect } from 'drizzle-orm/pg-core';
+import { mealPlanEntries, recipes } from '@diet-app/db';
 import { recipesRoutes } from '../routes/recipes.js';
-import { makeDbMock, makeSelectMock, sequentialSelect } from './db-mock.js';
-
-const dialect = new PgDialect();
+import { makeDbMock, makeSelectMock, type DbMock } from './db-mock.js';
+import { makeSelectRouter } from './select-router.js';
+import { renderWhere } from './drizzle-introspect.js';
 
 const RECIPE_ID = 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee';
 const INGREDIENT_ID = '11111111-1111-4111-8111-111111111111';
@@ -44,24 +44,27 @@ type WriteMockOpts = {
 };
 
 function makeWriteMock(opts: WriteMockOpts = {}) {
-  let findCalls = 0;
+  let mock: DbMock;
 
   const resolveFind = () => {
-    findCalls += 1;
     if (typeof opts.findFirst === 'function') return (opts.findFirst as () => unknown)();
-    if (opts.findFirst === undefined) {
-      // First call often existence check; subsequent reloads return full shape.
-      return findCalls === 1 ? { id: RECIPE_ID, title: 'Roast chicken' } : RECIPE_WITH_RELATIONS;
-    }
-    return opts.findFirst;
+    if (opts.findFirst !== undefined) return opts.findFirst;
+    // Pre-write reads are existence checks (the handler only needs an id); the
+    // reload after a write is what the response is built from, so it carries
+    // the full relation shape. Keyed on whether a write has landed rather than
+    // on call count, so an extra pre-check can't shift the fixtures.
+    return mock.writes.length === 0
+      ? { id: RECIPE_ID, title: 'Roast chicken' }
+      : RECIPE_WITH_RELATIONS;
   };
 
-  // DELETE pre-checks meal-plan references first, then forked child recipes.
-  const selectResults = [opts.mealPlanRefs ?? [], opts.childRecipes ?? []];
-
-  return makeDbMock({
+  mock = makeDbMock({
     insertRows: () => [{ id: RECIPE_ID, title: VALID_CREATE.title, sourceType: 'manual' }],
-    select: sequentialSelect((call) => selectResults[call] ?? []),
+    // DELETE pre-checks meal-plan references, then forked child recipes.
+    select: makeSelectRouter([
+      [mealPlanEntries, opts.mealPlanRefs ?? []],
+      [recipes, opts.childRecipes ?? []],
+    ]).select,
     query: {
       recipes: {
         findFirst: vi.fn(async () => resolveFind()),
@@ -71,6 +74,7 @@ function makeWriteMock(opts: WriteMockOpts = {}) {
       if (opts.throwOnTransaction) throw opts.throwOnTransaction;
     },
   });
+  return mock;
 }
 
 describe('recipesRoutes', () => {
@@ -92,7 +96,7 @@ describe('recipesRoutes', () => {
     const { db, calls } = makeSelectMock([]);
     const res = await recipesRoutes(db).request('/?cuisine=italian');
     expect(res.status).toBe(200);
-    const q = dialect.sqlToQuery(calls.where as any);
+    const q = renderWhere(calls.where);
     expect(q.params).toContain('italian');
   });
 
@@ -100,7 +104,7 @@ describe('recipesRoutes', () => {
     const { db, calls } = makeSelectMock([]);
     const res = await recipesRoutes(db).request('/?tags=pasta,italian');
     expect(res.status).toBe(200);
-    const q = dialect.sqlToQuery(calls.where as any);
+    const q = renderWhere(calls.where);
     expect(q.sql).toContain('@> ARRAY[$1, $2]::text[]');
     expect(q.params).toEqual(['pasta', 'italian']);
   });
@@ -109,7 +113,7 @@ describe('recipesRoutes', () => {
     const { db, calls } = makeSelectMock([]);
     const res = await recipesRoutes(db).request('/?cuisine=italian&tags=pasta');
     expect(res.status).toBe(200);
-    const q = dialect.sqlToQuery(calls.where as any);
+    const q = renderWhere(calls.where);
     // Both filters present: cuisine equality + tag array containment, ANDed.
     expect(q.sql).toContain('and');
     expect(q.sql).toContain('@> ARRAY[$2]::text[]');

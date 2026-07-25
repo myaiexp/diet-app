@@ -11,6 +11,11 @@
 // Suites compose these with their own `db.query.X.findFirst` stubs rather than
 // configuring one mega-mock: the chain shape is what every suite shares, the
 // fixtures and relational stubs are what makes each suite different.
+//
+// Reads are dispatched by table in select-router.ts; writes record the table
+// they targeted here, so neither side has to key on statement order.
+
+import { tableNameOf } from './drizzle-introspect.js';
 
 export interface SelectMock {
   db: any;
@@ -51,66 +56,88 @@ export function makeSelectMock(rows: unknown[]): SelectMock {
   return { db: { select: () => chainSelect(rows, calls) }, calls };
 }
 
-/**
- * db.select() for handlers that run several *different* selects in sequence
- * (an existence pre-check, then the real read). The Nth select() — 0-indexed —
- * resolves to `rowsByCall(n)`.
- */
-export function sequentialSelect(rowsByCall: (call: number) => unknown[]): () => any {
-  let call = 0;
-  return () => chainSelect(rowsByCall(call++));
+/** One insert/update/delete statement the handler ran, with its table. */
+export interface WriteRecord {
+  kind: 'insert' | 'update' | 'delete';
+  /** Table named in insert()/update()/delete(), e.g. 'pantry_items'. */
+  table: string;
+  /** insert().values(v) or update().set(v); undefined for a delete. */
+  values?: unknown;
+  /** The .where() clause, when the handler applied one. */
+  where?: unknown;
 }
 
 /**
- * Rows a `.returning()` resolves to, computed from everything the builder has
- * recorded so far. Throw from here to simulate a failing write.
+ * Rows a `.returning()` resolves to. Receives everything recorded through this
+ * builder so far, plus the record for *this* statement — key on `record.table`
+ * or `record.values` when a handler writes to several tables through the same
+ * builder, so the fixture doesn't depend on which write happened to be last.
+ * Throw from here to simulate a failing write.
  */
-export type Returning = (recorded: unknown[]) => unknown[];
+export type Returning = (recorded: unknown[], record: WriteRecord) => unknown[];
 
-export interface Recorder {
-  builder: any;
+interface Recorder {
+  /** One builder per insert(t)/update(t)/delete(t) call. */
+  make: (table?: unknown) => any;
   recorded: unknown[];
 }
 
 /**
  * A write builder that appends every `recordOn` call to `recorded` and returns
- * itself, so the handler's chain runs to completion. Builders are deliberately
- * not thenable: routes that `await tx.insert(x).values(...)` without
- * `.returning()` get the plain object back, exactly as before.
+ * itself, so the handler's chain runs to completion. A fresh builder per
+ * statement keeps the table and WHERE of one write from leaking into the next.
+ * Builders are deliberately not thenable: routes that
+ * `await tx.insert(x).values(...)` without `.returning()` get the plain object
+ * back, exactly as before.
  */
-function recordingBuilder(recordOn: 'values' | 'set' | 'where', returning?: Returning): Recorder {
+function makeRecorder(
+  kind: WriteRecord['kind'],
+  recordOn: 'values' | 'set' | 'where',
+  writes: WriteRecord[],
+  returning?: Returning,
+): Recorder {
   const recorded: unknown[] = [];
-  const builder: any = {
-    where: () => builder,
-    returning: async () => (returning ? returning(recorded) : []),
-  };
-  builder[recordOn] = (v: unknown) => {
-    recorded.push(v);
+
+  const make = (table?: unknown): any => {
+    const record: WriteRecord = { kind, table: tableNameOf(table) };
+    let logged = false;
+    // .set() then .where() both fire on one statement — log it once.
+    const log = () => {
+      if (logged) return;
+      writes.push(record);
+      logged = true;
+    };
+
+    const builder: any = {
+      where: (w: unknown) => {
+        record.where = w;
+        if (recordOn === 'where') recorded.push(w);
+        log();
+        return builder;
+      },
+      returning: async () => (returning ? returning(recorded, record) : []),
+    };
+    if (recordOn !== 'where') {
+      builder[recordOn] = (v: unknown) => {
+        recorded.push(v);
+        record.values = v;
+        log();
+        return builder;
+      };
+    }
     return builder;
   };
-  return { builder, recorded };
+
+  return { make, recorded };
 }
 
-/** insert().values(v) — records each `v`. */
-export const recordingInsert = (returning?: Returning): Recorder =>
-  recordingBuilder('values', returning);
-
-/** update().set(v).where(...) — records each `v`. */
-export const recordingUpdate = (returning?: Returning): Recorder =>
-  recordingBuilder('set', returning);
-
-/** delete().where(w) — records each `w`. */
-export const recordingDelete = (returning?: Returning): Recorder =>
-  recordingBuilder('where', returning);
-
 /**
- * `.returning()` rows for the common case: the fixture row with the write that
- * was just made merged over it. Uses the latest recorded write, so a handler
- * that writes twice through one mock reads back the second write.
+ * `.returning()` rows for the common case: the fixture row with the write this
+ * returning belongs to merged over it.
  */
 export const mergedRow =
   (fixture: object): Returning =>
-  (recorded) => [{ ...fixture, ...(recorded[recorded.length - 1] as object) }];
+  (_recorded, record) => [{ ...fixture, ...(record.values as object) }];
 
 export interface DbMockOptions {
   /** Rows POST/PATCH read back from insert().returning(). */
@@ -137,6 +164,11 @@ export interface DbMock {
   updates: unknown[];
   /** Conditions passed to delete().where(), in call order. */
   deletes: unknown[];
+  /**
+   * Every write with the table it targeted — filter by table when a handler
+   * writes to several (`writes.filter((w) => w.table === 'pantry_items')`).
+   */
+  writes: WriteRecord[];
 }
 
 /**
@@ -145,15 +177,16 @@ export interface DbMock {
  * writes inside tx and one that writes directly are asserted the same way.
  */
 export function makeDbMock(opts: DbMockOptions = {}): DbMock {
-  const insert = recordingInsert(opts.insertRows);
-  const update = recordingUpdate(opts.updateRows);
-  const remove = recordingDelete(opts.deleteRows);
+  const writes: WriteRecord[] = [];
+  const insert = makeRecorder('insert', 'values', writes, opts.insertRows);
+  const update = makeRecorder('update', 'set', writes, opts.updateRows);
+  const remove = makeRecorder('delete', 'where', writes, opts.deleteRows);
   const emptySelect = () => chainSelect([]);
 
   const tx = {
-    insert: () => insert.builder,
-    update: () => update.builder,
-    delete: () => remove.builder,
+    insert: (t?: unknown) => insert.make(t),
+    update: (t?: unknown) => update.make(t),
+    delete: (t?: unknown) => remove.make(t),
     select: opts.txSelect ?? opts.select ?? emptySelect,
   };
 
@@ -172,5 +205,6 @@ export function makeDbMock(opts: DbMockOptions = {}): DbMock {
     inserts: insert.recorded,
     updates: update.recorded,
     deletes: remove.recorded,
+    writes,
   };
 }

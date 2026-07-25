@@ -1,19 +1,13 @@
 // Mock-based tests for POST /meal-plans/:id/cook (FEFO auto-deduct)
 
 import { describe, test, expect } from 'vitest';
-import { PgDialect } from 'drizzle-orm/pg-core';
+import { type Table } from 'drizzle-orm';
+import { mealPlanEntries, pantryItems, recipeIngredients, recipes } from '@diet-app/db';
 import { mealPlansRoutes } from '../routes/meal-plans.js';
 import { mealPlanCookRoutes } from '../routes/meal-plan-cook.js';
-
-const dialect = new PgDialect();
-
-function whereParams(where: unknown): unknown[] {
-  try {
-    return dialect.sqlToQuery(where as any).params;
-  } catch {
-    return [];
-  }
-}
+import { makeDbMock, type WriteRecord } from './db-mock.js';
+import { makeSelectRouter } from './select-router.js';
+import { tableNameOf, whereParams } from './drizzle-introspect.js';
 
 const ENTRY_ID = '11111111-1111-4111-8111-111111111111';
 const RECIPE_ID = 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee';
@@ -81,26 +75,9 @@ type CookMockOpts = {
 };
 
 function makeCookMock(opts: CookMockOpts = {}) {
-  const updates: { table: string; set: unknown; where?: unknown }[] = [];
-  const deletes: { table: string; id?: unknown }[] = [];
-  const selectMeta: { forUpdate: boolean; from: string }[] = [];
   let transactionOpened = false;
-  let selectCall = 0;
 
-  // Table identity: drizzle table objects are unique references
-  const tableName = (t: unknown): string => {
-    const anyT = t as { [k: string]: unknown };
-    // drizzle tables expose Symbol.for('drizzle:Name') or similar; fall back to order
-    const name =
-      (anyT as any)[Symbol.for('drizzle:Name')] ??
-      (anyT as any)._?.name ??
-      (anyT as any)[Object.getOwnPropertySymbols(anyT as object)[0] ?? ''];
-    if (typeof name === 'string') return name;
-    return 'unknown';
-  };
-
-  const resolveEntry = () =>
-    opts.entry === undefined ? { ...PLANNED_ENTRY } : opts.entry;
+  const resolveEntry = () => (opts.entry === undefined ? { ...PLANNED_ENTRY } : opts.entry);
 
   const resolveRecipe = (id: unknown) => {
     if (opts.recipesById && typeof id === 'string' && id in opts.recipesById) {
@@ -111,142 +88,62 @@ function makeCookMock(opts: CookMockOpts = {}) {
   };
 
   const resolveLines = (recipeId: unknown) => {
-    if (
-      opts.linesByRecipeId &&
-      typeof recipeId === 'string' &&
-      recipeId in opts.linesByRecipeId
-    ) {
+    if (opts.linesByRecipeId && typeof recipeId === 'string' && recipeId in opts.linesByRecipeId) {
       return opts.linesByRecipeId[recipeId]!;
     }
     if (opts.lines === undefined) return [{ ...LINE }];
     return opts.lines;
   };
 
-  // Sequential select results when for/where filters aren't introspectable:
-  // call 0 = entry; 1 = recipe; 2 = lines; 3 = pantry (if any)
-  // We inspect forUpdate + call order and eq() is opaque — track by order.
-  const buildSelect = (txMode: boolean) => {
-    return (_cols?: unknown) => {
-      const idx = selectCall++;
-      let forUpdate = false;
-      let fromTable = 'unknown';
-      let whereArg: unknown;
+  // Each read is answered by the table it named. The recipe/lines fixtures key
+  // on the id the route bound into eq(), which is what proves the substitute
+  // was resolved — the route may run these in any order.
+  const router = makeSelectRouter([
+    [
+      mealPlanEntries,
+      () => {
+        const entry = resolveEntry();
+        return entry == null ? [] : [entry];
+      },
+    ],
+    [
+      recipes,
+      ({ params }) => {
+        const recipe = resolveRecipe(params[0] ?? RECIPE_ID);
+        return recipe == null ? [] : [recipe];
+      },
+    ],
+    [recipeIngredients, ({ params }) => resolveLines(params[0] ?? RECIPE_ID)],
+    [pantryItems, opts.pantryRows ?? [{ ...PANTRY_ROW }]],
+  ]);
 
-      const builder: any = {
-        from: (t: unknown) => {
-          fromTable = tableName(t);
-          return builder;
-        },
-        where: (w: unknown) => {
-          whereArg = w;
-          return builder;
-        },
-        orderBy: () => builder,
-        for: (_strength: string) => {
-          forUpdate = true;
-          return builder;
-        },
-        then: (resolve: (v: unknown) => unknown) => {
-          selectMeta.push({ forUpdate, from: fromTable });
-          const params = whereParams(whereArg);
-
-          // Order-based resolution matching the route's query sequence
-          if (idx === 0) {
-            // entry FOR UPDATE
-            const entry = resolveEntry();
-            return resolve(entry == null ? [] : [entry]);
-          }
-
-          // After entry: recipe load (no for), lines (no for), pantry (for)
-          if (!forUpdate) {
-            const nonForAfterEntry = selectMeta.filter(
-              (m, i) => i > 0 && !m.forUpdate,
-            ).length;
-            // Use the actual eq() param the route passed — proves which recipe id was loaded
-            const queriedId =
-              typeof params[0] === 'string' ? params[0] : undefined;
-            if (nonForAfterEntry <= 1) {
-              const recipe = resolveRecipe(queriedId ?? RECIPE_ID);
-              return resolve(recipe == null ? [] : [recipe]);
-            }
-            return resolve(resolveLines(queriedId ?? RECIPE_ID));
-          }
-
-          // pantry FOR UPDATE
-          return resolve(opts.pantryRows ?? [{ ...PANTRY_ROW }]);
-        },
+  const mock = makeDbMock({
+    // Only the final "mark cooked" update reads a row back; key on that
+    // statement's own values rather than on whichever write happened last.
+    updateRows: (_recorded, record) => {
+      const base = (opts.cookedEntry as object) ?? {
+        ...PLANNED_ENTRY,
+        ...(resolveEntry() as object),
       };
-      // silence unused
-      void whereArg;
-      void txMode;
-      return builder;
-    };
-  };
-
-  const makeWriteSide = () => {
-    const update = (_table: unknown) => {
-      const tName = tableName(_table);
-      let whereArg: unknown;
-      const builder: any = {
-        set: (v: unknown) => {
-          updates.push({ table: tName, set: v, where: undefined });
-          return builder;
-        },
-        where: (w: unknown) => {
-          whereArg = w;
-          const last = updates[updates.length - 1];
-          if (last) last.where = w;
-          return builder;
-        },
-        returning: async () => {
-          const last = updates[updates.length - 1]?.set as Record<string, unknown>;
-          const base =
-            (opts.cookedEntry as object) ??
-            { ...PLANNED_ENTRY, ...(resolveEntry() as object) };
-          return [{ ...base, ...last, status: last?.status ?? 'cooked' }];
-        },
-      };
-      void whereArg;
-      return builder;
-    };
-    const del = (_table: unknown) => {
-      const tName = tableName(_table);
-      const builder: any = {
-        where: (w: unknown) => {
-          deletes.push({ table: tName, id: whereParams(w)[0] });
-          return builder;
-        },
-      };
-      return builder;
-    };
-    return { update, delete: del };
-  };
-
-  const writes = makeWriteSide();
-
-  const tx = {
-    select: buildSelect(true),
-    update: writes.update,
-    delete: writes.delete,
-  };
-
-  const db = {
-    transaction: async (fn: (t: typeof tx) => Promise<unknown>) => {
-      transactionOpened = true;
-      selectCall = 0;
-      return fn(tx);
+      const set = record.values as Record<string, unknown> | undefined;
+      return [{ ...base, ...set, status: set?.['status'] ?? 'cooked' }];
     },
-    // top-level unused for cook path
-    select: buildSelect(false),
-    update: writes.update,
-    delete: writes.delete,
-  } as any;
+    select: router.select,
+    beforeTransaction: () => {
+      transactionOpened = true;
+    },
+  });
+
+  const writesTo = (kind: WriteRecord['kind'], table: Table) =>
+    mock.writes.filter((w) => w.kind === kind && w.table === tableNameOf(table));
 
   return {
-    db,
-    updates,
-    deletes,
-    selectMeta,
+    db: mock.db,
+    /** Every write, in statement order — assert nothing extra was written. */
+    writes: mock.writes,
+    updatesTo: (table: Table) => writesTo('update', table),
+    deletesTo: (table: Table) => writesTo('delete', table),
+    reads: router.reads,
     wasOpened: () => transactionOpened,
   };
 }
@@ -297,7 +194,7 @@ describe('mealPlanCookRoutes', () => {
       substituteRecipeId: null,
       freeformNote: 'takeaway',
     };
-    const { db, updates, deletes } = makeCookMock({
+    const { db, writes, updatesTo } = makeCookMock({
       entry: freeform,
       cookedEntry: { ...freeform, status: 'cooked' },
     });
@@ -310,9 +207,10 @@ describe('mealPlanCookRoutes', () => {
     expect(body.shortfalls).toEqual([]);
     expect(body.entry.status).toBe('cooked');
     // only the entry status update — no pantry writes, no timesCooked
-    expect(deletes).toHaveLength(0);
-    expect(updates).toHaveLength(1);
-    expect(updates[0]!.set).toMatchObject({ status: 'cooked' });
+    const entryUpdates = updatesTo(mealPlanEntries);
+    expect(entryUpdates).toHaveLength(1);
+    expect(entryUpdates[0]!.values).toMatchObject({ status: 'cooked' });
+    expect(writes).toHaveLength(1);
   });
 
   test('prefers substituteRecipeId over recipeId when resolving the recipe', async () => {
@@ -323,7 +221,7 @@ describe('mealPlanCookRoutes', () => {
       servings: '2',
     };
     const subLine = { ...LINE, recipeId: SUB_RECIPE_ID, quantity: '100', unit: 'g' };
-    const { db, updates } = makeCookMock({
+    const { db, updatesTo } = makeCookMock({
       entry,
       recipesById: {
         [SUB_RECIPE_ID]: SUB_RECIPE,
@@ -346,16 +244,14 @@ describe('mealPlanCookRoutes', () => {
     expect(body.deductions[0].requested).toBe(100);
     expect(body.deductions[0].pantryItems[0].after).toBe('400');
     // timesCooked must target the substitute, not the primary recipe
-    const recipeUpdates = updates.filter(
-      (u) => (u.set as any).timesCooked !== undefined,
-    );
+    const recipeUpdates = updatesTo(recipes);
     expect(recipeUpdates).toHaveLength(1);
     expect(whereParams(recipeUpdates[0]!.where)).toContain(SUB_RECIPE_ID);
     expect(whereParams(recipeUpdates[0]!.where)).not.toContain(RECIPE_ID);
   });
 
   test('entry and pantry selects use FOR UPDATE; recipe/lines do not', async () => {
-    const { db, selectMeta } = makeCookMock({
+    const { db, reads } = makeCookMock({
       entry: { ...PLANNED_ENTRY, servings: '1' },
       recipe: { ...RECIPE, servings: 1 },
       lines: [{ ...LINE, quantity: '100', unit: 'g' }],
@@ -365,8 +261,12 @@ describe('mealPlanCookRoutes', () => {
       method: 'POST',
     });
     expect(res.status).toBe(200);
-    // [entry for], [recipe no], [lines no], [pantry for]
-    expect(selectMeta.map((m) => m.forUpdate)).toEqual([true, false, false, true]);
+    // Which rows the cook locks — the claim is about the tables, not the order
+    // the route happens to read them in.
+    const locked = reads.filter((r) => r.forUpdate).map((r) => r.table);
+    const unlocked = reads.filter((r) => !r.forUpdate).map((r) => r.table);
+    expect([...locked].sort()).toEqual(['meal_plan_entries', 'pantry_items']);
+    expect([...unlocked].sort()).toEqual(['recipe_ingredients', 'recipes']);
   });
 
   test('returns 404 when resolved recipe is missing', async () => {
@@ -418,7 +318,7 @@ describe('mealPlanCookRoutes', () => {
 
   test('applies planner output: updates touched rows, deletes zeroed rows, bumps timesCooked', async () => {
     // exact consume 1000g from 1000g → delete row
-    const { db, updates, deletes } = makeCookMock({
+    const { db, deletesTo } = makeCookMock({
       entry: { ...PLANNED_ENTRY, servings: '2' }, // scale = 2/2 = 1, need 500... use 1000 line
       recipe: { ...RECIPE, servings: 1 },
       lines: [{ ...LINE, quantity: '1000', unit: 'g' }],
@@ -430,8 +330,9 @@ describe('mealPlanCookRoutes', () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.deductions[0].pantryItems[0].deleted).toBe(true);
-    expect(deletes).toHaveLength(1);
-    expect(deletes[0]!.id).toBe(PANTRY_ID);
+    const pantryDeletes = deletesTo(pantryItems);
+    expect(pantryDeletes).toHaveLength(1);
+    expect(whereParams(pantryDeletes[0]!.where)).toContain(PANTRY_ID);
 
     // partial update path: leftover stock
     const partial = makeCookMock({
@@ -445,25 +346,18 @@ describe('mealPlanCookRoutes', () => {
       { method: 'POST' },
     );
     expect(res2.status).toBe(200);
-    const pantryUpdates = partial.updates.filter(
-      (u) => (u.set as any).quantity !== undefined,
-    );
+    const pantryUpdates = partial.updatesTo(pantryItems);
     expect(pantryUpdates).toHaveLength(1);
-    expect(pantryUpdates[0]!.set).toMatchObject({ quantity: '500' });
-    expect(partial.deletes).toHaveLength(0);
+    expect(pantryUpdates[0]!.values).toMatchObject({ quantity: '500' });
+    expect(partial.deletesTo(pantryItems)).toHaveLength(0);
 
     // timesCooked increment present
-    const timesBumps = partial.updates.filter(
-      (u) => (u.set as any).timesCooked !== undefined,
-    );
-    expect(timesBumps).toHaveLength(1);
+    expect(partial.updatesTo(recipes)).toHaveLength(1);
 
     // entry status cooked
-    const statusUpdates = partial.updates.filter(
-      (u) => (u.set as any).status === 'cooked',
-    );
+    const statusUpdates = partial.updatesTo(mealPlanEntries);
     expect(statusUpdates).toHaveLength(1);
-    void updates; // first case already asserted deletes
+    expect(statusUpdates[0]!.values).toMatchObject({ status: 'cooked' });
   });
 
   test('a shortfall does not prevent the cook', async () => {

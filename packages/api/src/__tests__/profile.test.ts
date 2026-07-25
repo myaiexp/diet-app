@@ -1,8 +1,10 @@
 // Mock-based route tests for profileRoutes — GET disliked ids + PATCH.
 
 import { describe, test, expect, vi } from 'vitest';
+import { ingredients, userDislikedIngredients } from '@diet-app/db';
 import { profileRoutes } from '../routes/profile.js';
-import { makeDbMock, sequentialSelect } from './db-mock.js';
+import { makeDbMock } from './db-mock.js';
+import { makeSelectRouter } from './select-router.js';
 
 const PROFILE_ID = '11111111-1111-1111-1111-111111111111';
 const ING_A = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
@@ -26,13 +28,11 @@ const PROFILE = {
 
 type MockOpts = {
   profile?: typeof PROFILE | null | (() => typeof PROFILE | null | undefined);
-  /** Rows returned by loadDislikedIds (and after-patch load when afterDislikedIds omitted). */
+  /** Junction rows loadDislikedIds reads (GET, and PATCH when unchanged). */
   dislikedIds?: string[];
-  /** When PATCH includes dislikedIngredientIds: first select is ingredient existence check. */
-  hasDislikedKey?: boolean;
-  /** Ingredient ids found by the existence pre-check. */
+  /** Ingredient ids the existence pre-check finds. */
   ingredientIds?: string[];
-  /** Junction ids returned after a disliked PATCH write. */
+  /** Junction ids the post-write reload returns; defaults to dislikedIds. */
   afterDislikedIds?: string[];
   throwOnWrite?: unknown;
 };
@@ -48,14 +48,13 @@ function makeWriteMock(opts: MockOpts = {}) {
   };
 
   return makeDbMock({
-    select: sequentialSelect((call) => {
-      // PATCH with dislikedIngredientIds: call 0 = ingredient existence, rest = junction.
-      if (opts.hasDislikedKey === true && call === 0) {
-        return (opts.ingredientIds ?? []).map((id) => ({ id }));
-      }
-      const ids = opts.hasDislikedKey && call > 0 ? afterDislikedIds : dislikedIds;
-      return ids.map((id) => ({ ingredientId: id }));
-    }),
+    // The two reads hit different tables: ingredients is the existence
+    // pre-check for a disliked patch, user_disliked_ingredients is the junction
+    // load that builds the response (always after the write on PATCH).
+    select: makeSelectRouter([
+      [ingredients, (opts.ingredientIds ?? []).map((id) => ({ id }))],
+      [userDislikedIngredients, afterDislikedIds.map((id) => ({ ingredientId: id }))],
+    ]).select,
     query: {
       userProfile: {
         findFirst: vi.fn(async () => resolveProfile()),
@@ -152,7 +151,6 @@ describe('profileRoutes', () => {
 
   test('PATCH dislikedIngredientIds full replace', async () => {
     const { db, inserts, deletes } = makeWriteMock({
-      hasDislikedKey: true,
       ingredientIds: [ING_A, ING_B],
       afterDislikedIds: [ING_A, ING_B],
       dislikedIds: [],
@@ -175,7 +173,6 @@ describe('profileRoutes', () => {
 
   test('PATCH dislikedIngredientIds empty array clears all', async () => {
     const { db, inserts, deletes } = makeWriteMock({
-      hasDislikedKey: true,
       ingredientIds: [],
       afterDislikedIds: [],
       dislikedIds: [ING_A],
@@ -194,7 +191,6 @@ describe('profileRoutes', () => {
 
   test('PATCH dislikedIngredientIds dedupes duplicates', async () => {
     const { db, inserts } = makeWriteMock({
-      hasDislikedKey: true,
       ingredientIds: [ING_A],
       afterDislikedIds: [ING_A],
     });
@@ -210,7 +206,6 @@ describe('profileRoutes', () => {
 
   test('PATCH unknown ingredient id returns 400 Invalid reference', async () => {
     const { db } = makeWriteMock({
-      hasDislikedKey: true,
       ingredientIds: [],
     });
     const app = profileRoutes(db);

@@ -2,7 +2,9 @@
 
 import { describe, test, expect, vi } from 'vitest';
 import { mealPlansRoutes } from '../routes/meal-plans.js';
-import { chainSelect, makeDbMock, makeSelectMock, mergedRow, sequentialSelect } from './db-mock.js';
+import { cookFeedback } from '@diet-app/db';
+import { chainSelect, makeDbMock, makeSelectMock, mergedRow } from './db-mock.js';
+import { makeSelectRouter } from './select-router.js';
 
 const ENTRY_ID = '11111111-1111-4111-8111-111111111111';
 const RECIPE_ID = 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee';
@@ -44,18 +46,18 @@ function makeWriteMock(opts: WriteMockOpts = {}) {
   const existing = opts.existing === undefined ? PLANNED_ENTRY : opts.existing;
 
   return makeDbMock({
-    insertRows: (recorded) => {
+    insertRows: (recorded, record) => {
       if (opts.throwOnInsert) throw opts.throwOnInsert;
-      return opts.insertRow ? [opts.insertRow] : mergedRow(PLANNED_ENTRY)(recorded);
+      return opts.insertRow ? [opts.insertRow] : mergedRow(PLANNED_ENTRY)(recorded, record);
     },
-    updateRows: (recorded) => {
+    updateRows: (recorded, record) => {
       if (opts.throwOnUpdate) throw opts.throwOnUpdate;
-      return opts.updateRow ? [opts.updateRow] : mergedRow(PLANNED_ENTRY)(recorded);
+      return opts.updateRow ? [opts.updateRow] : mergedRow(PLANNED_ENTRY)(recorded, record);
     },
     // PATCH locks the row inside the transaction: select().from().where().for('update')
     txSelect: () => chainSelect(existing == null ? [] : [existing]),
-    // DELETE pre-checks cook feedback once (select().from().where().limit()).
-    select: sequentialSelect((call) => (call === 0 ? (opts.feedbackRows ?? []) : [])),
+    // DELETE pre-checks cook feedback (select().from().where().limit()).
+    select: makeSelectRouter([[cookFeedback, opts.feedbackRows ?? []]]).select,
     query: {
       mealPlanEntries: { findFirst: vi.fn(async () => existing) },
     },

@@ -44,9 +44,9 @@ type MockOpts = {
 
 function makeWriteMock(opts: MockOpts = {}) {
   return makeDbMock({
-    insertRows: (recorded) => {
+    insertRows: (recorded, record) => {
       if (opts.throwOnInsert) throw opts.throwOnInsert;
-      return opts.insertRow ? [opts.insertRow] : mergedRow(FEEDBACK)(recorded);
+      return opts.insertRow ? [opts.insertRow] : mergedRow(FEEDBACK)(recorded, record);
     },
     updateRows: opts.updateRow ? () => [opts.updateRow] : mergedRow(FEEDBACK),
     query: {
