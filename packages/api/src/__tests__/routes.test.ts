@@ -396,6 +396,37 @@ describe.skipIf(!hasDb)('cook flow', () => {
         error: 'Meal plan entry already cooked',
       });
 
+      // 8b. PATCH cannot rewrite the inputs the deduction was computed from.
+      // Each rejection must leave the pantry exactly where the cook left it.
+      for (const patch of [
+        { servings: 4 },
+        { substituteRecipeId: recipeId },
+        { servings: 4, notes: 'should not land' },
+      ]) {
+        const bad = await app!.request(`/api/meal-plans/${entryId}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(patch),
+        });
+        expect(bad.status, `expected 409 for ${JSON.stringify(patch)}`).toBe(409);
+        expect(await bad.json()).toEqual({
+          error: 'Cooked meal plan entry recipe and servings are immutable',
+        });
+      }
+      const pantryAfterPatch = await app!.request(`/api/pantry/${pantryId}`);
+      expect((await pantryAfterPatch.json()).quantity).toBe('0.5');
+
+      // 8c. …but the non-cook fields, and an unchanged resend, still go through.
+      const okPatch = await app!.request(`/api/meal-plans/${entryId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ servings: 2, recipeId, notes: 'a bit salty' }),
+      });
+      expect(okPatch.status).toBe(200);
+      const patched = await okPatch.json();
+      expect(patched.notes).toBe('a bit salty');
+      expect(patched.status).toBe('cooked');
+
       // 9. Feedback create + get
       const fbRes = await app!.request(`/api/meal-plans/${entryId}/feedback`, {
         method: 'POST',
