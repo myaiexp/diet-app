@@ -2,6 +2,7 @@
 
 import type OpenAI from 'openai';
 import { z } from 'zod';
+import { logImportFailure } from './log.js';
 
 export type ExtractedRecipe = {
   title: string;
@@ -107,11 +108,20 @@ export function parseExtractedRecipe(
   let data: unknown;
   try {
     data = JSON.parse(stripJsonFences(raw));
-  } catch {
+  } catch (err) {
+    logImportFailure('model output is not JSON', err, { chars: raw.length });
     return { ok: false };
   }
   const parsed = extractedRecipeSchema.safeParse(data);
-  if (!parsed.success) return { ok: false };
+  if (!parsed.success) {
+    logImportFailure(
+      'model JSON failed schema validation',
+      parsed.error.issues
+        .map((i) => `${i.path.join('.') || '(root)'} ${i.message}`)
+        .join('; '),
+    );
+    return { ok: false };
+  }
   return { ok: true, recipe: toExtractedRecipe(parsed.data) };
 }
 
@@ -135,9 +145,16 @@ export async function extractRecipeFromText(
       ],
     });
     const content = completion.choices[0]?.message?.content;
-    if (!content || !content.trim()) return { ok: false };
+    if (!content || !content.trim()) {
+      logImportFailure('model returned empty content', undefined, { model });
+      return { ok: false };
+    }
     return parseExtractedRecipe(content);
-  } catch {
+  } catch (err) {
+    // Bad AI_API_KEY (401), wrong AI_BASE_URL (ENOTFOUND), 429, and the 30s
+    // client timeout all land here and all answer a flat 502 — the log line is
+    // the only thing that tells them apart.
+    logImportFailure('chat completion failed', err, { model });
     return { ok: false };
   }
 }

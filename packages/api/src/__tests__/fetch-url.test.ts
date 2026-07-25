@@ -1,12 +1,28 @@
 // SSRF-safe fetchUrlAsText + HTML strip coverage (mock fetch + mock DNS only)
 
-import { describe, test, expect } from 'vitest';
+import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   fetchUrlAsText,
   htmlToPlainText,
   IMPORT_TEXT_MAX_CHARS,
   type DnsLookupFn,
 } from '../ai/fetch-url.js';
+
+// Every failure path logs to console.error by design (it is the operator's only
+// signal behind the flat 502). Capture instead of printing, and assert on the
+// captured lines in the 'failure logging' block below.
+let logged: string[] = [];
+
+beforeEach(() => {
+  logged = [];
+  vi.spyOn(console, 'error').mockImplementation((...args: unknown[]) => {
+    logged.push(args.map((a) => String(a)).join(' '));
+  });
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 /** Public IPv4 — never hit real DNS in these tests. */
 const publicDns: DnsLookupFn = async () => [
@@ -234,6 +250,93 @@ describe('fetchUrlAsText', () => {
       dnsLookup: publicDns,
     });
     expect(result).toEqual({ ok: false, error: 'fetch_failed' });
+  });
+});
+
+describe('fetchUrlAsText failure logging', () => {
+  test('logs the transport cause, not just fetch_failed', async () => {
+    const err = new TypeError('fetch failed');
+    (err as { cause?: unknown }).cause = Object.assign(
+      new Error('getaddrinfo ENOTFOUND recipes.invalid'),
+      { code: 'ENOTFOUND' },
+    );
+    const result = await fetchUrlAsText('https://example.com/x', {
+      fetchImpl: async () => {
+        throw err;
+      },
+      dnsLookup: publicDns,
+    });
+    expect(result).toEqual({ ok: false, error: 'fetch_failed' });
+    expect(logged).toHaveLength(1);
+    expect(logged[0]).toContain('[recipe-import] transport error');
+    expect(logged[0]).toContain('url=https://example.com/x');
+    expect(logged[0]).toContain('ENOTFOUND');
+  });
+
+  test('logs DNS failure distinctly from transport failure', async () => {
+    const result = await fetchUrlAsText('https://example.com/x', {
+      fetchImpl: mustNotFetch(),
+      dnsLookup: async () => {
+        throw Object.assign(new Error('queryA EAI_AGAIN'), { code: 'EAI_AGAIN' });
+      },
+    });
+    expect(result).toEqual({ ok: false, error: 'fetch_failed' });
+    expect(logged[0]).toContain('[recipe-import] dns lookup failed');
+    expect(logged[0]).toContain('host=example.com');
+    expect(logged[0]).toContain('EAI_AGAIN');
+  });
+
+  test('logs the HTTP status behind a non-success response', async () => {
+    const result = await fetchUrlAsText('https://example.com/gone', {
+      fetchImpl: async () => new Response('nope', { status: 403 }),
+      dnsLookup: publicDns,
+    });
+    expect(result).toEqual({ ok: false, error: 'fetch_failed' });
+    expect(logged[0]).toContain('[recipe-import] non-success status');
+    expect(logged[0]).toContain('status=403');
+  });
+
+  test('logs why the body was rejected', async () => {
+    const result = await fetchUrlAsText('https://example.com/big', {
+      fetchImpl: async () =>
+        new Response('tiny', {
+          status: 200,
+          headers: { 'content-length': String(5_000_000) },
+        }),
+      dnsLookup: publicDns,
+      maxBytes: 1000,
+    });
+    expect(result).toEqual({ ok: false, error: 'fetch_failed' });
+    expect(logged[0]).toContain('[recipe-import] body read failed');
+    expect(logged[0]).toContain('content-length 5000000 exceeds cap 1000');
+  });
+
+  test('logs a rejected redirect target (the user URL was fine)', async () => {
+    let calls = 0;
+    const result = await fetchUrlAsText('https://example.com/start', {
+      fetchImpl: async () => {
+        calls += 1;
+        return new Response(null, {
+          status: 302,
+          headers: { Location: 'http://169.254.169.254/latest/meta-data/' },
+        });
+      },
+      dnsLookup: publicDns,
+    });
+    expect(result).toEqual({ ok: false, error: 'blocked_url' });
+    expect(calls).toBe(1);
+    expect(logged[0]).toContain('[recipe-import] redirect target rejected');
+    expect(logged[0]).toContain('hop=1');
+    expect(logged[0]).toContain('blocked_url');
+  });
+
+  test('stays silent when the user URL itself is rejected (expected 400)', async () => {
+    const result = await fetchUrlAsText('http://127.0.0.1/secret', {
+      fetchImpl: mustNotFetch(),
+      dnsLookup: publicDns,
+    });
+    expect(result).toEqual({ ok: false, error: 'blocked_url' });
+    expect(logged).toEqual([]);
   });
 });
 

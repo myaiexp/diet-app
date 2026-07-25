@@ -14,6 +14,7 @@ import {
 } from './ssrf-host.js';
 
 import { IMPORT_TEXT_MAX_CHARS } from './import-limits.js';
+import { describeError, logImportFailure } from './log.js';
 
 export { IMPORT_TEXT_MAX_CHARS };
 
@@ -102,7 +103,10 @@ async function assertUrlSafe(
     for (const a of answers) {
       if (isBlockedAddress(a.address)) return { ok: false, error: 'blocked_url' };
     }
-  } catch {
+  } catch (err) {
+    // DNS failure and the shared-timeout abort both land here and both flatten
+    // to fetch_failed — indistinguishable from a transport error without this.
+    logImportFailure('dns lookup failed', err, { host });
     return { ok: false, error: 'fetch_failed' };
   }
 
@@ -152,7 +156,7 @@ async function readBodyCapped(
   res: Response,
   maxBytes: number,
   signal: AbortSignal,
-): Promise<{ ok: true; text: string } | { ok: false }> {
+): Promise<{ ok: true; text: string } | { ok: false; reason: string }> {
   const cl = res.headers.get('content-length');
   if (cl !== null) {
     const n = Number(cl);
@@ -162,17 +166,19 @@ async function readBodyCapped(
       } catch {
         /* ignore */
       }
-      return { ok: false };
+      return { ok: false, reason: `content-length ${n} exceeds cap ${maxBytes}` };
     }
   }
 
   if (!res.body) {
     try {
       const t = await res.text();
-      if (new TextEncoder().encode(t).byteLength > maxBytes) return { ok: false };
+      if (new TextEncoder().encode(t).byteLength > maxBytes) {
+        return { ok: false, reason: `body exceeds cap ${maxBytes}` };
+      }
       return { ok: true, text: t };
-    } catch {
-      return { ok: false };
+    } catch (err) {
+      return { ok: false, reason: describeError(err) };
     }
   }
 
@@ -183,7 +189,7 @@ async function readBodyCapped(
     for (;;) {
       if (signal.aborted) {
         await reader.cancel().catch(() => undefined);
-        return { ok: false };
+        return { ok: false, reason: 'aborted mid-body (timeout)' };
       }
       const { done, value } = await reader.read();
       if (done) break;
@@ -191,12 +197,12 @@ async function readBodyCapped(
       total += value.byteLength;
       if (total > maxBytes) {
         await reader.cancel().catch(() => undefined);
-        return { ok: false };
+        return { ok: false, reason: `body exceeds cap ${maxBytes}` };
       }
       chunks.push(value);
     }
-  } catch {
-    return { ok: false };
+  } catch (err) {
+    return { ok: false, reason: describeError(err) };
   }
 
   const out = new Uint8Array(total);
@@ -221,6 +227,7 @@ export async function fetchUrlAsText(
   const maxBytes = opts?.maxBytes ?? DEFAULT_MAX_BYTES;
 
   if (typeof fetchImpl !== 'function') {
+    logImportFailure('no fetch implementation available (node <18?)');
     return { ok: false, error: 'fetch_failed' };
   }
 
@@ -230,10 +237,21 @@ export async function fetchUrlAsText(
 
   try {
     for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
-      if (controller.signal.aborted) return { ok: false, error: 'fetch_failed' };
+      if (controller.signal.aborted) {
+        logImportFailure('timed out', undefined, { url: current, timeoutMs, hop });
+        return { ok: false, error: 'fetch_failed' };
+      }
 
       const safe = await assertUrlSafe(current, dnsLookup, controller.signal);
-      if (!safe.ok) return safe;
+      if (!safe.ok) {
+        // A rejected redirect target answers the same 400 as a bad user URL —
+        // log it so "my URL was fine" and "the redirect went somewhere blocked"
+        // are distinguishable. Hop 0 is the user's own input; no log needed.
+        if (hop > 0) {
+          logImportFailure('redirect target rejected', safe.error, { url: current, hop });
+        }
+        return safe;
+      }
 
       let res: Response;
       try {
@@ -246,18 +264,35 @@ export async function fetchUrlAsText(
             'User-Agent': 'diet-app-import/1.0',
           },
         });
-      } catch {
+      } catch (err) {
+        logImportFailure('transport error', err, { url: safe.url.href, hop });
         return { ok: false, error: 'fetch_failed' };
       }
 
       if (REDIRECT_STATUSES.has(res.status)) {
-        if (hop === MAX_REDIRECTS) return { ok: false, error: 'fetch_failed' };
+        if (hop === MAX_REDIRECTS) {
+          logImportFailure('too many redirects', undefined, {
+            url: safe.url.href,
+            max: MAX_REDIRECTS,
+          });
+          return { ok: false, error: 'fetch_failed' };
+        }
         const location = res.headers.get('location');
-        if (!location) return { ok: false, error: 'fetch_failed' };
+        if (!location) {
+          logImportFailure('redirect without location header', undefined, {
+            url: safe.url.href,
+            status: res.status,
+          });
+          return { ok: false, error: 'fetch_failed' };
+        }
         let next: URL;
         try {
           next = new URL(location, safe.url);
-        } catch {
+        } catch (err) {
+          logImportFailure('redirect location unparseable', err, {
+            url: safe.url.href,
+            location,
+          });
           return { ok: false, error: 'invalid_url' };
         }
         current = next.href;
@@ -266,17 +301,27 @@ export async function fetchUrlAsText(
 
       // Only success statuses that carry a body we want to parse (not 204/304).
       if (!OK_STATUSES.has(res.status)) {
+        logImportFailure('non-success status', undefined, {
+          url: safe.url.href,
+          status: res.status,
+        });
         return { ok: false, error: 'fetch_failed' };
       }
 
       const body = await readBodyCapped(res, maxBytes, controller.signal);
-      if (!body.ok) return { ok: false, error: 'fetch_failed' };
+      if (!body.ok) {
+        logImportFailure('body read failed', body.reason, { url: safe.url.href });
+        return { ok: false, error: 'fetch_failed' };
+      }
 
       const plain = htmlToPlainText(body.text);
       const { text, truncated } = truncateText(plain);
       return { ok: true, text, finalUrl: safe.url.href, truncated };
     }
 
+    // Unreachable: the hop === MAX_REDIRECTS branch returns first. Logged so a
+    // future edit to the loop bounds can't create a silent failure here.
+    logImportFailure('redirect loop exhausted', undefined, { url });
     return { ok: false, error: 'fetch_failed' };
   } finally {
     clearTimeout(timer);

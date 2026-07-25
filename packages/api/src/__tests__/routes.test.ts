@@ -1,5 +1,9 @@
+import { fileURLToPath } from 'node:url';
 import { config } from 'dotenv';
-config({ path: '../../.env' });
+// Resolved from this file, not the CWD: a CWD-relative path silently loads
+// nothing when vitest is invoked from the repo root instead of packages/api,
+// which puts the whole suite back into silent-skip mode.
+config({ path: fileURLToPath(new URL('../../../../.env', import.meta.url)) });
 
 import { describe, test, expect, afterAll } from 'vitest';
 import { createDb, cookFeedback } from '@diet-app/db';
@@ -29,6 +33,26 @@ if (TEST_DB_URL && TEST_DB_URL.includes('dietapp') && !TEST_DB_URL.includes('_te
 const hasDb = Boolean(TEST_DB_URL);
 const db = hasDb ? createDb(TEST_DB_URL!) : null;
 const app = db ? createApp(db) : null;
+
+// LOUD GATE: `describe.skipIf` alone reports 16 quiet skips, which is how this
+// suite went 4 commits without ever executing — the SQL it is the only cover
+// for (tags @>, unnest, ON CONFLICT, relational with:, numeric FEFO math) was
+// unverified the whole time. An unset TEST_DATABASE_URL now fails the run.
+// Opting out is possible but has to be deliberate: DIET_APP_SKIP_DB_TESTS=1.
+const SKIP_DB_TESTS = process.env.DIET_APP_SKIP_DB_TESTS === '1';
+
+describe('integration DB gate', () => {
+  test.skipIf(SKIP_DB_TESTS)('TEST_DATABASE_URL is configured', () => {
+    expect(
+      hasDb,
+      'TEST_DATABASE_URL is not set, so the entire real-Postgres integration ' +
+        'suite would skip silently. Provision the DB with ' +
+        '`pnpm --filter @diet-app/db setup:test-db`, then add TEST_DATABASE_URL ' +
+        'to the repo-root .env (see .env.example). To run the mock suites ' +
+        'without Postgres on purpose, set DIET_APP_SKIP_DB_TESTS=1.',
+    ).toBe(true);
+  });
+});
 
 // Write-path smokes mutate dietapp_test and clean up in try/finally so leftover
 // rows do not accumulate across runs. The DB is isolated from prod (guarded

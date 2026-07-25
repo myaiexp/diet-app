@@ -1,11 +1,26 @@
 // Unit tests for AI recipe extract parse + extractRecipeFromText (mocked client)
 
-import { describe, test, expect, vi } from 'vitest';
+import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   parseExtractedRecipe,
   stripJsonFences,
   extractRecipeFromText,
 } from '../ai/import-recipe.js';
+
+// Failure paths log to console.error by design; capture instead of printing so
+// the suite stays readable, and assert on the lines in 'failure logging'.
+let logged: string[] = [];
+
+beforeEach(() => {
+  logged = [];
+  vi.spyOn(console, 'error').mockImplementation((...args: unknown[]) => {
+    logged.push(args.map((a) => String(a)).join(' '));
+  });
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 const VALID_JSON = JSON.stringify({
   title: 'Pancakes',
@@ -147,5 +162,55 @@ describe('extractRecipeFromText', () => {
       },
     } as any;
     expect(await extractRecipeFromText(client, 'm', 'x')).toEqual({ ok: false });
+  });
+});
+
+describe('extract failure logging', () => {
+  test('logs the API cause — a bad key must not look like a bad model', async () => {
+    const client = {
+      chat: {
+        completions: {
+          create: async () => {
+            throw Object.assign(new Error('Incorrect API key provided'), {
+              status: 401,
+            });
+          },
+        },
+      },
+    } as any;
+
+    expect(await extractRecipeFromText(client, 'model-capable', 'x')).toEqual({
+      ok: false,
+    });
+    expect(logged).toHaveLength(1);
+    expect(logged[0]).toContain('[recipe-import] chat completion failed');
+    expect(logged[0]).toContain('model=model-capable');
+    expect(logged[0]).toContain('Incorrect API key provided');
+    expect(logged[0]).toContain('status=401');
+  });
+
+  test('logs empty content distinctly from an API error', async () => {
+    const client = {
+      chat: {
+        completions: {
+          create: async () => ({ choices: [{ message: { content: '' } }] }),
+        },
+      },
+    } as any;
+
+    await extractRecipeFromText(client, 'model-capable', 'x');
+    expect(logged[0]).toContain('[recipe-import] model returned empty content');
+    expect(logged[0]).toContain('model=model-capable');
+  });
+
+  test('logs unparseable model output', () => {
+    parseExtractedRecipe('not-json');
+    expect(logged[0]).toContain('[recipe-import] model output is not JSON');
+  });
+
+  test('logs which fields failed schema validation', () => {
+    parseExtractedRecipe(JSON.stringify({ title: 'Empty', ingredients: [] }));
+    expect(logged[0]).toContain('[recipe-import] model JSON failed schema validation');
+    expect(logged[0]).toContain('ingredients');
   });
 });
