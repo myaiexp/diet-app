@@ -350,6 +350,79 @@ describe('mealPlansRoutes', () => {
     expect(updates[0]).toMatchObject({ status: 'cooked', notes: 'salty' });
   });
 
+  test('PATCH cannot change the cook inputs of a cooked entry', async () => {
+    const OTHER_RECIPE_ID = 'ffffffff-1111-4222-8333-444444444444';
+    const cases: Array<[string, Record<string, unknown>]> = [
+      ['recipeId', { recipeId: OTHER_RECIPE_ID }],
+      ['recipeId cleared', { recipeId: null }],
+      ['substituteRecipeId', { substituteRecipeId: OTHER_RECIPE_ID }],
+      ['servings', { servings: 4 }],
+      ['cook input alongside an editable field', { servings: 4, notes: 'salty' }],
+    ];
+
+    for (const [label, patch] of cases) {
+      const { db, updates } = makeWriteMock({ existing: COOKED_ENTRY });
+      const res = await mealPlansRoutes(db).request(
+        `/${ENTRY_ID}`,
+        jsonReq('PATCH', '/', patch),
+      );
+      expect(res.status, `expected 409 for ${label}`).toBe(409);
+      expect(await res.json()).toEqual({
+        error: 'Cooked meal plan entry recipe and servings are immutable',
+      });
+      // The guard must reject before writing anything.
+      expect(updates, `expected no update for ${label}`).toHaveLength(0);
+    }
+  });
+
+  test('PATCH accepts a no-op resend of the cook inputs on a cooked entry', async () => {
+    // servings is a numeric column, so it reads back as '2.00' — an unchanged
+    // resend of 2 must compare equal rather than trip the guard.
+    const entry = { ...COOKED_ENTRY, servings: '2.00' };
+    const { db, updates } = makeWriteMock({
+      existing: entry,
+      updateRow: { ...entry, notes: 'salty' },
+    });
+    const res = await mealPlansRoutes(db).request(
+      `/${ENTRY_ID}`,
+      jsonReq('PATCH', '/', {
+        recipeId: RECIPE_ID,
+        substituteRecipeId: null,
+        servings: 2,
+        notes: 'salty',
+      }),
+    );
+    expect(res.status).toBe(200);
+    expect((await res.json()).notes).toBe('salty');
+    expect(updates[0]).toMatchObject({ notes: 'salty' });
+  });
+
+  test('PATCH allows date and slot edits on a cooked entry', async () => {
+    const { db, updates } = makeWriteMock({
+      existing: COOKED_ENTRY,
+      updateRow: { ...COOKED_ENTRY, date: '2026-07-22', slot: 'lunch' },
+    });
+    const res = await mealPlansRoutes(db).request(
+      `/${ENTRY_ID}`,
+      jsonReq('PATCH', '/', { date: '2026-07-22', slot: 'lunch' }),
+    );
+    expect(res.status).toBe(200);
+    expect(updates[0]).toMatchObject({ date: '2026-07-22', slot: 'lunch' });
+  });
+
+  test('PATCH still allows cook-input edits on a non-cooked entry', async () => {
+    const { db, updates } = makeWriteMock({
+      existing: PLANNED_ENTRY,
+      updateRow: { ...PLANNED_ENTRY, servings: '4' },
+    });
+    const res = await mealPlansRoutes(db).request(
+      `/${ENTRY_ID}`,
+      jsonReq('PATCH', '/', { servings: 4 }),
+    );
+    expect(res.status).toBe(200);
+    expect(updates[0]).toMatchObject({ servings: '4' });
+  });
+
   test('PATCH allows planned -> skipped', async () => {
     const { db, updates } = makeWriteMock({
       updateRow: { ...PLANNED_ENTRY, status: 'skipped' },

@@ -4,5 +4,9 @@
     "outDir": "dist",
     "rootDir": "src"
   },
-  "include": ["src"]
+  "include": ["src"],
+  // Build output must never contain tests: emitted dist/__tests__ copies get
+  // picked up as a second, stale test suite. Type-check them via
+  // tsconfig.typecheck.json (pnpm typecheck) instead.
+  "exclude": ["src/__tests__"]
 }
