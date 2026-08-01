@@ -39,6 +39,8 @@ type MockOpts = {
   feedback?: unknown | null;
   insertRow?: unknown;
   updateRow?: unknown;
+  /** Full RETURNING array for UPDATE — use [] for the delete-between-read race. */
+  updateRows?: unknown[];
   /** Driver-shaped error thrown at the handler's write (FK / unique races). */
   throwOnWrite?: unknown;
 };
@@ -47,7 +49,12 @@ function makeWriteMock(opts: MockOpts = {}) {
   return makeDbMock({
     insertRows: (recorded, record) =>
       opts.insertRow ? [opts.insertRow] : mergedRow(FEEDBACK)(recorded, record),
-    updateRows: opts.updateRow ? () => [opts.updateRow] : mergedRow(FEEDBACK),
+    updateRows:
+      opts.updateRows !== undefined
+        ? () => opts.updateRows!
+        : opts.updateRow
+          ? () => [opts.updateRow]
+          : mergedRow(FEEDBACK),
     throwOnWrite: () => opts.throwOnWrite,
     query: {
       mealPlanEntries: {
@@ -285,6 +292,16 @@ describe('mealPlanFeedbackRoutes', () => {
       usedAsIs: false,
       changesNote: 'extra garlic',
     });
+  });
+
+  test('PATCH returns 404 when the row is gone between read and update', async () => {
+    const { db } = makeWriteMock({ feedback: FEEDBACK, updateRows: [] });
+    const res = await mealPlanFeedbackRoutes(db).request(
+      `/${ENTRY_ID}/feedback`,
+      json('PATCH', { rating: 'thumbs_down' }),
+    );
+    expect(res.status).toBe(404);
+    expect(await res.json()).toEqual({ error: 'Not found' });
   });
 
   test('PATCH rejects an empty body and unknown keys', async () => {

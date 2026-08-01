@@ -125,6 +125,9 @@ export function pantryRoutes(db: Db): Hono {
       .where(eq(pantryItems.id, id))
       .returning();
 
+    // Race: row deleted between pre-check and update — empty RETURNING must
+    // not reach withStatus (row.expiresDate would TypeError into a 500).
+    if (!row) return notFound(c);
     return c.json(withStatus(row));
   });
 

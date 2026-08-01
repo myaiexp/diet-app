@@ -127,11 +127,12 @@ export function mealPlanFeedbackRoutes(db: Db): Hono {
       });
     }
 
-    // Persist exactly the pair that was validated: buildPatch carries the
-    // rating fields, `merged` owns usedAsIs/changesNote.
+    // usedAsIs/changesNote are route-owned (mergeFeedback) — omit them from
+    // buildPatch so ownership is structural, not later-spread-order dependent.
     const patch: Partial<typeof cookFeedback.$inferInsert> = {
-      ...buildPatch(data, cookFeedback),
-      ...merged,
+      ...buildPatch(data, cookFeedback, ['usedAsIs', 'changesNote']),
+      usedAsIs: merged.usedAsIs,
+      changesNote: merged.changesNote,
       updatedAt: new Date(),
     };
 
@@ -141,6 +142,8 @@ export function mealPlanFeedbackRoutes(db: Db): Hono {
       .where(eq(cookFeedback.id, existing.id))
       .returning();
 
+    // Race: row deleted between pre-check and update.
+    if (!row) return notFound(c);
     return c.json(row);
   });
 

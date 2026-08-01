@@ -35,6 +35,8 @@ function makeWriteMock(opts: {
   existingItem?: unknown | null;
   insertRow?: unknown;
   updateRow?: unknown;
+  /** Full RETURNING array for UPDATE — use [] for the delete-between-read race. */
+  updateRows?: unknown[];
   deleteRows?: unknown[];
   /** Driver-shaped error thrown at the handler's write (FK races). */
   throwOnWrite?: unknown;
@@ -42,7 +44,12 @@ function makeWriteMock(opts: {
   return makeDbMock({
     throwOnWrite: () => opts.throwOnWrite,
     insertRows: () => [opts.insertRow ?? FRESH_ROW],
-    updateRows: opts.updateRow ? () => [opts.updateRow] : mergedRow(FRESH_ROW),
+    updateRows:
+      opts.updateRows !== undefined
+        ? () => opts.updateRows!
+        : opts.updateRow
+          ? () => [opts.updateRow]
+          : mergedRow(FRESH_ROW),
     deleteRows: () => opts.deleteRows ?? [{ id: ITEM_ID }],
     query: {
       ingredients: {
@@ -266,6 +273,19 @@ describe('pantryRoutes', () => {
 
   test('PATCH /:id returns 404 when missing', async () => {
     const { db } = makeWriteMock({ existingItem: null });
+    const res = await pantryRoutes(db).request(`/${ITEM_ID}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ quantity: 5 }),
+    });
+    expect(res.status).toBe(404);
+    expect(await res.json()).toEqual({ error: 'Not found' });
+  });
+
+  // Finding #5751: pre-check saw the row, then a concurrent DELETE emptied
+  // UPDATE … RETURNING — withStatus(undefined) would TypeError into a 500.
+  test('PATCH /:id returns 404 when the row is gone between read and update', async () => {
+    const { db } = makeWriteMock({ updateRows: [] });
     const res = await pantryRoutes(db).request(`/${ITEM_ID}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
