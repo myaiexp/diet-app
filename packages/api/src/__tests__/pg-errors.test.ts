@@ -31,12 +31,25 @@ describe('isFkViolation', () => {
     }
   });
 
-  test('false when the code is only nested — the check is one level deep', () => {
-    // Drivers put `code` at the top level; a wrapper that buries it would slip
-    // past here and reach the route as a 500. Pinned so that a driver or
-    // Drizzle change wrapping errors fails this test rather than production.
-    expect(isFkViolation({ cause: { code: '23503' } })).toBe(false);
-    expect(isFkViolation(new Error('wrapped', { cause: pgError('23503') }))).toBe(false);
+  test('true when the code is nested under cause — Drizzle wraps driver errors', () => {
+    // This is the live shape: DrizzleQueryError carries the driver error on
+    // .cause and has no code of its own. The one-level check this replaced
+    // returned false here, so every real 23503/23505 reached Hono's onError as
+    // a 500 while the mock suites — which throw an unwrapped driver error —
+    // stayed green. Caught by the shopping-list integration round trip.
+    expect(isFkViolation({ cause: { code: '23503' } })).toBe(true);
+    expect(isFkViolation(new Error('wrapped', { cause: pgError('23503') }))).toBe(true);
+  });
+
+  test('stops at a cause cycle instead of looping forever', () => {
+    const err: { code?: string; cause?: unknown } = {};
+    err.cause = err;
+    expect(isFkViolation(err)).toBe(false);
+  });
+
+  test('the outermost code wins over a nested one', () => {
+    expect(isFkViolation({ code: '23503', cause: { code: '23505' } })).toBe(true);
+    expect(isUniqueViolation({ code: '23503', cause: { code: '23505' } })).toBe(false);
   });
 });
 
@@ -56,5 +69,13 @@ describe('isUniqueViolation', () => {
     for (const value of [null, undefined, '23505', 23505, false, new Error('boom')]) {
       expect(isUniqueViolation(value), String(value)).toBe(false);
     }
+  });
+
+  test('true when the code is nested under cause', () => {
+    expect(isUniqueViolation(new Error('wrapped', { cause: pgError('23505') }))).toBe(true);
+  });
+
+  test('false for a numeric code anywhere in the chain', () => {
+    expect(isUniqueViolation({ cause: { code: 23505 } })).toBe(false);
   });
 });
