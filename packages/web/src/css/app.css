@@ -190,6 +190,14 @@
 
 .text-pretty { text-wrap: pretty; }
 
+/* Label tints base.css doesn't ship (it has green/red/orange/accent/muted).
+   Shared, not per-screen: the source-type vocabulary shows up wherever a
+   recipe does. "to buy" is bg-raised/fg-3, distinct from --label-muted's tint. */
+.label-blue { background: var(--blue-bg); color: var(--blue); }
+.label-purple { background: var(--purple-bg); color: var(--purple); }
+.label-cyan { background: var(--cyan-bg); color: var(--cyan); }
+.label-tobuy { background: var(--bg-raised); color: var(--fg-3); }
+
 /* ===== Modal frame ===== */
 
 .modal-frame {
