@@ -1,14 +1,14 @@
 # Ruoka Frontend — Phase 1 Implementation Plan
 
-**Goal:** Ship a deployed, usable web frontend at `https://mase.fi/diet/` covering every
+**Goal:** Ship a deployed, usable web frontend at `https://diet.mase.fi` covering every
 screen the existing API can actually serve — pantry, recipes, import, meal plan, cook flow,
 profile, and a Today landing view.
 
 **Architecture:** A new `packages/web` workspace: Vite + vanilla TypeScript, no framework.
-One thin API client wraps `fetch` and is the single place credentials and error mapping
-live. Screens are independent modules rendering into an app shell that swaps a sidebar
-(desktop) for a bottom tab bar (phone). Served as static files by nginx from the same
-origin as the API (`/diet/` and `/diet/api/`), so CORS is not involved.
+One thin API client wraps `fetch` and is the single place error mapping lives. Screens are
+independent modules rendering into an app shell that swaps a sidebar (desktop) for a bottom
+tab bar (phone). Served as static files by nginx on its own vhost, same-origin with the API
+(`diet.mase.fi/` and `diet.mase.fi/api/`), behind the central-hub auth gate.
 
 **Tech Stack:** Vite, TypeScript, vanilla DOM, `https://mase.fi/base.css`, vitest.
 
@@ -34,26 +34,31 @@ computable.
 
 ---
 
-## Open decision — how the browser authenticates
+## Authentication — decided: central-hub SSO at the edge
 
-Every `/api/*` route except `/api/health` requires `Authorization: Bearer <API_TOKEN>`
-(`packages/api/src/auth.ts`). A browser cannot hold a shared secret secretly, so this needs
-a decision. **The plan is written so the choice is isolated to one module**
-(`src/api/credentials.ts`); swapping options later touches nothing else.
+The app is served from **`https://diet.mase.fi`**, gated by an nginx `auth_request`
+subrequest to central-hub's `/api/auth/check` (127.0.0.1:3200) — the same gate
+`prospect.mase.fi`, `st.mase.fi` and `sm.mase.fi` use. Central-hub validates the
+`.mase.fi`-scoped session cookie, so signing in at `db.mase.fi` authenticates diet too, and
+there is no login UI to build here.
 
-**Recommended — nginx edge auth, token injected server-side.** Put `auth_basic` on
-`location /diet/`, and have `location /diet/api/` set
-`proxy_set_header Authorization "Bearer <token>"`. The API token never reaches the browser,
-there is no login UI to build, and the browser remembers the credential. Carve
-`/diet/api/health` out above the protected block so uptime checks stay public.
-`credentials.ts` becomes a no-op that sends nothing.
+Consequences, all of which simplify the frontend:
 
-**Fallback — token in `localStorage`.** A one-time paste screen stores the token; the client
-attaches the header. Zero infra change, but the token sits in browser storage, readable by
-any script that runs on the origin.
+- **The browser never holds the API token.** nginx injects
+  `proxy_set_header Authorization "Bearer <API_TOKEN>"` on `/api/` *after* the auth
+  subrequest passes. No `localStorage`, no paste screen, no `credentials.ts`.
+- **The API keeps its own bearer check unchanged.** Defence in depth: the edge gate and the
+  application gate are independent, so a misconfigured `location` block cannot expose the
+  API to anonymous traffic.
+- **Frontend and API are same-origin** (`diet.mase.fi/` and `diet.mase.fi/api/`), so CORS is
+  not involved. `CORS_ORIGINS` stays as-is for any non-browser client.
+- **Non-browser clients keep working** via the bearer token directly — a cron job or a
+  future barcode scanner (#394) cannot do cookie SSO.
 
-Task 1 implements the recommended option. If you prefer the fallback, say so and only
-Task 1's `credentials.ts` and Task 11's nginx block change.
+This replaces the earlier `mase.fi/diet/` path-prefix plan, and it is a deliberate exception
+to the "new personal projects deploy under `mase.fi/<name>/`" convention: the isolation need
+is real (the gate is per-vhost, and a path prefix on the shared `mase.fi` vhost cannot carry
+one without complicating the whole default site).
 
 ---
 
@@ -66,8 +71,7 @@ packages/web/
     main.ts                  — entry: mount shell, start router
     router.ts                — history routing, route table → screen module
     api/
-      client.ts              — fetch wrapper: base URL, credentials, error mapping
-      credentials.ts         — the auth decision, isolated (see above)
+      client.ts              — fetch wrapper: base URL, error mapping
       errors.ts              — ApiError type + status → user message
       pantry.ts, recipes.ts, meal-plans.ts, profile.ts, recipe-import.ts
       types.ts               — response types mirroring the DB schema
@@ -222,7 +226,7 @@ it('still rejects a line with no quantity at all', async () => {
 - Create: `packages/web/{package.json,tsconfig.json,vite.config.ts,index.html}`
 - Create: `packages/web/src/{main.ts,router.ts}`
 - Create: `packages/web/src/ui/{shell.ts,placeholder.ts}`
-- Create: `packages/web/src/api/{client.ts,credentials.ts,errors.ts}`
+- Create: `packages/web/src/api/{client.ts,errors.ts}`
 - Create: `packages/web/src/css/app.css`
 
 (`pnpm-workspace.yaml` already globs `packages/*` — no edit needed.)
@@ -238,7 +242,8 @@ export function navigate(to: Route): void;   // also closes any open modal
 // api/client.ts
 export function apiGet<T>(path: string, params?: Record<string,string|number>): Promise<T>;
 export function apiSend<T>(method: 'POST'|'PATCH'|'DELETE', path: string, body?: unknown): Promise<T>;
-// Base URL '/diet/api'. Throws ApiError on non-2xx.
+// Base URL '/api' (same-origin). Sends no Authorization header — nginx injects it.
+// Throws ApiError on non-2xx.
 
 // api/errors.ts
 export class ApiError extends Error {
@@ -255,14 +260,19 @@ it('maps a 404 body to its error string', () => {
 });
 it('maps 503 to the AI-unavailable message', () => { /* recipe import needs this */ });
 it('maps a network failure to a generic retryable message', () => { /* fetch rejects */ });
+it('reloads the page on 401 rather than showing an error', () => {
+  // 401 means the central-hub session expired; a reload hits the gate and lands on login
+});
 it('navigate() closes an open modal', () => { /* ... */ });
 it('an unknown path falls back to /today', () => { /* ... */ });
 ```
 
 **Constraints:**
-- `index.html` links `https://mase.fi/base.css` absolutely — a relative path 404s behind the
-  `/diet/` proxy prefix.
-- Vite `base: '/diet/'` so built asset URLs resolve behind the prefix.
+- `index.html` links `https://mase.fi/base.css` absolutely — the stylesheet lives on the
+  apex, and diet.mase.fi is a different host.
+- Vite `base: '/'` — the app owns its vhost root, no path prefix.
+- A `401` is never a user-facing error here: the edge gate would normally have caught it, so
+  it means the session expired mid-session. Reload so the gate can redirect to login.
 - Shell follows the base.css scroll contract: `.app-shell` flex column, exactly one visible
   `.scroll-region` per pane, none nested.
 - Sidebar (desktop) / bottom tab bar (phone) per the design doc's Layout section. The
@@ -708,38 +718,73 @@ it('refuses an unguarded production database name', () => { /* ... */ });
 
 ---
 
-## Task 11: Deploy — nginx, build hook, docs
+## Task 11: Deploy — `diet.mase.fi` vhost, DNS, build hook, docs
 
 **Files:**
 - Create: `scripts/post-deploy.sh`
-- Modify: `/etc/nginx/sites-enabled/default` (VPS, outside the repo)
+- Create: `/etc/nginx/sites-available/diet.mase.fi` + symlink into `sites-enabled/` (VPS)
+- Modify: `/etc/nginx/sites-enabled/default` — drop the now-superseded `/diet/api/` block
 - Modify: `CLAUDE.md`
 
 **Contracts:**
-- `location /diet/` serves the built static files with SPA fallback (`try_files ... /diet/index.html`).
-- `location /diet/api/` keeps its existing proxy block, **placed before** `/diet/` so it
-  still wins.
-- `/diet/api/health` stays public — carve it out above any auth block.
-- `scripts/post-deploy.sh` runs `pnpm --filter @diet-app/web build` and rsyncs `dist/` to
-  the served directory. Hook failure aborts the deploy.
+- **DNS:** `cf --zone mase.fi dns create` an `A` record `diet.mase.fi → 94.237.37.88`,
+  proxied. Mirror the `prospect.mase.fi` record exactly.
+- **Vhost**, modelled on `/etc/nginx/sites-enabled/prospect.mase.fi`:
+  - Port 80 server → 301 to https.
+  - TLS from `/etc/ssl/cloudflare/mase.fi.pem`, with `ssl_verify_client on` against the AOP
+    CA — every CF-proxied vhost here enforces Authenticated Origin Pulls.
+  - The six security headers (`Strict-Transport-Security`, `X-Frame-Options`,
+    `X-Content-Type-Options`, `X-XSS-Protection`, `Referrer-Policy`, `Permissions-Policy`).
+  - `location = /_auth` — internal, `proxy_pass http://127.0.0.1:3200/api/auth/check`,
+    `proxy_pass_request_body off`, `Content-Length ""`, `X-Original-URI $request_uri`, and
+    **`proxy_set_header Cookie $http_cookie`**.
+  - `location /api/` — `auth_request /_auth`, `limit_req zone=api burst=10 nodelay`,
+    `proxy_pass http://127.0.0.1:3300/api/`, plus
+    `proxy_set_header Authorization "Bearer <API_TOKEN>"`.
+  - `location = /api/health` — **no** `auth_request`, so uptime checks stay public. Must be
+    an exact-match location so it wins over the `/api/` prefix.
+  - `location /` — `auth_request /_auth`, `root /var/www/diet.mase.fi`,
+    `try_files $uri $uri/ /index.html` for SPA fallback.
+  - Cache-control per the two-bucket strategy: HTML `no-cache, must-revalidate`; Vite's
+    content-hashed `/assets/` `public, max-age=31536000, immutable`. A `location` with its
+    own `add_header` inherits none from server level — re-declare the six security headers
+    in any block that adds its own.
+- **`scripts/post-deploy.sh`**: `pnpm --filter @diet-app/web build`, then rsync
+  `packages/web/dist/` → `/var/www/diet.mase.fi/`. Aborts the deploy on failure.
+- **Remove** `location /diet/api/` from `sites-enabled/default`. It is superseded, has no
+  consumers (the database has no user data yet), and leaving it would keep a second,
+  edge-unauthenticated door open to the same API.
 
-**Test Cases:** Manual, and they are the acceptance criteria:
+**Test Cases:** manual, and they are the acceptance criteria:
 ```
-xh GET https://mase.fi/diet/                 → 200, HTML
-xh GET https://mase.fi/diet/api/health       → 200 {"ok":true}, no credential
-xh GET https://mase.fi/diet/pantry           → 200 (SPA fallback, not 404)
-xh GET https://mase.fi/diet/api/pantry       → 401 without credential
+sudo nginx -t                                          → syntax ok, no conflicting server name
+xh GET https://diet.mase.fi/api/health --ignore-stdin   → 200 {"ok":true}, no cookie needed
+xh GET https://diet.mase.fi/ --ignore-stdin             → 302 to central-hub login (no cookie)
+xh GET https://diet.mase.fi/api/pantry --ignore-stdin   → 302/401 (no cookie)
+xh GET https://mase.fi/diet/api/health --ignore-stdin   → 404 (old path retired)
+# with a valid .mase.fi session cookie:
+#   /            → 200 HTML
+#   /pantry      → 200 HTML (SPA fallback, not 404)
+#   /api/pantry  → 200 JSON (nginx injected the bearer)
+curl -sI https://diet.mase.fi/ | grep -ci '^cache-control'  → exactly 1
 ```
 
 **Constraints:**
-- Read `modules/skill/vps-infrastructure.md` before touching nginx.
-- Same origin (`/diet/` and `/diet/api/`) means CORS is not involved — do not add origins.
+- Read `modules/skill/vps-infrastructure.md` before touching nginx. Config backups go in
+  `/etc/nginx/sites-backups/`, **never** in `sites-enabled/` — every file there is loaded.
+- Do not drop the `Cookie $http_cookie` line from `/_auth`. Central-hub validates the
+  session cookie; without it every request 401s. The docs skeleton omitted it once already.
+- The API token in the vhost is a secret in a root-owned file — do not commit it, and do not
+  echo it into any log or session output.
 - `deploy` refuses an unclean tree, including untracked files.
-- Update `CLAUDE.md`: new `packages/web` workspace, the public URL, and the auth decision.
+- Update `CLAUDE.md`: the new `packages/web` workspace, the public URL
+  (`https://diet.mase.fi`, replacing `https://mase.fi/diet/api/`), and the auth model.
+- `helm project` derives its registry from project files + the systemd unit; re-check
+  `helm project show diet-app` after the change and correct anything stale.
 
-**Verification:** `scroll-audit https://mase.fi/diet/ --tabs` and
-`scroll-audit https://mase.fi/diet/ --viewport 390x844`, then fix every
-starved/nested/clipped/noregion finding.
+**Verification:** `scroll-audit https://diet.mase.fi/ --tabs` and
+`scroll-audit https://diet.mase.fi/ --viewport 390x844`, then fix every
+starved/nested/clipped/noregion/regionnest finding before commit.
 
 `[Mode: Direct]`
 
