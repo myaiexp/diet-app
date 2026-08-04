@@ -44,6 +44,10 @@ function buildDraft(
       optional: ing.optional ?? false,
       notes: ing.notes ?? null,
       match: m.match,
+      // The review screen's third state: matched, but the amount was guessed.
+      // `match` only carries exact|alias|none, and a round number is not
+      // evidence of a guess — only the extraction model knows.
+      quantityInferred: ing.quantityInferred ?? false,
     };
   });
 
