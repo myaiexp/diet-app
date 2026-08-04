@@ -7,7 +7,7 @@ import { asc } from 'drizzle-orm';
 import { ingredients } from '@diet-app/db';
 import { ingredientsRoutes } from '../routes/ingredients.js';
 import { isUuid } from '../validation.js';
-import { makeSelectMock } from './db-mock.js';
+import { makeSelectMock, makeDbMock, mergedRow } from './db-mock.js';
 import { DEFAULT_LIMIT, MAX_LIMIT } from '../pagination.js';
 
 describe('isUuid', () => {
@@ -154,5 +154,83 @@ describe('GET /api/ingredients/:id — lookup', () => {
     const res = await app.request(`/${VALID_ID}`);
     expect(res.status).toBe(404);
     expect(await res.json()).toEqual({ error: 'Not found' });
+  });
+});
+
+describe('PATCH /api/ingredients/:id — isPantryStaple toggle', () => {
+  const VALID_ID = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
+  const ROW = {
+    id: VALID_ID,
+    name: 'Potato',
+    category: 'produce',
+    defaultUnit: 'g',
+    isPantryStaple: true,
+  };
+
+  const patch = (body: unknown, updateRows = mergedRow(ROW)) => {
+    const mock = makeDbMock({ updateRows });
+    return {
+      mock,
+      request: () =>
+        ingredientsRoutes(mock.db).request(`/${VALID_ID}`, {
+          method: 'PATCH',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(body),
+        }),
+    };
+  };
+
+  test('toggles isPantryStaple and returns the updated row', async () => {
+    const { mock, request } = patch({ isPantryStaple: false });
+    const res = await request();
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({ id: VALID_ID, isPantryStaple: false });
+    expect(mock.updates[0]).toMatchObject({ isPantryStaple: false });
+  });
+
+  test('returns 400 for a malformed id', async () => {
+    const mock = makeDbMock({});
+    const res = await ingredientsRoutes(mock.db).request('/not-a-uuid', {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ isPantryStaple: true }),
+    });
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({ error: 'Invalid id format' });
+    expect(mock.writes).toHaveLength(0);
+  });
+
+  test('returns 400 for an empty patch body', async () => {
+    const { mock, request } = patch({});
+    const res = await request();
+    expect(res.status).toBe(400);
+    expect(mock.writes).toHaveLength(0);
+  });
+
+  test('returns 400 for an unknown field', async () => {
+    // .strict(): the catalog stays read-only apart from the staple flag, so a
+    // client trying to rename an ingredient here must be told, not ignored.
+    const { mock, request } = patch({ name: 'Renamed' });
+    const res = await request();
+    expect(res.status).toBe(400);
+    expect(await res.json()).toMatchObject({ error: 'Validation failed' });
+    expect(mock.writes).toHaveLength(0);
+  });
+
+  test('returns 404 when the ingredient does not exist', async () => {
+    const { request } = patch({ isPantryStaple: true }, () => []);
+    const res = await request();
+    expect(res.status).toBe(404);
+    expect(await res.json()).toEqual({ error: 'Not found' });
+  });
+
+  test('returns 404 when the row vanishes before the update lands', async () => {
+    // No pre-check select: an empty RETURNING is the single signal for both
+    // "never existed" and "deleted concurrently", so neither can 500.
+    const { mock, request } = patch({ isPantryStaple: false }, () => []);
+    const res = await request();
+    expect(res.status).toBe(404);
+    expect(mock.writes).toHaveLength(1);
+    expect(mock.writes[0]!.table).toBe('ingredients');
   });
 });
