@@ -91,10 +91,13 @@ describe('shell', () => {
 
 describe('router', () => {
   test('an unknown path falls back to /today', () => {
-    boot('/nope');
+    const { root } = boot('/nope');
     expect(currentRoute()).toBe('/today');
     expect(window.location.pathname).toBe('/today');
-    expect(activeShell()!.content.textContent).toContain('Today');
+    // The header, not the screen body: Today loads its data asynchronously and
+    // this suite stubs no network, so the body is legitimately a loading row.
+    expect(root.querySelector('.screen-title')!.textContent).toBe('Today');
+    expect(activeShell()!.content.children.length).toBeGreaterThan(0);
   });
 
   test('out-of-scope routes render the placeholder, not a broken screen', () => {

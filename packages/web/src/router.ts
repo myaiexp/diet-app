@@ -3,6 +3,7 @@
 import { activeShell } from './ui/shell.js';
 import { closeModal } from './ui/modal.js';
 import { placeholderScreen } from './ui/placeholder.js';
+import { todayScreen } from './screens/today.js';
 import { pantryScreen } from './screens/pantry.js';
 import { recipesScreen } from './screens/recipes.js';
 import { importScreen } from './screens/import.js';
@@ -48,13 +49,7 @@ export type ScreenFactory = () => Screen;
  * (#389) have no endpoint yet, and the nav must still be complete.
  */
 const SCREENS: Record<Route, ScreenFactory> = {
-  '/today': () =>
-    placeholderScreen({
-      title: 'Today',
-      subtitle: 'what now',
-      what: 'The day\'s four slots, what is spoiling, and the next action.',
-      blocker: 'Screen under construction.',
-    }),
+  '/today': todayScreen,
   '/pantry': pantryScreen,
   '/recipes': recipesScreen,
   '/import': importScreen,
