@@ -1,0 +1,123 @@
+/* Cook confirm + feedback modals — deduction table, warning strip, feedback chips.
+   Modal chrome itself (.modal-frame/-head/-body/-foot) lives in app.css; this file
+   is only the content particular to the two cook modals. */
+
+/* ===== Deduction table (confirm modal) ===== */
+
+.cook-table {
+  display: flex;
+  flex-direction: column;
+}
+
+.cook-item {
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+}
+.cook-item:last-child { border-bottom: none; }
+
+.cook-item-name {
+  font-size: var(--text-base);
+  font-weight: 500;
+  color: var(--fg-1);
+}
+
+/* One line per pantry lot the ingredient was taken from. */
+.cook-lot-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-top: 2px;
+}
+.cook-lot-info {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-size: var(--text-xs);
+  color: var(--fg-3);
+}
+/* Amount taken — the negative number is the point, so it carries --red. */
+.cook-lot-amount {
+  flex: 0 0 70px;
+  width: 70px;
+  text-align: right;
+  color: var(--red);
+  font-size: var(--text-sm);
+}
+/* What remains in that lot after the deduction — muted, secondary. */
+.cook-lot-left {
+  flex: 0 0 78px;
+  width: 78px;
+  text-align: right;
+  color: var(--fg-3);
+  font-size: var(--text-xs);
+}
+
+.cook-item-shortfall {
+  padding: 6px 0;
+  font-size: var(--text-sm);
+  color: var(--orange);
+  border-bottom: 1px solid var(--border);
+}
+.cook-item-shortfall:last-child { border-bottom: none; }
+
+.cook-empty {
+  padding: 10px 0;
+  color: var(--fg-3);
+  font-size: var(--text-sm);
+}
+
+/* ===== Irreversibility warning ===== */
+
+.cook-warning {
+  display: flex;
+  gap: 6px;
+  padding: 8px;
+  background: var(--orange-bg);
+  color: var(--orange);
+  font-size: var(--text-sm);
+  text-wrap: pretty;
+}
+
+/* ===== Servings stepper (confirm modal) ===== */
+
+.cook-stepper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.cook-step-value {
+  min-width: 1.4em;
+  text-align: center;
+  font-weight: 700;
+}
+.cook-step-note { margin: 0; }
+
+/* ===== Feedback chip groups ===== */
+
+.cook-chip-group { padding: 4px 0; }
+.cook-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.cook-chip {
+  height: 32px;
+  padding: 0 10px;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  color: var(--fg-2);
+  font-size: var(--text-sm);
+  transition: background var(--transition), border-color var(--transition), color var(--transition);
+}
+.cook-chip:hover { background: var(--bg-hover); }
+.cook-chip.is-selected {
+  background: var(--accent-glow);
+  color: var(--accent-text);
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+}
+
+.cook-changes {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: 4px;
+}
