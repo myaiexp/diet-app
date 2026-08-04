@@ -6,6 +6,8 @@ import { placeholderScreen } from './ui/placeholder.js';
 import { pantryScreen } from './screens/pantry.js';
 import { recipesScreen } from './screens/recipes.js';
 import { importScreen } from './screens/import.js';
+import { planScreen } from './screens/plan.js';
+import { profileScreen } from './screens/profile.js';
 
 export const ROUTES = [
   '/today',
@@ -56,20 +58,8 @@ const SCREENS: Record<Route, ScreenFactory> = {
   '/pantry': pantryScreen,
   '/recipes': recipesScreen,
   '/import': importScreen,
-  '/plan': () =>
-    placeholderScreen({
-      title: 'Meal plan',
-      subtitle: '7 days × 4 slots',
-      what: 'The week grid: fill slots, cook an entry, see what is locked.',
-      blocker: 'Screen under construction.',
-    }),
-  '/profile': () =>
-    placeholderScreen({
-      title: 'Profile',
-      subtitle: 'targets, restrictions, kit',
-      what: 'Calorie and macro targets, restrictions, dislikes and kitchen equipment.',
-      blocker: 'Screen under construction.',
-    }),
+  '/plan': planScreen,
+  '/profile': profileScreen,
   '/shopping': () =>
     placeholderScreen({
       title: 'Shopping list',
