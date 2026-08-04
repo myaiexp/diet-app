@@ -1,0 +1,85 @@
+/* Recipe import screen: paste / extracting / review */
+
+.import-paste {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 620px;
+}
+.import-paste-text { min-height: 110px; }
+
+.import-field-errors {
+  margin: 0;
+  padding-left: 16px;
+  list-style: disc;
+}
+
+.import-extracting {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: flex-start;
+}
+.import-extracting .shimmer { align-self: stretch; }
+
+.import-review {
+  display: grid;
+  grid-template-columns: 1fr 1.15fr;
+  gap: 10px;
+}
+@media (max-width: 720px) {
+  .import-review { grid-template-columns: 1fr; }
+}
+
+.import-fields { display: flex; flex-direction: column; gap: 8px; }
+.import-fields-row { display: flex; gap: 8px; }
+.import-fields-row > * { flex: 1; min-width: 0; }
+.import-field { display: flex; flex-direction: column; gap: 2px; }
+.import-steps { min-height: 96px; }
+
+.import-lines { display: flex; flex-direction: column; gap: 6px; }
+.import-lines-head { display: flex; align-items: center; gap: 8px; }
+
+.import-line {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border);
+  border-left: 3px solid transparent;
+}
+.import-line--bound { border-left-color: var(--green); }
+.import-line--assumed { border-left-color: var(--ramp-amber, #e8a308); }
+.import-line--unresolved {
+  border-left-color: var(--red);
+  background: color-mix(in srgb, var(--red) 5%, transparent);
+}
+
+.import-line-head { display: flex; align-items: center; gap: 8px; }
+.import-line-index { color: var(--fg-3); }
+.import-line-raw { flex: 1; min-width: 0; font-size: var(--text-md); }
+
+.import-line-bind {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding-left: 22px;
+  margin-top: 4px;
+}
+.import-qty { width: 70px; }
+.import-unit { width: 60px; }
+
+.import-candidates {
+  margin: 6px 0 0 22px;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: var(--bg-raised);
+  border: 1px solid color-mix(in srgb, var(--red) 40%, transparent);
+}
+.import-candidate-results { display: flex; flex-wrap: wrap; gap: 4px; }
+
+.import-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 8px;
+}

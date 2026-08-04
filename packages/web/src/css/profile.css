@@ -1,0 +1,67 @@
+/* Profile screen: targets panel + three chip panels. Shared surfaces (.panel,
+   .panel-pad, .chip, .section-header, .helper, .helper-error) live in
+   base.css / app.css — only genuinely profile-specific rules below.
+   Desktop-first surface (per the design's Responsive Behavior section):
+   default control sizing applies, and the grid only collapses on phone. */
+
+.profile-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+@media (max-width: 720px) {
+  .profile-grid { grid-template-columns: 1fr; }
+}
+
+.profile-targets,
+.profile-chip-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.profile-field {
+  flex: 1;
+  min-width: 0;
+}
+
+/* × remove control riding inside a .chip, next to its label text. */
+.chip-x {
+  background: transparent;
+  border: none;
+  padding: 0;
+  color: var(--fg-3);
+  font-size: var(--text-sm);
+  line-height: 1;
+}
+.chip-x:hover { color: var(--red); }
+
+/* Disliked-ingredient search — absolutely positioned so a handful of matches
+   overlay the add control rather than pushing the chip row around. */
+.profile-search-wrap {
+  position: relative;
+  min-width: 200px;
+}
+
+.profile-search-results {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 2px);
+  z-index: 20;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+}
+.profile-search-results:empty { display: none; border: none; }
+
+.profile-search-result {
+  display: block;
+  width: 100%;
+  padding: 6px 8px;
+  text-align: left;
+  color: var(--fg-1);
+  border-bottom: 1px solid var(--border);
+}
+.profile-search-result:last-child { border-bottom: none; }
+.profile-search-result:hover { background: var(--bg-hover); }

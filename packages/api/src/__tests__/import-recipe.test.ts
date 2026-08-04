@@ -107,6 +107,41 @@ describe('parseExtractedRecipe', () => {
     });
     expect(parseExtractedRecipe(raw)).toEqual({ ok: false });
   });
+
+  test('keeps the model\'s quantityInferred flag', () => {
+    const raw = JSON.stringify({
+      title: 'Sipulikeitto',
+      ingredients: [
+        { name: 'Onion', quantity: 150, unit: 'g', quantityInferred: true },
+        { name: 'Butter', quantity: 40, unit: 'g' },
+      ],
+    });
+    const result = parseExtractedRecipe(raw);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.recipe.ingredients[0]!.quantityInferred).toBe(true);
+    // Absent stays absent here — the route defaults it, so a model that never
+    // emits the field can't be told apart from one that emitted false.
+    expect(result.recipe.ingredients[1]!.quantityInferred).toBeUndefined();
+  });
+
+  test('the flag marks provenance, it does not make quantity optional', () => {
+    const raw = JSON.stringify({
+      title: 'No amount',
+      ingredients: [{ name: 'Dill', unit: 'g', quantityInferred: true }],
+    });
+    expect(parseExtractedRecipe(raw)).toEqual({ ok: false });
+  });
+
+  test('rejects a non-boolean quantityInferred', () => {
+    const raw = JSON.stringify({
+      title: 'Bad flag',
+      ingredients: [
+        { name: 'Salt', quantity: 5, unit: 'g', quantityInferred: 'yes' },
+      ],
+    });
+    expect(parseExtractedRecipe(raw)).toEqual({ ok: false });
+  });
 });
 
 describe('extractRecipeFromText', () => {

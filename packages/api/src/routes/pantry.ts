@@ -25,17 +25,22 @@ function withStatus<T extends { expiresDate: string }>(row: T) {
 export function pantryRoutes(db: Db): Hono {
   const app = new Hono();
 
+  // Every read eager-loads the ingredient. A pantry row carries only an
+  // ingredientId, and every consumer needs the name, alias and category to
+  // render it — without the join a 50-row page costs 50 follow-up requests,
+  // one per row, growing with the pantry. This is the `with:` case the
+  // relational API exists for (see the Drizzle API rule in CLAUDE.md).
   app.get('/', async (c) => {
     const { limit, offset } = getPagination(c);
-    const rows = await db
-      .select()
-      .from(pantryItems)
+    const rows = await db.query.pantryItems.findMany({
+      with: { ingredient: true },
       // Spoilage-first, tie-broken on id. PATCH /pantry/:id rewrites rows in
       // place while a client is paging, so without a total order the same item
       // can appear on two pages and another never appear at all.
-      .orderBy(asc(pantryItems.expiresDate), asc(pantryItems.id))
-      .limit(limit)
-      .offset(offset);
+      orderBy: [asc(pantryItems.expiresDate), asc(pantryItems.id)],
+      limit,
+      offset,
+    });
     return c.json(rows.map(withStatus));
   });
 
@@ -44,6 +49,7 @@ export function pantryRoutes(db: Db): Hono {
     if (!isUuid(id)) return badRequest(c, 'Invalid id format');
     const row = await db.query.pantryItems.findFirst({
       where: eq(pantryItems.id, id),
+      with: { ingredient: true },
     });
     if (!row) return notFound(c);
     return c.json(withStatus(row));
@@ -91,7 +97,10 @@ export function pantryRoutes(db: Db): Hono {
         })
         .returning();
 
-      return c.json(withStatus(row), 201);
+      // Same shape as a read: the ingredient is already in hand from the
+      // shelf-life lookup, so matching costs nothing and saves the client a
+      // follow-up request to render the row it just created.
+      return c.json(withStatus({ ...row, ingredient }), 201);
     } catch (err) {
       // Race: ingredient deleted between pre-check and insert.
       if (isFkViolation(err)) return badRequest(c, 'Invalid reference');
@@ -107,8 +116,12 @@ export function pantryRoutes(db: Db): Hono {
     if (!parsed.ok) return parsed.response;
     const data = parsed.data;
 
+    // `with` on the pre-check read, not a second query after the write: PATCH
+    // cannot change ingredientId, so the ingredient loaded here is still the
+    // right one for the response.
     const existing = await db.query.pantryItems.findFirst({
       where: eq(pantryItems.id, id),
+      with: { ingredient: true },
     });
     if (!existing) return notFound(c);
 
@@ -128,7 +141,7 @@ export function pantryRoutes(db: Db): Hono {
     // Race: row deleted between pre-check and update — empty RETURNING must
     // not reach withStatus (row.expiresDate would TypeError into a 500).
     if (!row) return notFound(c);
-    return c.json(withStatus(row));
+    return c.json(withStatus({ ...row, ingredient: existing.ingredient }));
   });
 
   app.delete('/:id', async (c) => {

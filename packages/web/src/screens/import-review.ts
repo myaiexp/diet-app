@@ -1,0 +1,279 @@
+// The reconciliation pane: draft fields + per-line ingredient binding.
+// Split out of import.ts to stay under the 300-line file limit.
+
+import type { ScreenContext } from '../router.js';
+import { el, button } from '../ui/dom.js';
+import { say } from '../ui/toast.js';
+import { searchIngredients } from '../api/ingredients.js';
+import { confirmRecipe } from '../api/recipe-import.js';
+import { userMessage, fieldErrors } from '../api/errors.js';
+import type {
+  RecipeDraft,
+  DraftIngredientLine,
+  RecipeCreate,
+  RecipeLineInput,
+  Ingredient,
+  MatchKind,
+} from '../api/types.js';
+
+export type LineState = 'bound' | 'assumed' | 'unresolved';
+
+export interface EditableLine {
+  raw: string;
+  ingredientId: string | null;
+  quantity: number | null;
+  unit: string;
+  optional: boolean;
+  notes: string | null;
+  match: MatchKind;
+  quantityInferred: boolean;
+  query: string;
+  candidates: Ingredient[];
+  searched: boolean;
+  searching: boolean;
+}
+
+interface DraftMeta {
+  title: string;
+  sourceUrl: string | null;
+  steps: string;
+  servings: number;
+  prepTime: number | null;
+  totalTime: number | null;
+  effortScore: number | null;
+  cuisineType: string | null;
+  tags: string[];
+}
+
+/**
+ * `unresolved` = no catalog binding, or a cleared quantity — blocks saving.
+ * `assumed` = matched, but the model invented the quantity. Never inferred
+ * from the number's shape: `match` and `quantityInferred` are the only
+ * sources of truth.
+ */
+export function classify(line: EditableLine): LineState {
+  if (line.match === 'none' || !line.ingredientId || line.quantity === null) return 'unresolved';
+  return line.quantityInferred ? 'assumed' : 'bound';
+}
+
+function toEditable(l: DraftIngredientLine): EditableLine {
+  return {
+    raw: l.rawName, ingredientId: l.ingredientId, quantity: l.quantity, unit: l.unit,
+    optional: l.optional, notes: l.notes, match: l.match, quantityInferred: l.quantityInferred,
+    query: l.rawName, candidates: [], searched: false, searching: false,
+  };
+}
+
+function toMeta(d: RecipeDraft): DraftMeta {
+  return {
+    title: d.title, sourceUrl: d.sourceUrl, steps: d.steps.join('\n'), servings: d.servings,
+    prepTime: d.prepTime, totalTime: d.totalTime, effortScore: d.effortScore,
+    cuisineType: d.cuisineType, tags: d.tags,
+  };
+}
+
+function field(labelText: string, control: HTMLElement): HTMLElement {
+  return el('label', { class: 'form-label import-field' }, labelText, control);
+}
+
+function numberField(labelText: string, value: number | null, onChange: (v: number | null) => void) {
+  const input = el('input', { class: 'input', type: 'number', value: value ?? '' });
+  input.addEventListener('change', () => onChange(input.value.trim() === '' ? null : Number(input.value)));
+  return field(labelText, input);
+}
+
+function textInput(cls: string, value: string, ariaLabel: string, onChange: (v: string) => void) {
+  const input = el('input', { class: `input ${cls}`, type: 'text', value, 'aria-label': ariaLabel });
+  input.addEventListener('change', () => onChange(input.value));
+  return input;
+}
+
+function buildFields(meta: DraftMeta, notify: () => void): HTMLElement {
+  const title = el('input', { class: 'input', value: meta.title });
+  title.addEventListener('change', () => { meta.title = title.value; notify(); });
+  const cuisine = el('input', { class: 'input', value: meta.cuisineType ?? '' });
+  cuisine.addEventListener('change', () => (meta.cuisineType = cuisine.value.trim() || null));
+  const stepCount = meta.steps.split('\n').filter((s) => s.trim()).length;
+  const steps = el('textarea', { class: 'textarea import-steps', rows: 6 }, meta.steps);
+  steps.addEventListener('change', () => (meta.steps = steps.value));
+
+  return el(
+    'div',
+    { class: 'panel panel-pad import-fields' },
+    el('div', { class: 'section-header' }, 'draft'),
+    field('title', title),
+    el('div', { class: 'flex gap-2 import-fields-row' },
+      numberField('prep min', meta.prepTime, (v) => (meta.prepTime = v)),
+      numberField('total min', meta.totalTime, (v) => (meta.totalTime = v)),
+      numberField('servings', meta.servings, (v) => (meta.servings = v ?? meta.servings))),
+    el('div', { class: 'flex gap-2 import-fields-row' },
+      field('cuisine', cuisine),
+      numberField('effort 1-5', meta.effortScore, (v) => (meta.effortScore = v))),
+    field(`steps (${stepCount} extracted)`, steps),
+  );
+}
+
+/** Mounts the full review pane (fields + reconciliation) into `root`. */
+export function mountReview(root: HTMLElement, ctx: ScreenContext, draft: RecipeDraft): void {
+  const meta = toMeta(draft);
+  const lines: EditableLine[] = draft.ingredients.map(toEditable);
+  const timers = new Map<number, ReturnType<typeof setTimeout>>();
+  let saving = false;
+
+  const head = el('div', { class: 'import-lines-head' });
+  const list = el('div', { class: 'import-line-list' });
+  const saveBtn = button('btn btn-primary', 'save recipe', () => void doSave());
+  const saveHelp = el('p', { class: 'helper-error hidden' });
+
+  root.appendChild(
+    el('div', { class: 'import-review' },
+      buildFields(meta, renderFooter),
+      el('div', { class: 'panel panel-pad import-lines' }, head, list,
+        el('div', { class: 'import-footer' }, saveBtn, saveHelp))),
+  );
+
+  const savable = (): EditableLine[] => lines.filter((l) => classify(l) !== 'unresolved');
+
+  function problems(): string[] {
+    const unresolved = lines.length - savable().length;
+    if (unresolved > 0) {
+      return [`${unresolved} unresolved line${unresolved === 1 ? '' : 's'} block saving — resolve or skip them.`];
+    }
+    if (savable().length === 0) return ['Every line was skipped — add at least one ingredient to save.'];
+    if (!meta.title.trim()) return ['Title is required.'];
+    return [];
+  }
+
+  /** Recomputes both the bound/need-you tally and the save gate — one pass. */
+  function renderFooter(): void {
+    const bound = savable().length;
+    head.replaceChildren(
+      el('span', { class: 'section-header' }, 'ingredient reconciliation'),
+      el('span', { class: 'label label-green' }, `${bound} bound`),
+      el('span', { class: 'label label-red' }, `${lines.length - bound} need you`),
+    );
+    const msgs = saving ? [] : problems();
+    saveBtn.disabled = saving || msgs.length > 0;
+    saveHelp.classList.toggle('hidden', msgs.length === 0);
+    if (msgs.length) saveHelp.textContent = msgs[0]!;
+  }
+
+  function renderAll(): void {
+    list.replaceChildren(...lines.map((line, i) => buildRow(line, i)));
+    renderFooter();
+  }
+
+  function buildRow(line: EditableLine, index: number): HTMLElement {
+    const state = classify(line);
+    const tint = state === 'bound' ? 'green' : state === 'assumed' ? 'orange' : 'red';
+
+    const qty = textInput(
+      'import-qty', line.quantity === null ? '' : String(line.quantity), `quantity for ${line.raw}`,
+      (v) => {
+        const n = v.trim() === '' ? NaN : Number(v);
+        line.quantity = v.trim() === '' || Number.isNaN(n) ? null : n;
+        line.quantityInferred = false; // the user has now stated the amount
+        renderAll();
+      },
+    );
+    const unit = textInput('import-unit', line.unit, `unit for ${line.raw}`, (v) => { line.unit = v.trim(); });
+
+    const row = el(
+      'div', { class: `import-line import-line--${state}` },
+      el('div', { class: 'import-line-head' },
+        el('span', { class: 'import-line-index' }, `${index + 1}.`),
+        el('span', { class: 'import-line-raw' }, line.raw),
+        el('span', { class: `label label-${tint}` }, state)),
+      el('div', { class: 'import-line-bind' },
+        el('span', { class: 'label-muted' }, line.ingredientId ? '→ catalog match' : '→ no catalog match'),
+        qty, unit),
+    );
+
+    if (state === 'unresolved' && !line.ingredientId) row.appendChild(buildCandidates(line, index));
+    else if (state === 'unresolved') {
+      row.appendChild(el('p', { class: 'helper-error' }, 'enter a quantity to resolve this line'));
+    } else if (state === 'assumed') {
+      row.appendChild(el('p', { class: 'helper' }, 'quantity assumed by the model — edit it to confirm'));
+    }
+    return row;
+  }
+
+  function buildCandidates(line: EditableLine, index: number): HTMLElement {
+    const results = el('div', { class: 'import-candidate-results' });
+    const query = el('input', { class: 'input', value: line.query });
+
+    function paint(): void {
+      if (line.searching || !line.searched) {
+        results.replaceChildren(el('p', { class: 'helper' }, 'searching…'));
+      } else if (line.candidates.length === 0) {
+        results.replaceChildren(el('p', { class: 'helper' }, 'no catalog matches'));
+      } else {
+        results.replaceChildren(
+          ...line.candidates.map((ing) =>
+            button('btn btn-sm', ing.name, () => { line.ingredientId = ing.id; renderAll(); })),
+        );
+      }
+    }
+
+    function search(q: string): void {
+      line.searching = true;
+      searchIngredients(q)
+        .then((hits) => { line.candidates = hits; })
+        .catch(() => { line.candidates = []; })
+        .finally(() => { line.searching = false; line.searched = true; paint(); });
+    }
+
+    query.addEventListener('input', () => {
+      line.query = query.value;
+      line.searched = false;
+      paint();
+      const existing = timers.get(index);
+      if (existing) clearTimeout(existing);
+      timers.set(index, setTimeout(() => search(query.value.trim()), 200));
+    });
+
+    paint();
+    if (!line.searched && !line.searching) search(line.query.trim());
+
+    return el(
+      'div', { class: 'import-candidates' },
+      el('p', { class: 'helper' }, 'closest catalog matches — pick one, or add it'),
+      query, results,
+      button('btn btn-primary', `create "${line.raw}"`, () => {}, { disabled: true }),
+      el('p', { class: 'helper' }, "new catalog ingredients aren't creatable yet"),
+      button('btn btn-ghost', 'skip line', () => {
+        const at = lines.indexOf(line);
+        if (at >= 0) lines.splice(at, 1);
+        renderAll();
+      }),
+    );
+  }
+
+  async function doSave(): Promise<void> {
+    saving = true;
+    renderFooter();
+    const ingredients: RecipeLineInput[] = savable().map((line) => ({
+      ingredientId: line.ingredientId!, quantity: line.quantity!, unit: line.unit,
+      optional: line.optional, notes: line.notes,
+    }));
+    const body: RecipeCreate = {
+      title: meta.title.trim(), sourceType: draft.sourceType, sourceUrl: meta.sourceUrl,
+      steps: meta.steps.split('\n').map((s) => s.trim()).filter(Boolean),
+      servings: meta.servings, cuisineType: meta.cuisineType, tags: meta.tags, ingredients,
+      prepTime: meta.prepTime ?? undefined, totalTime: meta.totalTime ?? undefined,
+      effortScore: meta.effortScore ?? undefined,
+    };
+    try {
+      await confirmRecipe(body);
+      say('Recipe saved.', 'success');
+      ctx.navigate('/recipes');
+    } catch (err) {
+      saving = false;
+      saveHelp.textContent = [userMessage(err), ...fieldErrors(err)].join(' ');
+      saveHelp.classList.remove('hidden');
+      saveBtn.disabled = false;
+    }
+  }
+
+  renderAll();
+}

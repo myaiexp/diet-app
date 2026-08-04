@@ -1,0 +1,89 @@
+/* Today screen: stat strip, today's slots + spoiling side by side, what now.
+   Shared surfaces (.panel, .panel-pad, .hairline-grid, .stat-cell/-key/-value/
+   -note, .row/-main/-title/-meta/-right, .section-header, .empty-state,
+   .error-panel, .text-pretty) live in base.css / app.css — only genuinely
+   Today-specific rules below. */
+
+.today-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.today-stat-strip {
+  grid-template-columns: repeat(auto-fit, minmax(min(110px, 100%), 1fr));
+}
+
+.stat-placeholder { color: var(--fg-3); }
+
+.today-columns {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(300px, 100%), 1fr));
+  gap: 10px;
+  align-items: start;
+}
+
+/* ===== Today's slots ===== */
+
+.today-slot-row {
+  min-height: 42px;
+}
+.today-slot-row.is-dimmed { opacity: 0.5; }
+
+.today-slot-name {
+  flex: 0 0 58px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  font-size: var(--text-xs);
+  color: var(--fg-3);
+}
+.today-slot-empty { color: var(--fg-3); }
+
+/* ===== Spoiling panel ===== */
+
+.today-spoiling-footer {
+  padding: 8px 10px;
+  border-top: 1px solid var(--border);
+}
+
+.today-spoil-title {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.today-spoil-alias {
+  font-size: var(--text-sm);
+  color: var(--fg-2);
+}
+
+/* ===== What now ===== */
+
+.today-whatnow-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 40px;
+  padding: 6px 10px;
+  text-align: left;
+  color: var(--fg-1);
+  border-bottom: 1px solid var(--border);
+  transition: background var(--transition);
+}
+.today-whatnow-row:last-child { border-bottom: none; }
+.today-whatnow-row:hover { background: var(--bg-hover); }
+
+.today-whatnow-glyph {
+  width: 16px;
+  flex-shrink: 0;
+  text-align: center;
+  font-weight: 700;
+}
+.today-whatnow-text { flex: 1; min-width: 0; }
+.today-whatnow-arrow { color: var(--fg-3); }
+.today-whatnow-empty { padding: 10px; color: var(--fg-3); }
+
+/* ===== First run ===== */
+
+.today-first-run-actions { flex-wrap: wrap; }

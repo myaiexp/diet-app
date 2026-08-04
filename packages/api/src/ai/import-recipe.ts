@@ -19,6 +19,8 @@ export type ExtractedRecipe = {
     unit: string;
     optional?: boolean;
     notes?: string | null;
+    /** The model invented this quantity; the source text never stated one. */
+    quantityInferred?: boolean;
   }>;
 };
 
@@ -28,6 +30,11 @@ const extractedIngredientSchema = z.object({
   unit: z.string().trim().min(1),
   optional: z.boolean().optional(),
   notes: z.string().nullable().optional(),
+  // Provenance only — quantity stays required and positive. A line the model
+  // genuinely cannot quantify must fail extraction rather than arrive with a
+  // silent zero. Optional so a model that ignores the instruction (or an older
+  // one) doesn't 502 the whole import.
+  quantityInferred: z.boolean().optional(),
 });
 
 const extractedRecipeSchema = z.object({
@@ -59,11 +66,17 @@ Return JSON only (no markdown fences, no commentary) with this shape:
       "quantity": positive number,
       "unit": string (e.g. g, ml, kpl, tbsp),
       "optional": boolean,
-      "notes": string or null
+      "notes": string or null,
+      "quantityInferred": boolean
     }
   ]
 }
-Require at least one ingredient. Prefer SI / metric units when clear. Do not invent ingredient catalog IDs.`;
+Require at least one ingredient. Prefer SI / metric units when clear. Do not invent ingredient catalog IDs.
+Every ingredient needs a positive quantity. When the source text states no amount
+("1 iso sipuli", "reilusti juustoa", "tilliä"), assume a typical one and set
+"quantityInferred": true on that line. Set it false (or omit it) when the amount
+came from the text. The flag is how the user is shown which numbers you invented,
+so never mark a stated amount as inferred, and never omit it on a guessed one.`;
 
 /** Strip optional ``` / ```json fences some models wrap around JSON. */
 export function stripJsonFences(raw: string): string {
@@ -89,6 +102,9 @@ function toExtractedRecipe(
       };
       if (ing.optional !== undefined) line.optional = ing.optional;
       if (ing.notes !== undefined) line.notes = ing.notes;
+      if (ing.quantityInferred !== undefined) {
+        line.quantityInferred = ing.quantityInferred;
+      }
       return line;
     }),
   };
