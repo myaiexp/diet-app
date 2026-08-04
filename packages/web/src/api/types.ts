@@ -49,6 +49,12 @@ export interface PantryItem {
    * second implementation drifts on the UTC-day comparison.
    */
   status: PantryStatus;
+  /**
+   * Eager-loaded by every pantry endpoint. A row carries only an
+   * ingredientId, and every consumer needs the name — fetching them per row
+   * would cost one request per row, growing with the pantry.
+   */
+  ingredient: Ingredient;
   createdAt: string;
   updatedAt: string;
 }

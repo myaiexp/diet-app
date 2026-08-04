@@ -5,8 +5,28 @@ import { describe, test, expect, vi } from 'vitest';
 import { asc } from 'drizzle-orm';
 import { pantryItems } from '@diet-app/db';
 import { pantryRoutes } from '../routes/pantry.js';
-import { makeDbMock, makeSelectMock, mergedRow, pgError } from './db-mock.js';
+import { makeDbMock, mergedRow, pgError } from './db-mock.js';
 import { DEFAULT_LIMIT } from '../pagination.js';
+
+/**
+ * The list endpoint reads relationally (it eager-loads `ingredient`), so it has
+ * no chainable builder to record — the args object it passes to findMany is the
+ * whole assertion surface: ordering, paging and the `with` clause alike.
+ */
+function makeListMock(rows: unknown[]) {
+  const calls: { args?: Record<string, unknown> } = {};
+  const db = {
+    query: {
+      pantryItems: {
+        findMany: vi.fn(async (args: Record<string, unknown>) => {
+          calls.args = args;
+          return rows;
+        }),
+      },
+    },
+  } as any;
+  return { db, calls };
+}
 
 // Mock-based route tests for pantryRoutes — deterministic, Postgres-free.
 // The GET handlers use the real `new Date()`, so far-future / far-past expiry
@@ -28,9 +48,15 @@ const EXPIRED_ROW = {
 
 const INGREDIENT_ID = '22222222-2222-4222-8222-222222222222';
 const ITEM_ID = '11111111-1111-4111-8111-111111111111';
+const INGREDIENT = {
+  id: INGREDIENT_ID,
+  name: 'Salmon fillet',
+  aliases: ['lohifile'],
+  shelfLife: { fridge_days: 7 },
+};
 
 function makeWriteMock(opts: {
-  ingredient?: { id: string; shelfLife: Record<string, number | null> } | null;
+  ingredient?: Record<string, unknown> | null;
   /** Existing pantry row for PATCH; use null for 404. Default: FRESH_ROW. */
   existingItem?: unknown | null;
   insertRow?: unknown;
@@ -54,14 +80,14 @@ function makeWriteMock(opts: {
     query: {
       ingredients: {
         findFirst: vi.fn(async () =>
-          opts.ingredient === undefined
-            ? { id: INGREDIENT_ID, shelfLife: { fridge_days: 7 } }
-            : opts.ingredient,
+          opts.ingredient === undefined ? INGREDIENT : opts.ingredient,
         ),
       },
       pantryItems: {
         findFirst: vi.fn(async () =>
-          opts.existingItem === undefined ? FRESH_ROW : opts.existingItem,
+          opts.existingItem === undefined
+            ? { ...FRESH_ROW, ingredient: INGREDIENT }
+            : opts.existingItem,
         ),
       },
     },
@@ -70,7 +96,7 @@ function makeWriteMock(opts: {
 
 describe('pantryRoutes', () => {
   test('GET / maps each row to a computed status field', async () => {
-    const { db } = makeSelectMock([FRESH_ROW, EXPIRED_ROW]);
+    const { db } = makeListMock([FRESH_ROW, EXPIRED_ROW]);
     const app = pantryRoutes(db);
     const res = await app.request('/');
     expect(res.status).toBe(200);
@@ -81,19 +107,32 @@ describe('pantryRoutes', () => {
   });
 
   test('GET / applies default pagination', async () => {
-    const { db, calls } = makeSelectMock([FRESH_ROW]);
+    const { db, calls } = makeListMock([FRESH_ROW]);
     await pantryRoutes(db).request('/');
-    expect(calls.limit).toBe(DEFAULT_LIMIT);
-    expect(calls.offset).toBe(0);
+    expect(calls.args?.['limit']).toBe(DEFAULT_LIMIT);
+    expect(calls.args?.['offset']).toBe(0);
   });
 
   // Finding #5450: PATCH /pantry/:id rewrites rows in place, so paging this
   // list without a total order can hand the client the same item twice and
   // never show another. Spoilage-first ordering also matches the app's framing.
   test('GET / orders by expiry with an id tie-break before paging', async () => {
-    const { db, calls } = makeSelectMock([FRESH_ROW]);
+    const { db, calls } = makeListMock([FRESH_ROW]);
     await pantryRoutes(db).request('/');
-    expect(calls.orderBy).toEqual([asc(pantryItems.expiresDate), asc(pantryItems.id)]);
+    expect(calls.args?.['orderBy']).toEqual([
+      asc(pantryItems.expiresDate),
+      asc(pantryItems.id),
+    ]);
+  });
+
+  // A pantry row carries only an ingredientId; every client needs the name.
+  // Without the join, rendering a 50-row page costs 50 follow-up requests —
+  // a cost that grows with the pantry, so it belongs in the query.
+  test('GET / eager-loads the ingredient rather than leaving an N+1 to the client', async () => {
+    const { db, calls } = makeListMock([{ ...FRESH_ROW, ingredient: INGREDIENT }]);
+    const res = await pantryRoutes(db).request('/');
+    expect(calls.args?.['with']).toEqual({ ingredient: true });
+    expect((await res.json())[0].ingredient.name).toBe('Salmon fillet');
   });
 
   test('GET /:id rejects a malformed id with 400 before touching the DB', async () => {
@@ -140,6 +179,9 @@ describe('pantryRoutes', () => {
     const body = await res.json();
     expect(body.status).toBe('fresh');
     expect(body.quantity).toBe('3');
+    // Same shape as a read: the ingredient was already loaded for the
+    // shelf-life check, so the client never has to fetch it separately.
+    expect(body.ingredient.name).toBe('Salmon fillet');
     expect(inserts[0]).toMatchObject({
       ingredientId: INGREDIENT_ID,
       quantity: '3',
@@ -318,6 +360,9 @@ describe('pantryRoutes', () => {
     expect(res.status).toBe(200);
     expect(updates[0]).toMatchObject({ location: 'freezer' });
     expect(updates[0]).not.toHaveProperty('expiresDate');
+    // PATCH can't change ingredientId, so the ingredient read for the
+    // pre-check is still the right one to answer with — no second query.
+    expect((await res.json()).ingredient.name).toBe('Salmon fillet');
   });
 
   test('DELETE /:id returns 204 when deleted', async () => {
