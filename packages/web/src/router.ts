@@ -3,6 +3,9 @@
 import { activeShell } from './ui/shell.js';
 import { closeModal } from './ui/modal.js';
 import { placeholderScreen } from './ui/placeholder.js';
+import { pantryScreen } from './screens/pantry.js';
+import { recipesScreen } from './screens/recipes.js';
+import { importScreen } from './screens/import.js';
 
 export const ROUTES = [
   '/today',
@@ -50,27 +53,9 @@ const SCREENS: Record<Route, ScreenFactory> = {
       what: 'The day\'s four slots, what is spoiling, and the next action.',
       blocker: 'Screen under construction.',
     }),
-  '/pantry': () =>
-    placeholderScreen({
-      title: 'Pantry',
-      subtitle: 'spoilage order',
-      what: 'Everything you have, soonest to spoil first.',
-      blocker: 'Screen under construction.',
-    }),
-  '/recipes': () =>
-    placeholderScreen({
-      title: 'Recipes',
-      subtitle: 'browse the collection',
-      what: 'The collection, one recipe at a time, scalable to the servings you are cooking.',
-      blocker: 'Screen under construction.',
-    }),
-  '/import': () =>
-    placeholderScreen({
-      title: 'Recipe import',
-      subtitle: 'url or text → draft → review',
-      what: 'Paste a URL or raw text, then reconcile the extracted lines before anything is saved.',
-      blocker: 'Screen under construction.',
-    }),
+  '/pantry': pantryScreen,
+  '/recipes': recipesScreen,
+  '/import': importScreen,
   '/plan': () =>
     placeholderScreen({
       title: 'Meal plan',
