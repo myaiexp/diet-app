@@ -1,0 +1,269 @@
+/* Project layer on top of https://mase.fi/base.css */
+
+:root {
+  /* Amber is the expiry ramp's language; chrome must not compete with it. */
+  --accent: #06b6d4;
+  --accent-text: #22d3ee;
+  --ramp-amber: #e8a308;
+}
+
+/* ===== Shell ===== */
+
+.shell-row { flex: 1 1 auto; }
+
+.sidebar {
+  flex: 0 0 158px;
+  background: var(--bg);
+  border-right: 1px solid var(--border);
+}
+
+.nav-list { padding: 6px 0; }
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  width: 100%;
+  padding: 5px 9px;
+  font-size: var(--text-base);
+  color: var(--fg-2);
+  text-align: left;
+  border-left: 2px solid transparent;
+  transition: background var(--transition), border-color var(--transition);
+}
+.nav-item:hover { background: var(--bg-hover); }
+.nav-glyph { width: 14px; text-align: center; color: var(--fg-3); }
+.nav-label { flex: 1; min-width: 0; }
+.nav-item.is-active {
+  background: var(--bg-hover);
+  color: var(--fg-1);
+  border-left-color: var(--accent);
+}
+.nav-item.is-active .nav-glyph { color: var(--accent-text); }
+
+.sidebar-foot {
+  padding: 6px 9px;
+  border-top: 1px solid var(--border);
+  font-size: var(--text-xs);
+  color: var(--fg-3);
+}
+
+.shell-main { flex: 1 1 auto; }
+
+.screen-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 10px;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+}
+.screen-title { font-size: var(--text-md); font-weight: 700; }
+.screen-sub, .screen-date { font-size: var(--text-sm); color: var(--fg-3); }
+.screen-date { font-size: var(--text-xs); }
+
+.screen { padding: 10px; }
+
+/* ===== Bottom tabs (phone) ===== */
+
+.tabbar { display: none; }
+.more-sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 54px;
+  z-index: 50;
+  flex-direction: column;
+  background: var(--bg-surface);
+  border-top: 1px solid var(--border);
+}
+.more-sheet:not(.hidden) { display: flex; }
+.more-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 0 12px;
+  border-bottom: 1px solid var(--border);
+  color: var(--fg-1);
+  text-align: left;
+}
+
+.tab-item {
+  flex: 1;
+  min-height: 54px;
+  padding: 8px 2px 9px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  color: var(--fg-2);
+  border-top: 2px solid transparent;
+}
+.tab-glyph { font-size: 15px; }
+.tab-label { font-size: var(--text-xs); }
+.tab-item.is-active { color: var(--accent-text); border-top-color: var(--accent); }
+
+@media (max-width: 720px) {
+  .sidebar { display: none; }
+  .tabbar { display: flex; background: var(--bg); border-top: 1px solid var(--border); }
+  /* Touch: base.css sizes controls for a mouse. */
+  .btn, .input, .select { height: 28px; }
+  .btn-sm { height: 26px; }
+}
+
+/* ===== Shared surfaces ===== */
+
+.panel {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+}
+.panel-pad { padding: 8px; }
+
+/* Hairline cells: 1px gaps over a --border background inside a 1px border. */
+.hairline-grid {
+  display: grid;
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+}
+.stat-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 7px 9px;
+  background: var(--bg-surface);
+}
+.stat-key {
+  font-size: var(--text-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--fg-3);
+}
+.stat-value { font-size: var(--text-lg); font-weight: 700; }
+.stat-note { font-size: var(--text-xs); color: var(--fg-3); }
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border);
+}
+.row-main { flex: 1; min-width: 0; }
+.row-title { font-size: var(--text-md); }
+.row-meta { font-size: var(--text-xs); color: var(--fg-3); }
+.row-right { text-align: right; }
+
+/* Filter chips — a phone-first control, so 26px not 18px. */
+.chip {
+  height: 26px;
+  padding: 0 9px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--bg-raised);
+  border: 1px solid var(--border);
+  color: var(--fg-2);
+  font-size: var(--text-sm);
+  transition: background var(--transition), border-color var(--transition);
+}
+.chip:hover { background: var(--bg-hover); }
+.chip.is-on {
+  background: var(--bg-hover);
+  border-color: var(--border-hover);
+  color: var(--fg-1);
+}
+.chip-count { color: var(--fg-3); }
+
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+.bar-wrap { flex-wrap: wrap; }
+
+.text-pretty { text-wrap: pretty; }
+
+/* ===== Modal frame ===== */
+
+.modal-frame {
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  max-height: 90dvh;
+  max-width: 94vw;
+}
+.modal-head, .modal-foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background: var(--bg-overlay-rim);
+  flex-shrink: 0;
+}
+.modal-head { justify-content: space-between; border-bottom: 1px solid var(--border-overlay); }
+.modal-foot { justify-content: flex-end; border-top: 1px solid var(--border-overlay); }
+.modal-title { font-size: var(--text-md); font-weight: 700; }
+.modal-meta { font-size: var(--text-xs); color: var(--fg-3); }
+/* 1 1 auto, never a 0 basis: the frame's height comes only from max-height,
+   where a 0 basis collapses the body to nothing (verified prototype bug). */
+.modal-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ===== States ===== */
+
+.placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  max-width: 520px;
+  padding: 24px 14px;
+}
+.placeholder-what { color: var(--fg-2); text-wrap: pretty; }
+
+.error-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  max-width: 520px;
+  padding: 10px;
+  background: var(--red-bg);
+  border: 1px solid color-mix(in srgb, var(--red) 40%, transparent);
+  color: var(--red);
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  max-width: 420px;
+  padding: 24px 14px;
+  color: var(--fg-2);
+}
+.empty-state h1 { font-size: var(--text-lg); }
+
+.shimmer {
+  height: 12px;
+  background: var(--bg-hover);
+  animation: shimmer 1.4s ease-in-out infinite;
+}
+@keyframes shimmer {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 0.7; }
+}
