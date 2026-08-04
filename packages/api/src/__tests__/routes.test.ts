@@ -6,9 +6,19 @@ import { config } from 'dotenv';
 config({ path: fileURLToPath(new URL('../../../../.env', import.meta.url)) });
 
 import { describe, test, expect, afterAll } from 'vitest';
-import { createDb, cookFeedback } from '@diet-app/db';
-import { eq } from 'drizzle-orm';
+import {
+  createDb,
+  cookFeedback,
+  shoppingLists,
+  shoppingListItems,
+  pantryItems,
+} from '@diet-app/db';
+import { eq, inArray } from 'drizzle-orm';
 import { createApp } from '../app.js';
+// Asserted through the production predicate rather than a literal error shape:
+// Drizzle wraps driver errors, and what matters is that the routes' own
+// mapping recognizes the violation — not which wrapper this version uses.
+import { isUniqueViolation } from '../pg-errors.js';
 
 // Integration suite — exercises every route against a REAL Postgres instance
 // (dietapp_test). It is GATED on TEST_DATABASE_URL: when that env var is absent
@@ -316,6 +326,241 @@ describe.skipIf(!hasDb)('GET /api/shopping-lists', () => {
     } else {
       expect(res.status).toBe(404);
       expect(body).toEqual({ error: 'Not found' });
+    }
+  });
+});
+
+describe.skipIf(!hasDb)('shopping list flow', () => {
+  // Thursday; generate must snap it back to Monday 2026-09-07.
+  const MID_WEEK = '2026-09-10';
+  const MONDAY = '2026-09-07';
+
+  const json = (method: string, body?: unknown) => ({
+    method,
+    headers: { 'Content-Type': 'application/json' },
+    ...(body === undefined ? {} : { body: JSON.stringify(body) }),
+  });
+
+  const findIngredient = async (q: string) => {
+    const res = await app!.request(`/api/ingredients?q=${q}&limit=1`);
+    expect(res.status).toBe(200);
+    const rows = await res.json();
+    expect(rows.length, `seed should contain an ingredient matching "${q}"`).toBeGreaterThan(0);
+    return rows[0] as { id: string; name: string; category: string };
+  };
+
+  const itemFor = (items: any[], ingredientId: string, unit: string) =>
+    items.find((i) => i.ingredientId === ingredientId && i.unit === unit);
+
+  test('generate → tick → hand-add → regenerate → complete round trip', async () => {
+    const apple = await findIngredient('apple'); // produce, pieces
+    const artichoke = await findIngredient('artichoke'); // produce, g
+    const banana = await findIngredient('banana'); // the manual add
+    const ingredientIds = [apple.id, artichoke.id, banana.id];
+
+    let recipeId: string | undefined;
+    let entryId: string | undefined;
+    let listId: string | undefined;
+
+    try {
+      // Leftovers from an interrupted run would skew the pantry netting below.
+      await db!.delete(pantryItems).where(inArray(pantryItems.ingredientId, ingredientIds));
+      const stale = await db!
+        .select({ id: shoppingLists.id })
+        .from(shoppingLists)
+        .where(eq(shoppingLists.weekStarting, MONDAY));
+      for (const row of stale) {
+        await db!.delete(shoppingListItems).where(eq(shoppingListItems.listId, row.id));
+        await db!.delete(shoppingLists).where(eq(shoppingLists.id, row.id));
+      }
+
+      // 1. Recipe (servings 2): 2 pieces apple + 400 g artichoke.
+      const recipeRes = await app!.request(
+        '/api/recipes',
+        json('POST', {
+          title: 'Shopping-list smoke recipe',
+          servings: 2,
+          ingredients: [
+            { ingredientId: apple.id, quantity: 2, unit: 'pieces' },
+            { ingredientId: artichoke.id, quantity: 400, unit: 'g' },
+          ],
+        }),
+      );
+      expect(recipeRes.status).toBe(201);
+      recipeId = (await recipeRes.json()).id as string;
+
+      // 2. One planned dinner at servings 4 → scale 2 → 4 pieces + 800 g.
+      const entryRes = await app!.request(
+        '/api/meal-plans',
+        json('POST', { date: MID_WEEK, slot: 'dinner', recipeId, servings: 4 }),
+      );
+      expect(entryRes.status).toBe(201);
+      entryId = (await entryRes.json()).id as string;
+
+      // 3. 100 g of artichoke already in the pantry → netToBuy 700, not 800.
+      const pantryRes = await app!.request(
+        '/api/pantry',
+        json('POST', {
+          ingredientId: artichoke.id,
+          quantity: 100,
+          unit: 'g',
+          location: 'fridge',
+          expiresDate: '2099-12-31',
+        }),
+      );
+      expect(pantryRes.status).toBe(201);
+
+      // 4. Generate — the mid-week date snaps to the ISO Monday.
+      const genRes = await app!.request('/api/shopping-lists/generate', json('POST', { weekStarting: MID_WEEK }));
+      expect(genRes.status).toBe(200);
+      const generated = await genRes.json();
+      listId = generated.list.id as string;
+      expect(generated.list.weekStarting).toBe(MONDAY);
+      expect(generated.skipped).toEqual([]);
+
+      const appleItem = itemFor(generated.items, apple.id, 'pieces');
+      const artichokeItem = itemFor(generated.items, artichoke.id, 'g');
+      expect(appleItem, 'apple row in pieces').toBeDefined();
+      expect(appleItem.netToBuy).toBe('4');
+      expect(appleItem.source).toBe('generated');
+      // Real pantry netting, computed by Postgres numerics round-tripping
+      // through the aggregator — the half mocks structurally cannot prove.
+      expect(artichokeItem.quantityNeeded).toBe('800');
+      expect(artichokeItem.quantityInPantry).toBe('100');
+      expect(artichokeItem.netToBuy).toBe('700');
+
+      // 5. Tick the apple off and hand-add a banana in kg.
+      const tick = await app!.request(
+        `/api/shopping-lists/items/${appleItem.id}`,
+        json('PATCH', { bought: true, customNote: 'the big ones' }),
+      );
+      expect(tick.status).toBe(200);
+
+      const manual = await app!.request(
+        `/api/shopping-lists/${listId}/items`,
+        json('POST', { ingredientId: banana.id, quantityNeeded: 1, unit: 'kg' }),
+      );
+      expect(manual.status).toBe(201);
+      const manualItem = await manual.json();
+      // Normalized before the write, which is what lets the unique index see a
+      // kg add and a generated g row as the same thing.
+      expect(manualItem.unit).toBe('g');
+      expect(manualItem.quantityNeeded).toBe('1000');
+      expect(manualItem.source).toBe('manual');
+      expect(manualItem.category).toBe(banana.category);
+
+      // 6. A kg add against the existing g row must collide, not duplicate.
+      const dupe = await app!.request(
+        `/api/shopping-lists/${listId}/items`,
+        json('POST', { ingredientId: artichoke.id, quantityNeeded: 1, unit: 'kg' }),
+      );
+      expect(dupe.status).toBe(409);
+
+      // 7. Skip the dinner, then regenerate: the plan now calls for nothing.
+      const skip = await app!.request(`/api/meal-plans/${entryId}`, json('PATCH', { status: 'skipped' }));
+      expect(skip.status).toBe(200);
+
+      const regen = await app!.request('/api/shopping-lists/generate', json('POST', { weekStarting: MONDAY }));
+      expect(regen.status).toBe(200);
+      const regenerated = await regen.json();
+      expect(regenerated.list.id).toBe(listId);
+
+      // The bought row survives (that food is still going in the basket) and
+      // keeps its note; the manual row was never generation's to prune; the
+      // unbought generated row is gone.
+      const appleAfter = itemFor(regenerated.items, apple.id, 'pieces');
+      expect(appleAfter, 'bought generated row must survive a regeneration').toBeDefined();
+      expect(appleAfter.bought).toBe(true);
+      expect(appleAfter.customNote).toBe('the big ones');
+      expect(itemFor(regenerated.items, banana.id, 'g'), 'manual row must survive').toBeDefined();
+      expect(itemFor(regenerated.items, artichoke.id, 'g'), 'unbought generated row is pruned').toBeUndefined();
+
+      // 8. Complete: bought items with netToBuy > 0 become real pantry rows.
+      const buyManual = await app!.request(
+        `/api/shopping-lists/items/${manualItem.id}`,
+        json('PATCH', { bought: true }),
+      );
+      expect(buyManual.status).toBe(200);
+
+      const done = await app!.request(`/api/shopping-lists/${listId}/complete`, json('POST', {}));
+      expect(done.status).toBe(200);
+      const completed = await done.json();
+      expect(completed.list.status).toBe('done');
+      expect(completed.skipped).toEqual([]);
+      expect(completed.added).toHaveLength(2);
+
+      // produce → fridge → shelfLife.fridge_days (7 in the seed data).
+      const today = new Date().toISOString().slice(0, 10);
+      const expected = new Date(`${today}T00:00:00.000Z`);
+      expected.setUTCDate(expected.getUTCDate() + 7);
+      const expectedExpiry = expected.toISOString().slice(0, 10);
+
+      const addedApple = completed.added.find((r: any) => r.ingredientId === apple.id);
+      expect(addedApple.quantity).toBe('4');
+      expect(addedApple.unit).toBe('pieces');
+      expect(addedApple.location).toBe('fridge');
+      expect(addedApple.expiresDate).toBe(expectedExpiry);
+
+      const pantryList = await app!.request('/api/pantry?limit=200');
+      const pantryRows = await pantryList.json();
+      expect(pantryRows.some((r: any) => r.ingredientId === banana.id && r.quantity === '1000')).toBe(true);
+
+      // 9. done is terminal: no second completion, no delete, no status flip.
+      const again = await app!.request(`/api/shopping-lists/${listId}/complete`, json('POST', {}));
+      expect(again.status).toBe(409);
+
+      const reopen = await app!.request(`/api/shopping-lists/${listId}`, json('PATCH', { status: 'shopping' }));
+      expect(reopen.status).toBe(409);
+
+      const del = await app!.request(`/api/shopping-lists/${listId}`, { method: 'DELETE' });
+      expect(del.status).toBe(409);
+    } finally {
+      await db!.delete(pantryItems).where(inArray(pantryItems.ingredientId, ingredientIds));
+      if (listId) {
+        await db!.delete(shoppingListItems).where(eq(shoppingListItems.listId, listId));
+        await db!.delete(shoppingLists).where(eq(shoppingLists.id, listId));
+      }
+      if (entryId) {
+        const delEntry = await app!.request(`/api/meal-plans/${entryId}`, { method: 'DELETE' });
+        expect([204, 404]).toContain(delEntry.status);
+      }
+      if (recipeId) {
+        const delRecipe = await app!.request(`/api/recipes/${recipeId}`, { method: 'DELETE' });
+        expect([204, 404]).toContain(delRecipe.status);
+      }
+    }
+  });
+
+  // The two constraints the merge model rests on. A mock cannot prove an index
+  // exists — only Postgres refusing the second row can.
+  test('enforces the (list_id, ingredient_id, unit) unique index at the DB level', async () => {
+    const apple = await findIngredient('apple');
+    const [list] = await db!.insert(shoppingLists).values({ weekStarting: '2026-09-21' }).returning();
+    try {
+      const row = {
+        listId: list!.id,
+        ingredientId: apple.id,
+        quantityNeeded: '1',
+        netToBuy: '1',
+        category: apple.category,
+        unit: 'pieces',
+      };
+      await db!.insert(shoppingListItems).values(row);
+      await expect(db!.insert(shoppingListItems).values(row)).rejects.toSatisfy(isUniqueViolation);
+    } finally {
+      await db!.delete(shoppingListItems).where(eq(shoppingListItems.listId, list!.id));
+      await db!.delete(shoppingLists).where(eq(shoppingLists.id, list!.id));
+    }
+  });
+
+  test('enforces the week_starting unique index at the DB level', async () => {
+    const [list] = await db!.insert(shoppingLists).values({ weekStarting: '2026-09-28' }).returning();
+    try {
+      await expect(
+        db!.insert(shoppingLists).values({ weekStarting: '2026-09-28' }),
+      ).rejects.toSatisfy(isUniqueViolation);
+    } finally {
+      await db!.delete(shoppingLists).where(eq(shoppingLists.id, list!.id));
     }
   });
 });

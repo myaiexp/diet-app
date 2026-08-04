@@ -112,7 +112,13 @@ const COLUMN_SPECS: Record<string, Record<string, ColumnSpec>> = {
     quantityInPantry: { type: 'PgNumeric', notNull: true, hasDefault: true },
     netToBuy: { type: 'PgNumeric', notNull: true },
     category: { type: 'PgText', notNull: true },
-    bought: { type: 'PgBoolean', hasDefault: true },
+    // Base unit of the row's dimension; part of the (list, ingredient, unit)
+    // unique index generation upserts on.
+    unit: { type: 'PgText', notNull: true },
+    source: { type: 'PgText', notNull: true, hasDefault: true },
+    // notNull: the regeneration prune predicate (generated AND NOT bought)
+    // would skip NULL rows.
+    bought: { type: 'PgBoolean', notNull: true, hasDefault: true },
     customNote: { type: 'PgText' },
   },
   userProfile: {

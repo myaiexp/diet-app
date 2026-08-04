@@ -1,7 +1,7 @@
 // Unit conversion table coverage
 
 import { describe, test, expect } from 'vitest';
-import { resolveUnit, toBase, fromBase } from '../units.js';
+import { resolveUnit, toBase, fromBase, baseUnit, round6 } from '../units.js';
 
 describe('units', () => {
   test('resolves mass units to grams', () => {
@@ -44,5 +44,22 @@ describe('units', () => {
   test('mass and volume never share a dimension', () => {
     expect(resolveUnit('g')!.dimension).not.toBe(resolveUnit('ml')!.dimension);
     expect(resolveUnit('kpl')!.dimension).not.toBe(resolveUnit('g')!.dimension);
+  });
+
+  test('baseUnit maps each dimension to its canonical unit', () => {
+    expect(baseUnit('mass')).toBe('g');
+    expect(baseUnit('volume')).toBe('ml');
+    expect(baseUnit('count')).toBe('pieces');
+  });
+
+  test('round6 rounds to six decimal places', () => {
+    expect(round6(1 / 3)).toBe(0.333333);
+    expect(round6(0.1 + 0.2)).toBe(0.3);
+    expect(round6(1.0000001)).toBe(1);
+  });
+
+  test('round6 leaves integers unchanged', () => {
+    expect(round6(0)).toBe(0);
+    expect(round6(900)).toBe(900);
   });
 });

@@ -5,6 +5,9 @@ import { eq, ilike, and, or, sql, asc } from 'drizzle-orm';
 import { isUuid } from '../validation.js';
 import { getPagination } from '../pagination.js';
 import { notFound, badRequest } from '../responses.js';
+import { parseJsonBody } from '../json-body.js';
+import { buildPatch } from '../patch-builder.js';
+import { ingredientPatchSchema } from '../schemas/ingredients.js';
 
 export function ingredientsRoutes(db: Db): Hono {
   const app = new Hono();
@@ -47,6 +50,33 @@ export function ingredientsRoutes(db: Db): Hono {
     const row = await db.query.ingredients.findFirst({
       where: eq(ingredients.id, id),
     });
+    if (!row) return notFound(c);
+    return c.json(row);
+  });
+
+  // The catalog is otherwise read-only. isPantryStaple is the one column the
+  // user curates: shopping list reads group staples last, and the seed
+  // deliberately stops refreshing this column so a re-seed can't undo a toggle.
+  app.patch('/:id', async (c) => {
+    const id = c.req.param('id');
+    if (!isUuid(id)) return badRequest(c, 'Invalid id format');
+
+    const parsed = await parseJsonBody(c, ingredientPatchSchema, { requireNonEmpty: true });
+    if (!parsed.ok) return parsed.response;
+
+    const patch: Partial<typeof ingredients.$inferInsert> = {
+      ...buildPatch(parsed.data, ingredients),
+      updatedAt: new Date(),
+    };
+
+    const [row] = await db
+      .update(ingredients)
+      .set(patch)
+      .where(eq(ingredients.id, id))
+      .returning();
+
+    // Empty RETURNING covers both "never existed" and "deleted between the
+    // request and the update" — no pre-check select needed to tell them apart.
     if (!row) return notFound(c);
     return c.json(row);
   });
