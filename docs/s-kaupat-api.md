@@ -181,8 +181,30 @@ returns data or a "must have a selection of subfields" error that names the type
 
 ## What login would add
 
-Nothing for catalog data. The auth-gated operations are all personal: order history,
-favourites, shopping lists, saved payment cards, profile, and
+Nothing for catalog data. The auth-gated operations on s-kaupat.fi are all personal:
+order history, favourites, shopping lists, saved payment cards, profile, and
 `personalizedSortedProducts` (recommendation ranking). Prices, nutrition, ingredients
-and the full assortment are already open. Logging in would not surface Jämsänkoski,
-because the gap there is assortment data that does not exist in this system at all.
+and the full assortment are already open.
+
+Nor can auth surface Jämsänkoski, and it is worth being precise about why, because
+"there must be more behind the login" is the natural assumption:
+
+- Its absence shows up in `Query.stores` — a **public, unauthenticated** field
+  returning all 706 e-commerce stores. An account cannot add a store to a list you
+  can already read in full.
+- `store(id: "726644899").navigation` is `null` and `products` is empty for that id,
+  which are the same public resolvers the logged-out site renders from.
+- `products` has **no user-scoped argument**: the full signature is `facets`,
+  `filters`, `from`, `limit`, `order`, `orderBy`, `queryString`, `slug`, `storeId`,
+  `availabilityDate`, `fallbackToGlobal`, `marketingId`. There is no seam through
+  which an account could change the assortment returned.
+
+**S-mobiili is not a second chance at this.** It is a native app with no web surface
+at all — `s-mobiili.fi` serves a Play Store / App Store download splash, and
+`omat.`/`web.`/`app.`/`asiointi.`/`tunnistaudu.s-mobiili.fi` are all NXDOMAIN. So
+haxi cannot reach it either: haxi's ladder tops out at driving Chrome, and even its
+deferred rung 6 (HAR-recorded auth'd clients, helm idea #2546) records *browser*
+traffic. Getting Jämsänkoski's shelf prices would mean intercepting the Android app
+— mitmproxy plus defeating cert pinning — which is a different project with a small
+payoff, since nutrition is product-level and already open and chain pricing means
+Jämsä matches for chain-priced items. Tracked as diet-app idea #3240.
