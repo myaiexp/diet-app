@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://mase.fi/base.css">
+<style>
+:root { --accent: #06b6d4; --accent-text: #22d3ee; }
+body { background: #050506; }
+@keyframes shimmer { 0%,100% { opacity: .35 } 50% { opacity: .7 } }
+a { color: var(--accent-text); }
+a:hover { color: var(--fg-1); }
+</style>
+</helmet>
+
+<div style="height:100dvh; display:flex; flex-direction:column; overflow:hidden; background:#050506">
+
+  <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; padding:5px 10px; border-bottom:1px solid var(--border); background:var(--bg); flex-shrink:0">
+    <div style="display:flex; align-items:center; gap:8px">
+      <span style="font-weight:700; letter-spacing:.06em">RUOKA</span>
+      <span class="label label-muted">mockup</span>
+      <span class="muted" style="font-size:var(--text-sm)">spoilage-first meal planning · single user</span>
+    </div>
+    <div style="display:flex; align-items:center; gap:6px">
+      <span class="muted" style="font-size:var(--text-xs); text-transform:uppercase; letter-spacing:.04em">viewport</span>
+      <button class="btn btn-sm" style="{{ deskBtn }}" onClick="{{ setDesktop }}">desktop</button>
+      <button class="btn btn-sm" style="{{ phoneBtn }}" onClick="{{ setPhone }}">phone 390</button>
+    </div>
+  </div>
+
+  <div style="flex:1 1 0; min-height:0; display:flex; justify-content:center; overflow:hidden; background:#050506">
+
+    <div style="{{ frameStyle }}">
+
+      <sc-if value="{{ is.desktop }}" hint-placeholder-val="{{ true }}">
+        <div style="width:158px; flex-shrink:0; border-right:1px solid var(--border); background:var(--bg); display:flex; flex-direction:column; overflow-y:auto">
+          <div class="section-header" style="padding-top:8px">plan</div>
+          <sc-for list="{{ navMain }}" as="n" hint-placeholder-count="5">
+            <button style="display:flex; align-items:center; gap:7px; padding:5px 9px; text-align:left; font-size:var(--text-base); background:{{ n.bg }}; color:{{ n.fg }}; border-left:2px solid {{ n.edge }}" onClick="{{ n.go }}">
+              <span style="width:14px; text-align:center; color:{{ n.edge2 }}">{{ n.glyph }}</span>
+              <span style="flex:1">{{ n.label }}</span>
+              <span class="label" style="background:{{ n.badgeBg }}; color:{{ n.badgeFg }}">{{ n.badge }}</span>
+            </button>
+          </sc-for>
+          <div class="section-header" style="padding-top:12px">review</div>
+          <sc-for list="{{ navSub }}" as="n" hint-placeholder-count="5">
+            <button style="display:flex; align-items:center; gap:7px; padding:5px 9px; text-align:left; font-size:var(--text-base); background:{{ n.bg }}; color:{{ n.fg }}; border-left:2px solid {{ n.edge }}" onClick="{{ n.go }}">
+              <span style="width:14px; text-align:center; color:{{ n.edge2 }}">{{ n.glyph }}</span>
+              <span style="flex:1">{{ n.label }}</span>
+              <span class="label" style="background:{{ n.badgeBg }}; color:{{ n.badgeFg }}">{{ n.badge }}</span>
+            </button>
+          </sc-for>
+          <div style="flex:1"></div>
+          <div style="padding:8px 9px; border-top:1px solid var(--border); font-size:var(--text-xs)" class="muted">
+            <div>pantry 15 items · 1 expired</div>
+            <div>api ok · synced 12:41</div>
+          </div>
+        </div>
+      </sc-if>
+
+      <div style="flex:1 1 0; min-width:0; display:flex; flex-direction:column; overflow:hidden; background:var(--bg)">
+
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; padding:7px 10px; border-bottom:1px solid var(--border); flex-shrink:0; background:var(--bg-surface)">
+          <div style="display:flex; align-items:baseline; gap:8px; min-width:0">
+            <span style="font-weight:700; font-size:var(--text-md)">{{ screen.title }}</span>
+            <span class="muted truncate" style="font-size:var(--text-sm)">{{ screen.sub }}</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:5px; flex-shrink:0">
+            <span class="status status-running">api</span>
+            <span class="muted" style="font-size:var(--text-xs)">ti 4.8.</span>
+          </div>
+        </div>
+
+        <div style="flex:1 1 0; min-height:0; overflow-y:auto">
+
+          <sc-if value="{{ is.today }}" hint-placeholder-val="{{ true }}">
+            <div style="padding:10px; display:flex; flex-direction:column; gap:10px">
+              <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(min(110px,100%),1fr)); gap:1px; background:var(--border); border:1px solid var(--border)">
+                <sc-for list="{{ todayStats }}" as="s" hint-placeholder-count="5">
+                  <div style="background:var(--bg-surface); padding:7px 9px">
+                    <div class="muted" style="font-size:var(--text-xs); text-transform:uppercase; letter-spacing:.04em">{{ s.k }}</div>
+                    <div style="font-size:var(--text-lg); font-weight:700; color:{{ s.color }}">{{ s.v }}</div>
+                    <div class="muted" style="font-size:var(--text-xs)">{{ s.note }}</div>
+                  </div>
+                </sc-for>
+              </div>
+
+              <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(min(300px,100%),1fr)); gap:10px">
+                <div style="border:1px solid var(--border); background:var(--bg-surface)">
+                  <div style="display:flex; align-items:center; justify-content:space-between; padding:5px 8px; border-bottom:1px solid var(--border)">
+                    <span class="section-header" style="padding:0">today · tiistai 4.8.</span>
+                    <button class="btn btn-sm" onClick="{{ goPlan }}">week →</button>
+                  </div>
+                  <sc-for list="{{ todayMeals }}" as="m" hint-placeholder-count="4">
+                    <div style="display:flex; align-items:center; gap:8px; padding:7px 8px; border-bottom:1px solid var(--border); min-height:42px">
+                      <span class="muted" style="width:58px; flex-shrink:0; font-size:var(--text-xs); text-transform:uppercase">{{ m.slot }}</span>
+                      <div style="flex:1; min-width:0">
+                        <div class="truncate" style="color:{{ m.fg }}">{{ m.title }}</div>
+                        <div class="muted" style="font-size:var(--text-xs)">{{ m.meta }}</div>
+                      </div>
+                      <span class="label" style="background:{{ m.tagBg }}; color:{{ m.tagFg }}">{{ m.status }}</span>
+                      <button class="btn btn-sm" style="{{ m.actionStyle }}" onClick="{{ m.action }}">{{ m.actionLabel }}</button>
+                    </div>
+                  </sc-for>
+                </div>
+
+                <div style="border:1px solid var(--border); background:var(--bg-surface)">
+                  <div style="display:flex; align-items:center; justify-content:space-between; padding:5px 8px; border-bottom:1px solid var(--border)">
+                    <span class="section-header" style="padding:0">spoiling</span>
+                    <button class="btn btn-sm" onClick="{{ goPantry }}">pantry →</button>
+                  </div>
+                  <sc-for list="{{ spoiling }}" as="p" hint-placeholder-count="5">
+                    <div style="display:flex; align-items:center; gap:8px; padding:0 8px 0 0; border-bottom:1px solid var(--border); min-height:38px">
+                      <span style="width:3px; align-self:stretch; background:{{ p.color }}"></span>
+                      <div style="flex:1; min-width:0; padding:5px 0">
+                        <div class="truncate">{{ p.name }} <span class="muted">{{ p.fi }}</span></div>
+                        <div class="muted" style="font-size:var(--text-xs)">{{ p.qty }} · {{ p.loc }}</div>
+                      </div>
+                      <span class="label" style="background:{{ p.bg }}; color:{{ p.color }}">{{ p.label }}</span>
+                    </div>
+                  </sc-for>
+                  <div style="padding:7px 8px; display:flex; gap:6px; flex-wrap:wrap">
+                    <button class="btn btn-sm btn-primary" onClick="{{ goSuggest }}">plan around these</button>
+                    <button class="btn btn-sm" onClick="{{ goWaste }}">waste report</button>
+                  </div>
+                </div>
+              </div>
+
+              <div style="border:1px solid var(--border); background:var(--bg-surface)">
+                <div class="section-header" style="padding:6px 8px; border-bottom:1px solid var(--border)">what now</div>
+                <sc-for list="{{ todos }}" as="t" hint-placeholder-count="3">
+                  <button style="display:flex; align-items:center; gap:8px; width:100%; text-align:left; padding:7px 8px; border-bottom:1px solid var(--border); min-height:40px" onClick="{{ t.go }}">
+                    <span style="color:{{ t.color }}">{{ t.glyph }}</span>
+                    <span style="flex:1">{{ t.text }}</span>
+                    <span class="muted">→</span>
+                  </button>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ is.pantry }}">
+            <div style="display:flex; flex-direction:column">
+              <div class="bar-sticky" style="background:var(--bg); border-bottom:1px solid var(--border); padding:7px 10px; display:flex; flex-direction:column; gap:6px">
+                <div style="display:flex; gap:4px; flex-wrap:wrap">
+                  <sc-for list="{{ locFilters }}" as="f" hint-placeholder-count="5">
+                    <button class="btn btn-sm" style="height:26px; padding:0 9px; background:{{ f.bg }}; border-color:{{ f.bd }}; color:{{ f.fg }}" onClick="{{ f.go }}">{{ f.label }} <span class="muted">{{ f.n }}</span></button>
+                  </sc-for>
+                </div>
+                <div style="display:flex; gap:6px; align-items:center">
+                  <input class="input" style="height:28px; flex:1" placeholder="search 462 ingredients — peruna, potato…" />
+                  <button class="btn btn-primary" style="height:28px" onClick="{{ noop }}">+ add</button>
+                </div>
+              </div>
+              <div style="padding:0 0 10px">
+                <div class="section-header" style="padding:6px 10px">sorted by expiry · soonest first</div>
+                <sc-for list="{{ pantryRows }}" as="p" hint-placeholder-count="8">
+                  <div style="display:flex; align-items:stretch; gap:0; border-bottom:1px solid var(--border); background:{{ p.rowBg }}; min-height:46px">
+                    <span style="width:3px; background:{{ p.color }}"></span>
+                    <div style="flex:1; min-width:0; padding:6px 10px; display:flex; align-items:center; gap:10px">
+                      <div style="flex:1; min-width:0">
+                        <div class="truncate" style="font-size:var(--text-md)">{{ p.name }} <span class="muted" style="font-size:var(--text-sm)">{{ p.fi }}</span> <span class="label label-muted">{{ p.openedTag }}</span></div>
+                        <div class="muted" style="font-size:var(--text-xs)">{{ p.cat }} · {{ p.loc }} · added {{ p.added }}</div>
+                      </div>
+                      <div style="text-align:right; flex-shrink:0">
+                        <div style="font-size:var(--text-md)">{{ p.qty }}</div>
+                        <div style="font-size:var(--text-xs); color:{{ p.color }}">{{ p.label }}</div>
+                      </div>
+                      <button class="btn btn-sm" style="height:30px; width:30px; padding:0" onClick="{{ noop }}">⋯</button>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ is.recipes }}">
+            <div style="display:grid; grid-template-columns:{{ recipeCols }}; gap:10px; padding:10px; align-items:start">
+              <div style="border:1px solid var(--border); background:var(--bg-surface); min-width:0">
+                <div style="padding:6px 8px; border-bottom:1px solid var(--border); display:flex; gap:5px; flex-wrap:wrap">
+                  <sc-for list="{{ recipeTags }}" as="t" hint-placeholder-count="5">
+                    <button class="btn btn-sm" style="background:{{ t.bg }}; color:{{ t.fg }}; border-color:{{ t.bd }}" onClick="{{ t.go }}">{{ t.label }}</button>
+                  </sc-for>
+                </div>
+                <sc-for list="{{ recipeList }}" as="r" hint-placeholder-count="6">
+                  <button style="display:block; width:100%; text-align:left; padding:7px 8px; border-bottom:1px solid var(--border); background:{{ r.bg }}; border-left:2px solid {{ r.edge }}" onClick="{{ r.go }}">
+                    <div style="display:flex; align-items:baseline; gap:6px">
+                      <span class="truncate" style="flex:1; font-size:var(--text-md); color:{{ r.fg }}">{{ r.title }}</span>
+                      <span class="muted" style="font-size:var(--text-xs)">{{ r.time }}</span>
+                    </div>
+                    <div class="muted" style="font-size:var(--text-xs)">{{ r.meta }}</div>
+                  </button>
+                </sc-for>
+              </div>
+
+              <div style="border:1px solid var(--border); background:var(--bg-surface); min-width:0">
+                <div style="padding:8px 10px; border-bottom:1px solid var(--border)">
+                  <div style="display:flex; align-items:baseline; justify-content:space-between; gap:8px; flex-wrap:wrap">
+                    <h1>{{ recipe.title }}</h1>
+                    <span class="label" style="background:{{ recipe.srcBg }}; color:{{ recipe.srcFg }}">{{ recipe.sourceType }}</span>
+                  </div>
+                  <div class="muted" style="font-size:var(--text-sm); margin-top:3px">{{ recipe.subline }}</div>
+                </div>
+                <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(min(84px,100%),1fr)); gap:1px; background:var(--border); border-bottom:1px solid var(--border)">
+                  <sc-for list="{{ recipe.stats }}" as="s" hint-placeholder-count="5">
+                    <div style="background:var(--bg-surface); padding:6px 8px">
+                      <div class="muted" style="font-size:var(--text-xs); text-transform:uppercase">{{ s.k }}</div>
+                      <div style="font-size:var(--text-md); color:{{ s.color }}">{{ s.v }}</div>
+                    </div>
+                  </sc-for>
+                </div>
+                <div style="display:flex; align-items:center; gap:8px; padding:7px 10px; border-bottom:1px solid var(--border); background:var(--bg-raised)">
+                  <span class="muted" style="font-size:var(--text-xs); text-transform:uppercase; letter-spacing:.04em">servings</span>
+                  <button class="btn" style="width:30px; height:26px; padding:0" onClick="{{ decServings }}">−</button>
+                  <span style="min-width:22px; text-align:center; font-size:var(--text-lg); font-weight:700; color:var(--accent-text)">{{ servings }}</span>
+                  <button class="btn" style="width:30px; height:26px; padding:0" onClick="{{ incServings }}">+</button>
+                  <span class="muted" style="font-size:var(--text-xs)">{{ scaleNote }}</span>
+                </div>
+                <div style="display:grid; grid-template-columns:{{ ingCols }}; gap:0">
+                  <div style="border-right:1px solid var(--border)">
+                    <div class="section-header" style="padding:6px 10px">ingredients</div>
+                    <sc-for list="{{ ingredients }}" as="i" hint-placeholder-count="7">
+                      <div style="display:flex; gap:8px; padding:4px 10px; border-top:1px solid var(--border); align-items:baseline">
+                        <span style="width:74px; flex-shrink:0; text-align:right; color:var(--accent-text)">{{ i.q }}</span>
+                        <span style="flex:1; min-width:0">{{ i.name }} <span class="muted" style="font-size:var(--text-xs)">{{ i.notes }}</span></span>
+                        <span class="label label-muted">{{ i.opt }}</span>
+                        <span class="label" style="background:{{ i.havBg }}; color:{{ i.havFg }}">{{ i.have }}</span>
+                      </div>
+                    </sc-for>
+                  </div>
+                  <div>
+                    <div class="section-header" style="padding:6px 10px">steps</div>
+                    <sc-for list="{{ recipe.steps }}" as="s" hint-placeholder-count="4">
+                      <div style="display:flex; gap:8px; padding:5px 10px; border-top:1px solid var(--border)">
+                        <span class="muted" style="flex-shrink:0">{{ s.n }}</span>
+                        <span style="text-wrap:pretty">{{ s.t }}</span>
+                      </div>
+                    </sc-for>
+                  </div>
+                </div>
+                <div style="display:flex; gap:6px; padding:8px 10px; border-top:1px solid var(--border); flex-wrap:wrap">
+                  <button class="btn btn-primary" onClick="{{ goPlan }}">add to plan</button>
+                  <button class="btn" onClick="{{ openCook }}">cook now</button>
+                  <button class="btn btn-ghost" onClick="{{ noop }}">fork</button>
+                  <button class="btn btn-ghost" onClick="{{ noop }}">edit</button>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ is.import }}">
+            <div style="padding:10px; display:flex; flex-direction:column; gap:10px">
+              <div style="display:flex; gap:4px; flex-wrap:wrap">
+                <sc-for list="{{ stageTabs }}" as="s" hint-placeholder-count="3">
+                  <button class="btn btn-sm" style="background:{{ s.bg }}; color:{{ s.fg }}; border-color:{{ s.bd }}" onClick="{{ s.go }}">{{ s.label }}</button>
+                </sc-for>
+                <span class="muted" style="font-size:var(--text-xs); align-self:center">← mock the three states</span>
+              </div>
+
+              <sc-if value="{{ isStage.input }}">
+                <div style="border:1px solid var(--border); background:var(--bg-surface); padding:10px; display:flex; flex-direction:column; gap:8px; max-width:620px">
+                  <div>
+                    <span class="form-label">source url</span>
+                    <input class="input" value="https://www.k-ruoka.fi/reseptit/ohrarisotto-metsasienilla" />
+                  </div>
+                  <div>
+                    <span class="form-label">or paste raw text</span>
+                    <textarea class="textarea" style="min-height:110px" placeholder="paste the recipe body — ingredients and steps, any format"></textarea>
+                  </div>
+                  <div style="display:flex; gap:6px; align-items:center">
+                    <button class="btn btn-primary" onClick="{{ toExtract }}">extract draft</button>
+                    <span class="muted" style="font-size:var(--text-xs)">nothing is saved until you approve the review step</span>
+                  </div>
+                </div>
+              </sc-if>
+
+              <sc-if value="{{ isStage.loading }}">
+                <div style="border:1px solid var(--border); background:var(--bg-surface); padding:12px; display:flex; flex-direction:column; gap:10px; max-width:620px">
+                  <div class="loading">extracting · matching lines against 462 catalog ingredients</div>
+                  <sc-for list="{{ skeletons }}" as="s" hint-placeholder-count="5">
+                    <div style="height:12px; background:var(--bg-hover); width:{{ s.w }}; animation:shimmer 1.4s ease-in-out infinite"></div>
+                  </sc-for>
+                  <button class="btn btn-ghost" style="align-self:flex-start" onClick="{{ toInput }}">cancel</button>
+                </div>
+              </sc-if>
+
+              <sc-if value="{{ isStage.review }}">
+                <div style="display:grid; grid-template-columns:{{ reviewCols }}; gap:10px; align-items:start">
+                  <div style="border:1px solid var(--border); background:var(--bg-surface); min-width:0">
+                    <div class="section-header" style="padding:6px 8px; border-bottom:1px solid var(--border)">draft · review before saving</div>
+                    <div style="padding:8px; display:flex; flex-direction:column; gap:7px">
+                      <div><span class="form-label">title</span><input class="input" value="Ohrarisotto metsäsienillä" /></div>
+                      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px">
+                        <div><span class="form-label">prep</span><input class="input" value="15" /></div>
+                        <div><span class="form-label">total</span><input class="input" value="40" /></div>
+                        <div><span class="form-label">servings</span><input class="input" value="4" /></div>
+                      </div>
+                      <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px">
+                        <div><span class="form-label">cuisine</span><input class="input" value="finnish" /></div>
+                        <div><span class="form-label">effort 1–5</span><input class="input" value="3" /></div>
+                      </div>
+                      <div>
+                        <span class="form-label">steps · 5 extracted</span>
+                        <textarea class="textarea" style="min-height:96px">Fry the mushrooms dry in a hot pan until the water is gone.
+Add butter and onion, soften without browning.
+Add barley, toast a minute, then stock a ladle at a time.
+Stir 25–30 min until the grain is tender but has bite.
+Finish off heat with cheese and dill.</textarea>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style="border:1px solid var(--border); background:var(--bg-surface); min-width:0">
+                    <div style="display:flex; align-items:center; justify-content:space-between; padding:6px 8px; border-bottom:1px solid var(--border); gap:8px; flex-wrap:wrap">
+                      <span class="section-header" style="padding:0">ingredient reconciliation</span>
+                      <span style="display:flex; gap:5px">
+                        <span class="label label-green">9 bound</span>
+                        <span class="label label-red">2 need you</span>
+                      </span>
+                    </div>
+                    <sc-for list="{{ reconLines }}" as="l" hint-placeholder-count="6">
+                      <div style="border-bottom:1px solid var(--border); background:{{ l.rowBg }}; display:flex; gap:0">
+                        <span style="width:3px; background:{{ l.color }}"></span>
+                        <div style="flex:1; min-width:0; padding:6px 8px">
+                          <div style="display:flex; gap:8px; align-items:baseline">
+                            <span class="muted" style="font-size:var(--text-xs); width:14px; flex-shrink:0">{{ l.n }}</span>
+                            <span style="flex:1; min-width:0; font-size:var(--text-md)">{{ l.raw }}</span>
+                            <span class="label" style="background:{{ l.bg }}; color:{{ l.color }}">{{ l.state }}</span>
+                          </div>
+                          <div style="display:flex; gap:8px; align-items:center; margin-left:22px; margin-top:3px; flex-wrap:wrap">
+                            <span class="muted" style="font-size:var(--text-xs)">→</span>
+                            <span style="font-size:var(--text-sm); color:{{ l.bindFg }}">{{ l.bind }}</span>
+                            <span class="label label-muted">{{ l.qty }}</span>
+                          </div>
+                          <sc-if value="{{ l.unresolved }}">
+                            <div style="margin-left:22px; margin-top:6px; padding:7px; border:1px solid color-mix(in srgb, var(--red) 40%, transparent); background:var(--bg-raised); display:flex; flex-direction:column; gap:6px">
+                              <span class="muted" style="font-size:var(--text-xs)">closest catalog matches — pick one, or add it</span>
+                              <div style="display:flex; gap:5px; flex-wrap:wrap">
+                                <sc-for list="{{ l.candidates }}" as="c" hint-placeholder-count="3">
+                                  <button class="btn btn-sm" onClick="{{ noop }}">{{ c.name }} <span class="muted">{{ c.score }}</span></button>
+                                </sc-for>
+                              </div>
+                              <div style="display:flex; gap:5px; flex-wrap:wrap">
+                                <button class="btn btn-sm btn-primary" onClick="{{ noop }}">create “{{ l.newName }}”</button>
+                                <button class="btn btn-sm btn-ghost" onClick="{{ noop }}">skip line</button>
+                              </div>
+                            </div>
+                          </sc-if>
+                        </div>
+                      </div>
+                    </sc-for>
+                    <div style="display:flex; gap:6px; padding:8px; align-items:center; flex-wrap:wrap">
+                      <button class="btn btn-primary" disabled="{{ true }}">save recipe</button>
+                      <span class="helper helper-error" style="margin:0">2 unresolved lines block saving — resolve or skip them</span>
+                    </div>
+                  </div>
+                </div>
+              </sc-if>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ is.plan }}">
+            <div style="padding:10px; display:flex; flex-direction:column; gap:8px">
+              <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap">
+                <button class="btn btn-sm" onClick="{{ noop }}">←</button>
+                <span style="font-size:var(--text-md); font-weight:700">vk 32 · 3.–9.8.</span>
+                <button class="btn btn-sm" onClick="{{ noop }}">→</button>
+                <span class="muted" style="font-size:var(--text-sm)">18 of 28 slots filled · 4 cooked</span>
+                <div style="flex:1"></div>
+                <button class="btn btn-sm btn-primary" onClick="{{ goSuggest }}">fill with AI</button>
+                <button class="btn btn-sm" onClick="{{ goShopping }}">shopping list →</button>
+              </div>
+              <div style="overflow-x:auto; border:1px solid var(--border)">
+                <div style="display:grid; grid-template-columns:repeat(7,minmax(150px,1fr)); min-width:1050px; background:var(--border); gap:1px">
+                  <sc-for list="{{ week }}" as="d" hint-placeholder-count="7">
+                    <div style="background:var(--bg); display:flex; flex-direction:column; gap:1px">
+                      <div style="background:var(--bg-raised); padding:5px 7px; border-bottom:1px solid var(--border)">
+                        <div style="display:flex; justify-content:space-between; align-items:baseline">
+                          <span style="font-weight:700; color:{{ d.fg }}">{{ d.label }}</span>
+                          <span class="muted" style="font-size:var(--text-xs)">{{ d.date }}</span>
+                        </div>
+                        <div style="font-size:var(--text-xs); color:{{ d.kcalFg }}">{{ d.kcal }}</div>
+                      </div>
+                      <sc-for list="{{ d.slots }}" as="s" hint-placeholder-count="4">
+                        <button style="text-align:left; padding:6px 7px; min-height:66px; background:{{ s.bg }}; border-left:2px solid {{ s.edge }}; display:flex; flex-direction:column; gap:3px" onClick="{{ s.go }}">
+                          <span class="muted" style="font-size:var(--text-xs); text-transform:uppercase; letter-spacing:.04em">{{ s.slot }}</span>
+                          <span style="font-size:var(--text-sm); color:{{ s.fg }}; text-wrap:pretty">{{ s.title }}</span>
+                          <span style="display:flex; gap:4px; align-items:center; flex-wrap:wrap">
+                            <span class="label" style="background:{{ s.tagBg }}; color:{{ s.tagFg }}">{{ s.tag }}</span>
+                            <span class="muted" style="font-size:var(--text-xs)">{{ s.serv }}</span>
+                          </span>
+                        </button>
+                      </sc-for>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+              <div style="display:flex; gap:10px; flex-wrap:wrap; font-size:var(--text-xs)" class="muted">
+                <span><span class="label label-muted">planned</span> click to cook</span>
+                <span><span class="label label-green">cooked</span> locked — deduction applied</span>
+                <span><span class="label label-orange">substituted</span></span>
+                <span><span class="label label-red">skipped</span></span>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ is.suggest }}">
+            <div style="padding:10px; display:flex; flex-direction:column; gap:10px">
+              <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap">
+                <span class="muted" style="font-size:var(--text-xs); text-transform:uppercase">state</span>
+                <sc-for list="{{ sugTabs }}" as="t" hint-placeholder-count="3">
+                  <button class="btn btn-sm" style="background:{{ t.bg }}; color:{{ t.fg }}; border-color:{{ t.bd }}" onClick="{{ t.go }}">{{ t.label }}</button>
+                </sc-for>
+                <div style="flex:1"></div>
+                <button class="btn btn-sm" onClick="{{ noop }}">reshuffle all</button>
+              </div>
+
+              <sc-if value="{{ isSug.ok }}">
+                <div style="display:flex; flex-direction:column; gap:8px">
+                  <div style="border:1px solid var(--border); background:var(--bg-raised); padding:7px 9px; display:flex; gap:12px; flex-wrap:wrap; font-size:var(--text-sm)">
+                    <span>weighting <span class="accent">spoilage 0.5</span> · restrictions <span class="accent">hard</span> · effort ≤ <span class="accent">3</span></span>
+                    <span class="muted">10 empty slots · 6 suggestions that clear the fridge first</span>
+                  </div>
+                  <div class="card-grid" style="--card-min:320px">
+                    <sc-for list="{{ suggestions }}" as="s" hint-placeholder-count="4">
+                      <div style="border:1px solid {{ s.bd }}; background:var(--bg-surface); display:flex; flex-direction:column">
+                        <div style="display:flex; align-items:baseline; justify-content:space-between; gap:8px; padding:6px 8px; border-bottom:1px solid var(--border)">
+                          <span class="muted" style="font-size:var(--text-xs); text-transform:uppercase">{{ s.when }}</span>
+                          <span class="label" style="background:{{ s.scoreBg }}; color:{{ s.scoreFg }}">{{ s.score }}</span>
+                        </div>
+                        <div style="padding:7px 8px; display:flex; flex-direction:column; gap:5px; flex:1">
+                          <div style="font-size:var(--text-md); font-weight:700">{{ s.title }}</div>
+                          <div class="muted" style="font-size:var(--text-xs)">{{ s.meta }}</div>
+                          <div style="display:flex; flex-direction:column; gap:3px; margin-top:2px">
+                            <sc-for list="{{ s.why }}" as="w" hint-placeholder-count="2">
+                              <div style="display:flex; gap:6px; font-size:var(--text-sm)">
+                                <span style="color:{{ w.color }}">{{ w.glyph }}</span>
+                                <span style="color:{{ w.fg }}; text-wrap:pretty">{{ w.t }}</span>
+                              </div>
+                            </sc-for>
+                          </div>
+                        </div>
+                        <div style="display:flex; gap:5px; padding:7px 8px; border-top:1px solid var(--border)">
+                          <button class="btn btn-sm btn-primary" style="flex:1; height:28px" onClick="{{ s.accept }}">{{ s.acceptLabel }}</button>
+                          <button class="btn btn-sm" style="height:28px" onClick="{{ noop }}">shuffle</button>
+                          <button class="btn btn-sm btn-ghost" style="height:28px" onClick="{{ noop }}">no</button>
+                        </div>
+                      </div>
+                    </sc-for>
+                  </div>
+                </div>
+              </sc-if>
+
+              <sc-if value="{{ isSug.loading }}">
+                <div style="border:1px solid var(--border); background:var(--bg-surface); padding:12px; display:flex; flex-direction:column; gap:10px">
+                  <div class="loading">scoring 84 recipes against 15 pantry items · 10 empty slots</div>
+                  <sc-for list="{{ skeletons }}" as="s" hint-placeholder-count="5">
+                    <div style="height:12px; background:var(--bg-hover); width:{{ s.w }}; animation:shimmer 1.4s ease-in-out infinite"></div>
+                  </sc-for>
+                </div>
+              </sc-if>
+
+              <sc-if value="{{ isSug.error }}">
+                <div style="border:1px solid color-mix(in srgb, var(--red) 40%, transparent); background:var(--red-bg); padding:12px; display:flex; flex-direction:column; gap:8px; max-width:520px">
+                  <div style="color:var(--red); font-weight:700">suggestion service unreachable</div>
+                  <div class="dim" style="font-size:var(--text-sm); text-wrap:pretty">502 from the model gateway after 3 retries. Your plan and pantry are untouched — nothing was written.</div>
+                  <pre style="font-size:var(--text-xs)">POST /api/suggest → 502 bad_gateway
+request 8f1c·b204 · 12:41:07</pre>
+                  <div style="display:flex; gap:6px; flex-wrap:wrap">
+                    <button class="btn btn-primary" onClick="{{ sugOk }}">retry</button>
+                    <button class="btn" onClick="{{ goPlan }}">fill the week by hand</button>
+                  </div>
+                </div>
+              </sc-if>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ is.shopping }}">
+            <div style="display:flex; flex-direction:column">
+              <sc-if value="{{ shop.empty }}">
+                <div style="padding:24px 14px; display:flex; flex-direction:column; gap:10px; align-items:flex-start; max-width:420px">
+                  <div style="font-size:var(--text-lg); font-weight:700">Nothing to buy</div>
+                  <div class="dim" style="text-wrap:pretty">The week's plan needs nothing the pantry doesn't already have. Either you planned well, or the week is empty.</div>
+                  <div style="display:flex; gap:6px; flex-wrap:wrap">
+                    <button class="btn btn-primary" onClick="{{ goPlan }}">open the week</button>
+                    <button class="btn" onClick="{{ shopFull }}">show a real list</button>
+                  </div>
+                </div>
+              </sc-if>
+              <sc-if value="{{ shop.full }}">
+                <div style="display:flex; flex-direction:column">
+                  <div class="bar-sticky" style="background:var(--bg); border-bottom:1px solid var(--border); padding:8px 10px; display:flex; flex-direction:column; gap:6px">
+                    <div style="display:flex; align-items:center; gap:8px">
+                      <span style="font-size:var(--text-md); font-weight:700">{{ shop.progress }}</span>
+                      <div style="flex:1; height:4px; background:var(--bg-hover)"><div style="height:4px; background:var(--accent); width:{{ shop.pct }}"></div></div>
+                      <button class="btn btn-sm" onClick="{{ shopReset }}">reset</button>
+                    </div>
+                    <div class="muted" style="font-size:var(--text-xs)">from vk 32 plan · minus pantry · aisle order</div>
+                  </div>
+                  <sc-for list="{{ shopGroups }}" as="g" hint-placeholder-count="4">
+                    <div>
+                      <div style="display:flex; justify-content:space-between; padding:6px 10px; background:var(--bg-raised); border-bottom:1px solid var(--border); border-top:1px solid var(--border)">
+                        <span class="section-header" style="padding:0; color:{{ g.color }}">{{ g.name }}</span>
+                        <span class="muted" style="font-size:var(--text-xs)">{{ g.count }}</span>
+                      </div>
+                      <sc-for list="{{ g.items }}" as="i" hint-placeholder-count="3">
+                        <button style="display:flex; align-items:center; gap:10px; width:100%; text-align:left; padding:9px 10px; border-bottom:1px solid var(--border); min-height:54px; background:{{ i.rowBg }}" onClick="{{ i.toggle }}">
+                          <span style="width:26px; height:26px; flex-shrink:0; border:1px solid {{ i.boxBd }}; background:{{ i.boxBg }}; color:{{ i.boxFg }}; display:flex; align-items:center; justify-content:center; font-weight:700">{{ i.check }}</span>
+                          <span style="flex:1; min-width:0">
+                            <span style="display:block; font-size:var(--text-md); color:{{ i.fg }}; text-decoration:{{ i.deco }}">{{ i.name }}</span>
+                            <span class="muted" style="display:block; font-size:var(--text-xs)">{{ i.note }}</span>
+                          </span>
+                          <span style="text-align:right; flex-shrink:0">
+                            <span style="display:block; font-size:var(--text-md); color:{{ i.qtyFg }}">{{ i.net }}</span>
+                            <span class="muted" style="display:block; font-size:var(--text-xs)">{{ i.have }}</span>
+                          </span>
+                        </button>
+                      </sc-for>
+                    </div>
+                  </sc-for>
+                  <div style="padding:10px; display:flex; gap:6px; border-top:1px solid var(--border)">
+                    <input class="input" style="height:34px; flex:1" placeholder="add something else…" />
+                    <button class="btn btn-primary" style="height:34px" onClick="{{ noop }}">add</button>
+                  </div>
+                  <div style="padding:0 10px 14px">
+                    <button class="btn" style="height:34px; width:100%" onClick="{{ shopEmptyState }}">show empty state</button>
+                  </div>
+                </div>
+              </sc-if>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ is.nutrition }}">
+            <div style="padding:10px; display:flex; flex-direction:column; gap:10px">
+              <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(min(130px,100%),1fr)); gap:1px; background:var(--border); border:1px solid var(--border)">
+                <sc-for list="{{ nutrTotals }}" as="t" hint-placeholder-count="4">
+                  <div style="background:var(--bg-surface); padding:8px 10px">
+                    <div class="muted" style="font-size:var(--text-xs); text-transform:uppercase; letter-spacing:.04em">{{ t.k }}</div>
+                    <div style="font-size:var(--text-lg); font-weight:700; color:{{ t.color }}">{{ t.v }}</div>
+                    <div class="muted" style="font-size:var(--text-xs)">{{ t.target }}</div>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="border:1px solid var(--border); background:var(--bg-surface); overflow-x:auto">
+                <div style="min-width:560px">
+                  <div style="display:grid; grid-template-columns:52px 1fr 62px 62px 62px 62px; padding:5px 10px; border-bottom:1px solid var(--border); background:var(--bg-raised)">
+                    <span class="section-header" style="padding:0">day</span>
+                    <span class="section-header" style="padding:0">kcal vs 2100–2500</span>
+                    <span class="section-header" style="padding:0; text-align:right">kcal</span>
+                    <span class="section-header" style="padding:0; text-align:right">p g</span>
+                    <span class="section-header" style="padding:0; text-align:right">c g</span>
+                    <span class="section-header" style="padding:0; text-align:right">f g</span>
+                  </div>
+                  <sc-for list="{{ nutrDays }}" as="d" hint-placeholder-count="7">
+                    <div style="display:grid; grid-template-columns:52px 1fr 62px 62px 62px 62px; padding:6px 10px; border-bottom:1px solid var(--border); align-items:center">
+                      <span style="color:{{ d.fg }}">{{ d.label }}</span>
+                      <span style="position:relative; height:12px; background:var(--bg-hover); margin-right:12px">
+                        <span style="position:absolute; inset:0 auto 0 0; width:{{ d.barW }}; background:{{ d.barColor }}"></span>
+                        <span style="position:absolute; top:-2px; bottom:-2px; left:{{ d.bandL }}; width:{{ d.bandW }}; border-left:1px solid var(--border-hover); border-right:1px solid var(--border-hover)"></span>
+                      </span>
+                      <span style="text-align:right; color:{{ d.barColor }}">{{ d.kcal }}</span>
+                      <span style="text-align:right" class="dim">{{ d.p }}</span>
+                      <span style="text-align:right" class="dim">{{ d.c }}</span>
+                      <span style="text-align:right" class="dim">{{ d.f }}</span>
+                    </div>
+                  </sc-for>
+                  <div style="display:grid; grid-template-columns:52px 1fr 62px 62px 62px 62px; padding:6px 10px; background:var(--bg-raised)">
+                    <span class="muted">avg</span>
+                    <span class="muted" style="font-size:var(--text-xs)">2 of 7 days below target · none above</span>
+                    <span style="text-align:right; font-weight:700">2 180</span>
+                    <span style="text-align:right" class="dim">118</span>
+                    <span style="text-align:right" class="dim">214</span>
+                    <span style="text-align:right" class="dim">79</span>
+                  </div>
+                </div>
+              </div>
+              <div class="muted" style="font-size:var(--text-xs)">planned days only — cooked entries use actual servings, planned ones the plan's. Freeform notes contribute nothing and are excluded (3 slots this week).</div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ is.waste }}">
+            <div style="padding:10px; display:flex; flex-direction:column; gap:10px">
+              <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(min(140px,100%),1fr)); gap:1px; background:var(--border); border:1px solid var(--border)">
+                <sc-for list="{{ wasteStats }}" as="s" hint-placeholder-count="3">
+                  <div style="background:var(--bg-surface); padding:8px 10px">
+                    <div class="muted" style="font-size:var(--text-xs); text-transform:uppercase">{{ s.k }}</div>
+                    <div style="font-size:var(--text-lg); font-weight:700; color:{{ s.color }}">{{ s.v }}</div>
+                    <div class="muted" style="font-size:var(--text-xs)">{{ s.note }}</div>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="border:1px solid var(--border); background:var(--bg-surface); padding:10px">
+                <div class="section-header" style="padding:0 0 8px">grams expired per week</div>
+                <div style="display:flex; align-items:flex-end; gap:6px; height:80px">
+                  <sc-for list="{{ wasteWeeks }}" as="w" hint-placeholder-count="8">
+                    <div style="flex:1; display:flex; flex-direction:column; justify-content:flex-end; align-items:center; gap:4px; height:100%">
+                      <span style="font-size:var(--text-xs); color:{{ w.color }}">{{ w.g }}</span>
+                      <div style="width:100%; height:{{ w.h }}; background:{{ w.bar }}"></div>
+                      <span class="muted" style="font-size:var(--text-xs)">{{ w.label }}</span>
+                    </div>
+                  </sc-for>
+                </div>
+              </div>
+              <div style="border:1px solid var(--border); background:var(--bg-surface)">
+                <div class="section-header" style="padding:6px 10px; border-bottom:1px solid var(--border)">expired unused · last 30 days</div>
+                <sc-for list="{{ wasteItems }}" as="w" hint-placeholder-count="5">
+                  <div style="display:flex; gap:10px; align-items:center; padding:7px 10px; border-bottom:1px solid var(--border)">
+                    <span style="flex:1; min-width:0"><span class="truncate">{{ w.name }}</span> <span class="muted" style="font-size:var(--text-xs)">{{ w.detail }}</span></span>
+                    <span class="label label-muted">{{ w.reason }}</span>
+                    <span style="width:64px; text-align:right" class="dim">{{ w.qty }}</span>
+                  </div>
+                </sc-for>
+                <div style="padding:9px 10px; display:flex; gap:8px; align-items:flex-start; border-left:2px solid var(--accent); background:var(--bg-raised)">
+                  <span class="accent">·</span>
+                  <span style="text-wrap:pretty; font-size:var(--text-sm)">Two patterns: <span class="accent">spinach</span> expired 3× — you buy 200 g and recipes use 80 g, so buy loose or plan a second spinach meal. And Thursdays get skipped 4 weeks running — the plan keeps assuming you cook after the late shift.</span>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ is.profile }}">
+            <div style="padding:10px; display:grid; grid-template-columns:{{ profileCols }}; gap:10px; align-items:start">
+              <div style="border:1px solid var(--border); background:var(--bg-surface); min-width:0">
+                <div class="section-header" style="padding:6px 8px; border-bottom:1px solid var(--border)">targets</div>
+                <div style="padding:8px; display:flex; flex-direction:column; gap:7px">
+                  <div><span class="form-label">name</span><input class="input" value="Mase" /></div>
+                  <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px">
+                    <div><span class="form-label">kcal min</span><input class="input" value="2100" /></div>
+                    <div><span class="form-label">kcal max</span><input class="input" value="2500" /></div>
+                  </div>
+                  <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:6px">
+                    <div><span class="form-label">protein g</span><input class="input" value="130" /></div>
+                    <div><span class="form-label">carbs g</span><input class="input" value="230" /></div>
+                    <div><span class="form-label">fat g</span><input class="input" value="80" /></div>
+                  </div>
+                  <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px">
+                    <div><span class="form-label">household</span><input class="input" value="2" /></div>
+                    <div><span class="form-label">skill</span><input class="input" value="competent" /></div>
+                  </div>
+                  <div>
+                    <span class="form-label">schedule profile</span>
+                    <input class="input" value="late shift tue+thu · long weekend cooking" />
+                    <div class="helper">Suggestions read this: low-effort on late-shift days, effort ≤ 2 on weeknights.</div>
+                  </div>
+                </div>
+              </div>
+              <div style="display:flex; flex-direction:column; gap:10px; min-width:0">
+                <sc-for list="{{ chipGroups }}" as="g" hint-placeholder-count="3">
+                  <div style="border:1px solid var(--border); background:var(--bg-surface)">
+                    <div style="display:flex; justify-content:space-between; padding:6px 8px; border-bottom:1px solid var(--border)">
+                      <span class="section-header" style="padding:0">{{ g.name }}</span>
+                      <span class="muted" style="font-size:var(--text-xs)">{{ g.note }}</span>
+                    </div>
+                    <div style="padding:8px; display:flex; gap:5px; flex-wrap:wrap">
+                      <sc-for list="{{ g.chips }}" as="c" hint-placeholder-count="4">
+                        <span class="btn btn-sm" style="background:{{ c.bg }}; color:{{ c.fg }}; border-color:{{ c.bd }}">{{ c.label }} <span class="muted">{{ c.x }}</span></span>
+                      </sc-for>
+                      <button class="btn btn-sm btn-ghost" onClick="{{ noop }}">+ add</button>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{ is.more }}">
+            <div style="padding:8px 0">
+              <sc-for list="{{ moreItems }}" as="m" hint-placeholder-count="6">
+                <button style="display:flex; align-items:center; gap:10px; width:100%; text-align:left; padding:12px 12px; border-bottom:1px solid var(--border); min-height:52px" onClick="{{ m.go }}">
+                  <span style="width:16px; color:var(--accent-text)">{{ m.glyph }}</span>
+                  <span style="flex:1">
+                    <span style="display:block; font-size:var(--text-md)">{{ m.label }}</span>
+                    <span class="muted" style="display:block; font-size:var(--text-xs)">{{ m.note }}</span>
+                  </span>
+                  <span class="muted">→</span>
+                </button>
+              </sc-for>
+            </div>
+          </sc-if>
+
+        </div>
+
+        <sc-if value="{{ is.phone }}">
+          <div style="display:flex; border-top:1px solid var(--border); background:var(--bg); flex-shrink:0">
+            <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="5">
+              <button style="flex:1; padding:8px 2px 9px; display:flex; flex-direction:column; align-items:center; gap:3px; min-height:54px; color:{{ t.fg }}; border-top:2px solid {{ t.edge }}" onClick="{{ t.go }}">
+                <span style="font-size:15px; line-height:1">{{ t.glyph }}</span>
+                <span style="font-size:var(--text-xs)">{{ t.label }}</span>
+              </button>
+            </sc-for>
+          </div>
+        </sc-if>
+
+      </div>
+    </div>
+  </div>
+
+  <sc-if value="{{ modal.cook }}">
+    <div class="modal-backdrop">
+      <div style="background:var(--bg-overlay); border:1px solid var(--border-overlay); width:520px; max-width:94vw; max-height:90dvh; display:flex; flex-direction:column">
+        <div style="padding:8px 10px; background:var(--bg-overlay-rim); border-bottom:1px solid var(--border-overlay); display:flex; justify-content:space-between; align-items:baseline">
+          <span style="font-weight:700; font-size:var(--text-md)">Cook · Lohikeitto</span>
+          <span class="muted" style="font-size:var(--text-sm)">ti 4.8. · dinner · 4 servings</span>
+        </div>
+        <div style="flex:1 1 auto; min-height:0; overflow-y:auto">
+          <div class="section-header" style="padding:7px 10px">will be deducted · oldest expiry first</div>
+          <sc-for list="{{ deductions }}" as="d" hint-placeholder-count="5">
+            <div style="display:flex; gap:8px; align-items:center; padding:6px 10px; border-top:1px solid var(--border)">
+              <span style="flex:1; min-width:0"><span>{{ d.name }}</span> <span class="muted" style="font-size:var(--text-xs)">{{ d.lot }}</span></span>
+              <span style="width:70px; text-align:right; color:var(--red)">−{{ d.take }}</span>
+              <span style="width:78px; text-align:right" class="muted">{{ d.after }} left</span>
+            </div>
+          </sc-for>
+          <div style="padding:8px 10px; border-top:1px solid var(--border); display:flex; gap:8px; align-items:flex-start; background:var(--orange-bg)">
+            <span style="color:var(--orange)">!</span>
+            <span style="font-size:var(--text-sm); text-wrap:pretty; color:var(--orange)">Marking cooked is final. The deduction above is computed from <span class="bold">4 servings</span> and the entry locks — to change servings or recipe, do it now.</span>
+          </div>
+          <div style="padding:8px 10px; border-top:1px solid var(--border); display:flex; gap:8px; align-items:center; flex-wrap:wrap">
+            <span class="muted" style="font-size:var(--text-xs); text-transform:uppercase">servings</span>
+            <button class="btn" style="width:28px" onClick="{{ decServings }}">−</button>
+            <span style="min-width:20px; text-align:center; font-weight:700; color:var(--accent-text)">{{ servings }}</span>
+            <button class="btn" style="width:28px" onClick="{{ incServings }}">+</button>
+            <span class="muted" style="font-size:var(--text-xs)">quantities above rescale live</span>
+          </div>
+        </div>
+        <div style="padding:8px 10px; background:var(--bg-overlay-rim); border-top:1px solid var(--border-overlay); display:flex; gap:6px; justify-content:flex-end; flex-wrap:wrap">
+          <button class="btn btn-ghost" onClick="{{ closeModals }}">cancel</button>
+          <button class="btn" onClick="{{ closeModals }}">mark skipped</button>
+          <button class="btn btn-primary" onClick="{{ openFeedback }}">deduct &amp; mark cooked</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ modal.fb }}">
+    <div class="modal-backdrop">
+      <div style="background:var(--bg-overlay); border:1px solid var(--border-overlay); width:420px; max-width:94vw; display:flex; flex-direction:column">
+        <div style="padding:8px 10px; background:var(--bg-overlay-rim); border-bottom:1px solid var(--border-overlay); display:flex; justify-content:space-between; align-items:baseline">
+          <span style="font-weight:700">Cooked. 8 items deducted.</span>
+          <button class="btn btn-sm btn-ghost" onClick="{{ closeModals }}">skip</button>
+        </div>
+        <div style="padding:10px; display:flex; flex-direction:column; gap:10px">
+          <sc-for list="{{ fbRows }}" as="r" hint-placeholder-count="3">
+            <div style="display:flex; flex-direction:column; gap:4px">
+              <span class="form-label" style="margin:0">{{ r.label }}</span>
+              <div style="display:flex; gap:5px; flex-wrap:wrap">
+                <sc-for list="{{ r.opts }}" as="o" hint-placeholder-count="3">
+                  <button class="btn" style="height:32px; background:{{ o.bg }}; color:{{ o.fg }}; border-color:{{ o.bd }}" onClick="{{ o.pick }}">{{ o.label }}</button>
+                </sc-for>
+              </div>
+            </div>
+          </sc-for>
+          <sc-if value="{{ fbChanged }}">
+            <div>
+              <span class="form-label">what did you change? <span style="color:var(--red)">required</span></span>
+              <textarea class="textarea" style="min-height:54px" placeholder="halved the cream, added dill at the end" aria-invalid="{{ fbInvalid }}"></textarea>
+              <div class="helper helper-error">{{ fbError }}</div>
+            </div>
+          </sc-if>
+        </div>
+        <div style="padding:8px 10px; background:var(--bg-overlay-rim); border-top:1px solid var(--border-overlay); display:flex; gap:6px; justify-content:flex-end">
+          <button class="btn btn-primary" onClick="{{ closeModals }}">save · tunes suggestions</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ toast.on }}">
+    <div class="toast-container">
+      <button class="toast toast-success" style="text-align:left" onClick="{{ hideToast }}">{{ toast.text }}</button>
+    </div>
+  </sc-if>
+
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;accentColor&quot;:{&quot;editor&quot;:&quot;color&quot;,&quot;default&quot;:&quot;#06b6d4&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;options&quot;:[&quot;#06b6d4&quot;,&quot;#e8a308&quot;,&quot;#22c55e&quot;,&quot;#bc8cff&quot;],&quot;section&quot;:&quot;Theme&quot;},&quot;device&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;desktop&quot;,&quot;options&quot;:[&quot;desktop&quot;,&quot;phone&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Layout&quot;},&quot;startView&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;default&quot;:&quot;today&quot;,&quot;options&quot;:[&quot;today&quot;,&quot;pantry&quot;,&quot;recipes&quot;,&quot;import&quot;,&quot;plan&quot;,&quot;suggest&quot;,&quot;shopping&quot;,&quot;nutrition&quot;,&quot;waste&quot;,&quot;profile&quot;],&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Layout&quot;}}">
+const A = "#22d3ee";
+const RAMP = {
+  expired:   { label: "expired",   color: "var(--red)",    bg: "color-mix(in srgb, var(--red) 15%, transparent)",    row: "color-mix(in srgb, var(--red) 6%, transparent)" },
+  use_today: { label: "use today", color: "var(--orange)", bg: "color-mix(in srgb, var(--orange) 15%, transparent)", row: "color-mix(in srgb, var(--orange) 5%, transparent)" },
+  use_soon:  { label: "use soon",  color: "#e8a308",       bg: "color-mix(in srgb, #e8a308 14%, transparent)",       row: "transparent" },
+  fresh:     { label: "fresh",     color: "var(--green)",  bg: "color-mix(in srgb, var(--green) 12%, transparent)",  row: "transparent" }
+};
+const PANTRY = [
+  { n: "Dill", fi: "tilli", q: "20 g", cat: "produce", loc: "fridge", d: -1, added: "26.7." },
+  { n: "Salmon fillet", fi: "lohifile", q: "400 g", cat: "protein", loc: "fridge", d: 0, added: "2.8." },
+  { n: "Quark", fi: "rahka", q: "500 g", cat: "dairy", loc: "fridge", d: 1, added: "30.7.", opened: true },
+  { n: "Milk", fi: "maito", q: "1 l", cat: "dairy", loc: "fridge", d: 2, added: "1.8.", opened: true },
+  { n: "Spinach", fi: "pinaatti", q: "200 g", cat: "produce", loc: "fridge", d: 2, added: "1.8." },
+  { n: "Chicken thigh", fi: "broilerin reisi", q: "600 g", cat: "protein", loc: "fridge", d: 3, added: "2.8." },
+  { n: "Rye bread", fi: "ruisleipä", q: "6 pcs", cat: "grain", loc: "counter", d: 4, added: "1.8." },
+  { n: "Sour cream", fi: "smetana", q: "200 ml", cat: "dairy", loc: "fridge", d: 5, added: "28.7." },
+  { n: "Carrot", fi: "porkkana", q: "700 g", cat: "produce", loc: "fridge", d: 12, added: "27.7." },
+  { n: "Oltermanni cheese", fi: "juusto", q: "400 g", cat: "dairy", loc: "fridge", d: 14, added: "27.7." },
+  { n: "Potato", fi: "peruna", q: "2 kg", cat: "produce", loc: "pantry", d: 21, added: "20.7." },
+  { n: "Butter", fi: "voi", q: "250 g", cat: "dairy", loc: "fridge", d: 30, added: "22.7.", opened: true },
+  { n: "Onion", fi: "sipuli", q: "1 kg", cat: "produce", loc: "pantry", d: 34, added: "20.7." },
+  { n: "Pearl barley", fi: "ohrasuurimo", q: "900 g", cat: "grain", loc: "pantry", d: 210, added: "3.6." },
+  { n: "Lingonberry", fi: "puolukka", q: "300 g", cat: "produce", loc: "freezer", d: 240, added: "12.9." }
+];
+const RECIPES = [
+  { id: "lohikeitto", title: "Lohikeitto", src: "manual", prep: 15, total: 35, serv: 4, effort: 2, rating: 5, cooked: 11, cuisine: "finnish", tags: ["soup", "fish", "quick"],
+    ing: [["Salmon fillet", 400, "g", 0, "cubed"], ["Potato", 500, "g"], ["Carrot", 150, "g"], ["Leek", 1, "pcs"], ["Cream", 2, "dl"], ["Fish stock", 1, "l"], ["Dill", 15, "g", 0, "at the end"], ["Allspice", 6, "pcs", 1]],
+    steps: ["Simmer potato, carrot and leek in the stock 12 min.", "Add the salmon, take off the boil, 6 min more.", "Cream in, warm through — never boil after this.", "Dill off heat. Rest 10 min before serving."] },
+  { id: "karjalanpaisti", title: "Karjalanpaisti", src: "manual", prep: 20, total: 190, serv: 6, effort: 2, rating: 5, cooked: 3, cuisine: "finnish", tags: ["oven", "slow", "pork"],
+    ing: [["Pork shoulder", 700, "g"], ["Beef chuck", 500, "g"], ["Onion", 400, "g"], ["Carrot", 300, "g"], ["Allspice", 12, "pcs"], ["Bay leaf", 2, "pcs", 1], ["Salt", 2, "tsp"]],
+    steps: ["Layer meat, onion, carrot and spice in a pot.", "Water to just cover. Lid on.", "175 °C for three hours. Don't stir.", "Salt at the end, taste twice."] },
+  { id: "rahkabowl", title: "Rahka & puolukka bowl", src: "manual", prep: 5, total: 5, serv: 1, effort: 1, rating: 4, cooked: 24, cuisine: "finnish", tags: ["breakfast", "no-cook", "quick"],
+    ing: [["Quark", 250, "g"], ["Lingonberry", 60, "g"], ["Oats", 30, "g"], ["Honey", 1, "tsp", 1]],
+    steps: ["Quark in a bowl.", "Berries on top, still half frozen.", "Oats, honey if the berries fight back."] },
+  { id: "graavilohi", title: "Ruisleipä & graavilohi", src: "manual", prep: 6, total: 6, serv: 2, effort: 1, rating: 5, cooked: 9, cuisine: "finnish", tags: ["lunch", "no-cook", "fish"],
+    ing: [["Rye bread", 4, "pcs"], ["Cured salmon", 120, "g"], ["Sour cream", 60, "ml"], ["Dill", 8, "g"], ["Black pepper", 1, "tsp", 1]],
+    steps: ["Sour cream on the bread, thin.", "Salmon, dill, pepper.", "Eat standing up."] },
+  { id: "ohrarisotto", title: "Ohrarisotto metsäsienillä", src: "imported", prep: 15, total: 40, serv: 4, effort: 3, rating: 4, cooked: 2, cuisine: "finnish", tags: ["vegetarian", "grain"],
+    ing: [["Pearl barley", 300, "g"], ["Forest mushrooms", 250, "g"], ["Onion", 150, "g"], ["Butter", 40, "g"], ["Vegetable stock", 9, "dl"], ["Oltermanni cheese", 80, "g"], ["Dill", 10, "g", 1]],
+    steps: ["Dry-fry the mushrooms until the water is gone.", "Butter and onion, soften without colour.", "Barley in, toast a minute, then stock a ladle at a time.", "25–30 min, stirring. Grain tender with bite.", "Cheese and dill off heat."] },
+  { id: "pinaattiletut", title: "Pinaattiletut", src: "manual", prep: 10, total: 25, serv: 3, effort: 2, rating: 4, cooked: 5, cuisine: "finnish", tags: ["vegetarian", "quick"],
+    ing: [["Spinach", 200, "g"], ["Milk", 4, "dl"], ["Wheat flour", 180, "g"], ["Egg", 2, "pcs"], ["Butter", 30, "g"], ["Salt", 1, "tsp"]],
+    steps: ["Wilt the spinach, chop it fine.", "Batter, rest 20 min.", "Thin pancakes in butter, hot pan.", "Lingonberry jam alongside."] },
+  { id: "uunilohi", title: "Uunilohi & juurekset", src: "ai", prep: 10, total: 45, serv: 4, effort: 1, rating: 4, cooked: 1, cuisine: "finnish", tags: ["oven", "fish", "one-pan"],
+    ing: [["Salmon fillet", 600, "g"], ["Potato", 700, "g"], ["Carrot", 300, "g"], ["Onion", 200, "g"], ["Butter", 30, "g"], ["Dill", 10, "g", 1]],
+    steps: ["Roots in the tray, 200 °C, 25 min.", "Salmon on top, butter, 15 min more.", "Dill, lemon if you have it."] }
+];
+const SRC = { manual: ["var(--bg-raised)", "var(--fg-2)"], imported: ["var(--blue-bg)", "var(--blue)"], ai: ["var(--purple-bg)", "var(--purple)"], forked: ["var(--cyan-bg)", "var(--cyan)"] };
+const HAVE = { lohikeitto: { "Salmon fillet": ["have", 1], Potato: ["have", 1], Carrot: ["have", 1], Leek: ["buy", 0], Cream: ["buy", 0], "Fish stock": ["buy", 0], Dill: ["expired", 2], Allspice: ["have", 1] } };
+
+class Component extends DCLogic {
+  state = { view: "today", mode: "desktop", serv: 4, rid: "lohikeitto", loc: "all", stage: "review", sug: "ok", shop: "full", bought: { "Cream 2 dl": 1, "Leek 2 pcs": 1, "Rye bread 4 pcs": 1 }, cook: 0, fb: 0, fbPick: { rating: "", effort: "", again: "", asis: "" }, toast: "" };
+
+  componentDidMount() {
+    const a = this.props.accentColor;
+    if (a) { document.documentElement.style.setProperty("--accent", a); document.documentElement.style.setProperty("--accent-text", a); }
+    if (this.props.startView) this.setState({ view: this.props.startView });
+    if (this.props.device === "phone") this.setState({ mode: "phone" });
+  }
+
+  go = (v) => () => this.setState({ view: v, cook: 0, fb: 0 });
+  say = (msg) => {
+    clearTimeout(this._t);
+    this.setState({ toast: msg });
+    this._t = setTimeout(() => this.setState({ toast: "" }), 2600);
+  };
+  st(d) { return d < 0 ? RAMP.expired : d <= 1 ? RAMP.use_today : d <= 3 ? RAMP.use_soon : RAMP.fresh; }
+  dleft(d) { return d < 0 ? Math.abs(d) + "d ago" : d === 0 ? "today" : d === 1 ? "1 day" : d < 60 ? d + " days" : Math.round(d / 30) + " mo"; }
+  recipe() { return RECIPES.find(r => r.id === this.state.rid) || RECIPES[0]; }
+  fmt(n) { const r = n >= 100 ? Math.round(n / 5) * 5 : Math.round(n * 10) / 10; return String(r).replace(".", ","); }
+  tab(on) { return on ? { bg: "var(--bg-hover)", fg: "var(--fg-1)", bd: "var(--border-hover)" } : { bg: "var(--bg-raised)", fg: "var(--fg-2)", bd: "var(--border)" }; }
+
+  renderVals() {
+    const s = this.state, phone = s.mode === "phone", r = this.recipe(), mult = s.serv / r.serv;
+    const nav = (v, label, glyph, badge, badgeColor) => {
+      const on = s.view === v;
+      return { label, glyph, badge: badge || "", go: this.go(v), bg: on ? "var(--bg-hover)" : "transparent", fg: on ? "var(--fg-1)" : "var(--fg-2)",
+        edge: on ? "var(--accent)" : "transparent", edge2: on ? A : "var(--fg-3)",
+        badgeBg: badgeColor ? "color-mix(in srgb, " + badgeColor + " 15%, transparent)" : "transparent", badgeFg: badgeColor || "transparent" };
+    };
+    const views = {
+      today: ["Today", "tiistai 4.8. · 3 planned, 1 cooked"], pantry: ["Pantry", "15 items · spoilage order"],
+      recipes: ["Recipes", "7 in collection · filter by tag"], import: ["Recipe import", "url or text → draft → review"],
+      plan: ["Meal plan", "vk 32 · 7 days × 4 slots"], suggest: ["AI suggestions", "spoilage-weighted, explained"],
+      shopping: ["Shopping list", "aisle order · needed minus pantry"], nutrition: ["Nutrition", "vs 2100–2500 kcal"],
+      waste: ["Waste", "what expired unused"], profile: ["Profile", "targets, restrictions, kit"], more: ["More", "everything else"]
+    };
+    const v = views[s.view] || views.today;
+    const isView = {}; Object.keys(views).forEach(k => isView[k] = s.view === k);
+
+    const sorted = PANTRY.filter(p => s.loc === "all" || p.loc === s.loc);
+    const locCount = (l) => l === "all" ? PANTRY.length : PANTRY.filter(p => p.loc === l).length;
+
+    const ing = r.ing.map(([name, q, unit, opt, notes]) => {
+      const h = (HAVE[r.id] || {})[name];
+      const state = h ? h[0] : (PANTRY.some(p => p.n === name) ? "have" : "buy");
+      const meta = state === "have" ? ["color-mix(in srgb, var(--green) 14%, transparent)", "var(--green)", "in pantry"]
+        : state === "expired" ? ["color-mix(in srgb, var(--red) 15%, transparent)", "var(--red)", "expired"]
+        : ["var(--bg-raised)", "var(--fg-3)", "to buy"];
+      return { q: this.fmt(q * mult) + " " + unit, name, notes: notes || "", opt: opt ? "optional" : "", havBg: meta[0], havFg: meta[1], have: meta[2] };
+    });
+
+    const cell = (slot, title, status, serv, rid) => {
+      const map = { planned: ["var(--bg-raised)", "var(--fg-2)"], cooked: ["var(--green-bg)", "var(--green)"], skipped: ["var(--red-bg)", "var(--red)"], substituted: ["var(--orange-bg)", "var(--orange)"], empty: ["transparent", "var(--fg-3)"] };
+      const m = map[status];
+      return { slot, title: title || "—", tag: status === "empty" ? "+ fill" : status, serv: serv ? serv + " serv" : "", tagBg: m[0], tagFg: m[1],
+        bg: status === "cooked" ? "color-mix(in srgb, var(--green) 5%, transparent)" : "var(--bg)", edge: status === "empty" ? "transparent" : m[1],
+        fg: status === "empty" ? "var(--fg-3)" : status === "cooked" ? "var(--fg-2)" : "var(--fg-1)",
+        go: status === "empty" ? this.go("suggest") : status === "planned" ? () => this.setState({ cook: 1, rid: rid || s.rid }) : () => this.say("Cooked entries are locked — the deduction was computed from them.") };
+    };
+    const week = [
+      { label: "ma", date: "3.8.", kcal: "2 240 kcal", slots: [cell("breakfast", "Rahka & puolukka", "cooked", 1), cell("lunch", "Työlounas — canteen", "planned", 1), cell("dinner", "Karjalanpaisti", "cooked", 6, "karjalanpaisti"), cell("snack", "", "empty")] },
+      { label: "ti", date: "4.8.", kcal: "1 480 / 2 100", slots: [cell("breakfast", "Rahka & puolukka", "cooked", 1), cell("lunch", "Ruisleipä & graavilohi", "cooked", 2, "graavilohi"), cell("dinner", "Lohikeitto", "planned", 4, "lohikeitto"), cell("snack", "", "empty")] },
+      { label: "ke", date: "5.8.", kcal: "2 310 kcal", slots: [cell("breakfast", "Rahka & puolukka", "planned", 1), cell("lunch", "Karjalanpaisti · leftovers", "planned", 2, "karjalanpaisti"), cell("dinner", "Pinaattiletut", "planned", 3, "pinaattiletut"), cell("snack", "", "empty")] },
+      { label: "to", date: "6.8.", kcal: "1 620 kcal", slots: [cell("breakfast", "Rahka & puolukka", "planned", 1), cell("lunch", "", "empty"), cell("dinner", "Uunilohi & juurekset", "skipped", 4, "uunilohi"), cell("snack", "", "empty")] },
+      { label: "pe", date: "7.8.", kcal: "2 190 kcal", slots: [cell("breakfast", "", "empty"), cell("lunch", "Ohrarisotto", "planned", 4, "ohrarisotto"), cell("dinner", "Uunilohi & juurekset", "substituted", 4, "uunilohi"), cell("snack", "Rye bread & cheese", "planned", 1)] },
+      { label: "la", date: "8.8.", kcal: "2 400 kcal", slots: [cell("breakfast", "Pinaattiletut", "planned", 3, "pinaattiletut"), cell("lunch", "", "empty"), cell("dinner", "Karjalanpaisti", "planned", 6, "karjalanpaisti"), cell("snack", "", "empty")] },
+      { label: "su", date: "9.8.", kcal: "— unplanned", slots: [cell("breakfast", "", "empty"), cell("lunch", "", "empty"), cell("dinner", "", "empty"), cell("snack", "", "empty")] }
+    ];
+    week.forEach((d, i) => { d.fg = i === 1 ? A : "var(--fg-1)"; d.kcalFg = i === 1 ? "var(--orange)" : i === 6 ? "var(--fg-3)" : "var(--fg-2)"; });
+
+    const shopItems = [
+      ["produce", "var(--green)", [["Leek", "2 pcs", "have 0", "lohikeitto ti"], ["Mushrooms, forest", "250 g", "have 0", "ohrarisotto pe"], ["Spinach", "200 g", "have 200 g — half short", "pinaattiletut ke + la"], ["Lemon", "1 pcs", "optional", "uunilohi"]]],
+      ["protein", "var(--red)", [["Pork shoulder", "700 g", "have 0", "karjalanpaisti la"], ["Beef chuck", "500 g", "have 0", "karjalanpaisti la"], ["Cured salmon", "120 g", "have 0", "graavilohi"]]],
+      ["dairy", "var(--blue)", [["Cream", "2 dl", "have 0", "lohikeitto ti"], ["Milk", "6 dl", "have 1 l — 4 dl short", "pinaattiletut ×2"], ["Egg", "4 pcs", "have 0", "pinaattiletut ×2"]]],
+      ["grain", "var(--orange)", [["Rye bread", "4 pcs", "have 6 pcs — enough", "graavilohi"], ["Wheat flour", "360 g", "have 0", "pinaattiletut ×2"]]],
+      ["condiment", "var(--purple)", [["Fish stock", "1 l", "have 0", "lohikeitto"], ["Honey", "1 jar", "ad-hoc — you added this", ""]]]
+    ];
+    const groups = shopItems.map(([name, color, items]) => {
+      const rows = items.map(([n, net, have, note]) => {
+        const key = n + " " + net, on = !!s.bought[key];
+        return { name: n, net, have, note: note || "ad-hoc", check: on ? "✓" : "", toggle: () => this.setState(p => ({ bought: Object.assign({}, p.bought, { [key]: p.bought[key] ? 0 : 1 }) })),
+          rowBg: on ? "color-mix(in srgb, var(--green) 5%, transparent)" : "transparent", fg: on ? "var(--fg-3)" : "var(--fg-1)", deco: on ? "line-through" : "none",
+          qtyFg: on ? "var(--fg-3)" : A, boxBd: on ? "var(--green)" : "var(--border-hover)", boxBg: on ? "var(--green-bg)" : "transparent", boxFg: "var(--green)" };
+      });
+      return { name, color, count: rows.filter(x => x.check).length + "/" + rows.length, items: rows };
+    });
+    const total = groups.reduce((a, g) => a + g.items.length, 0), done = groups.reduce((a, g) => a + g.items.filter(i => i.check).length, 0);
+
+    const why = (t, kind) => kind === "spoil" ? { t, glyph: "!", color: "var(--orange)", fg: "var(--orange)" }
+      : kind === "block" ? { t, glyph: "×", color: "var(--red)", fg: "var(--fg-2)" }
+      : { t, glyph: "·", color: A, fg: "var(--fg-2)" };
+    const sug = (when, title, meta, score, scoreKind, whys, accepted) => ({
+      when, title, meta, score, why: whys, accept: () => this.say("Added to " + when + " — plan updated, shopping list recalculated."),
+      acceptLabel: accepted ? "accepted ✓" : "accept → " + when,
+      bd: scoreKind === "hot" ? "color-mix(in srgb, var(--orange) 45%, transparent)" : "var(--border)",
+      scoreBg: scoreKind === "hot" ? "var(--orange-bg)" : "var(--bg-raised)", scoreFg: scoreKind === "hot" ? "var(--orange)" : "var(--fg-2)"
+    });
+
+    return {
+      is: Object.assign({ phone, desktop: !phone }, isView),
+      screen: { title: v[0], sub: v[1] },
+      frameStyle: phone
+        ? "width:390px; height:844px; max-height:100%; border:1px solid var(--border-overlay); display:flex; overflow:hidden; margin:12px 0; background:var(--bg)"
+        : "flex:1; min-width:0; display:flex; overflow:hidden",
+      deskBtn: this.tab(!phone).bg === "var(--bg-hover)" ? "background:var(--bg-hover); color:var(--fg-1)" : "color:var(--fg-2)",
+      phoneBtn: phone ? "background:var(--bg-hover); color:var(--fg-1)" : "color:var(--fg-2)",
+      setPhone: () => this.setState({ mode: "phone" }), setDesktop: () => this.setState({ mode: "desktop" }),
+      noop: () => this.say("Mock — not wired to the API."),
+      goPantry: this.go("pantry"), goPlan: this.go("plan"), goSuggest: this.go("suggest"), goShopping: this.go("shopping"), goWaste: this.go("waste"),
+
+      navMain: [nav("today", "Today", "◆", "3"), nav("pantry", "Pantry", "▤", "1", "var(--red)"), nav("plan", "Meal plan", "▦"), nav("suggest", "Suggestions", "✳", "6", A), nav("shopping", "Shopping", "▣", String(total - done), "var(--orange)")],
+      navSub: [nav("recipes", "Recipes", "▧", "7"), nav("import", "Import", "↓", "2", "var(--red)"), nav("nutrition", "Nutrition", "▪"), nav("waste", "Waste", "▫"), nav("profile", "Profile", "◍")],
+      tabs: [["today", "Today", "◆"], ["pantry", "Pantry", "▤"], ["shopping", "Shop", "▣"], ["plan", "Plan", "▦"], ["more", "More", "⋯"]].map(([k, label, glyph]) => {
+        const on = s.view === k || (k === "more" && ["recipes", "import", "suggest", "nutrition", "waste", "profile", "more"].includes(s.view));
+        return { label, glyph, go: this.go(k), fg: on ? A : "var(--fg-3)", edge: on ? "var(--accent)" : "transparent" };
+      }),
+      moreItems: [["recipes", "Recipes", "7 in collection", "▧"], ["import", "Recipe import", "2 lines need resolving", "↓"], ["suggest", "AI suggestions", "6 for empty slots", "✳"], ["nutrition", "Nutrition", "2 180 kcal avg", "▪"], ["waste", "Waste report", "310 g last week", "▫"], ["profile", "Profile", "targets & restrictions", "◍"]].map(([k, label, note, glyph]) => ({ label, note, glyph, go: this.go(k) })),
+
+      todayStats: [
+        { k: "eaten", v: "1 480", note: "of 2 100–2 500 kcal", color: "var(--orange)" },
+        { k: "protein", v: "84 g", note: "target 130 g", color: "var(--fg-1)" },
+        { k: "use today", v: "2", note: "salmon 400 g · rahka", color: "var(--orange)" },
+        { k: "expired", v: "1", note: "dill · 1d ago", color: "var(--red)" },
+        { k: "to buy", v: String(total - done), note: "before saturday", color: A }
+      ],
+      todayMeals: [
+        { slot: "breakfast", title: "Rahka & puolukka bowl", meta: "1 serving · 320 kcal", status: "cooked", fg: "var(--fg-2)", tagBg: "var(--green-bg)", tagFg: "var(--green)", actionLabel: "locked", action: () => this.say("Cooked is terminal — deduction already applied."), actionStyle: "opacity:.5" },
+        { slot: "lunch", title: "Ruisleipä & graavilohi", meta: "2 servings · 410 kcal", status: "cooked", fg: "var(--fg-2)", tagBg: "var(--green-bg)", tagFg: "var(--green)", actionLabel: "rate", action: () => this.setState({ fb: 1 }), actionStyle: "" },
+        { slot: "dinner", title: "Lohikeitto", meta: "4 servings · uses salmon expiring today", status: "planned", fg: "var(--fg-1)", tagBg: "var(--bg-raised)", tagFg: "var(--fg-2)", actionLabel: "cook →", action: () => this.setState({ cook: 1, rid: "lohikeitto" }), actionStyle: "background:var(--accent-glow); border-color:color-mix(in srgb, var(--accent) 40%, transparent); color:" + A },
+        { slot: "snack", title: "empty", meta: "suggestion available", status: "—", fg: "var(--fg-3)", tagBg: "transparent", tagFg: "var(--fg-3)", actionLabel: "fill", action: this.go("suggest"), actionStyle: "" }
+      ],
+      spoiling: PANTRY.slice(0, 5).map(p => { const st = this.st(p.d); return { name: p.n, fi: p.fi, qty: p.q, loc: p.loc, color: st.color, bg: st.bg, label: p.d < 0 ? this.dleft(p.d) : st.label }; }),
+      todos: [
+        { text: "Cook tonight's lohikeitto — clears 400 g salmon + the dill", glyph: "◆", color: A, go: () => this.setState({ cook: 1, rid: "lohikeitto" }) },
+        { text: "2 imported recipe lines still unmatched", glyph: "↓", color: "var(--red)", go: this.go("import") },
+        { text: "Sunday is empty — 4 slots, 6 suggestions waiting", glyph: "✳", color: "var(--orange)", go: this.go("suggest") },
+        { text: "Shop before saturday · 13 items in 5 aisles", glyph: "▣", color: "var(--fg-2)", go: this.go("shopping") }
+      ],
+
+      locFilters: ["all", "fridge", "freezer", "pantry", "counter"].map(l => { const t = this.tab(s.loc === l); return { label: l, n: locCount(l), go: () => this.setState({ loc: l }), bg: t.bg, fg: t.fg, bd: t.bd }; }),
+      pantryRows: sorted.map(p => { const st = this.st(p.d); return { name: p.n, fi: p.fi, qty: p.q, cat: p.cat, loc: p.loc, added: p.added, color: st.color, label: p.d < 0 ? "expired " + this.dleft(p.d) : st.label + " · " + this.dleft(p.d), rowBg: st.row, openedTag: p.opened ? "opened" : "" }; }),
+
+      recipeCols: phone ? "1fr" : "270px 1fr",
+      ingCols: phone ? "1fr" : "1fr 1fr",
+      reviewCols: phone ? "1fr" : "1fr 1.15fr",
+      profileCols: phone ? "1fr" : "1fr 1fr",
+      recipeTags: ["all", "quick", "fish", "vegetarian", "oven", "no-cook"].map(t => { const on = t === "all", m = this.tab(on); return { label: t, go: this.noop, bg: m.bg, fg: m.fg, bd: m.bd }; }),
+      recipeList: RECIPES.map(x => ({ title: x.title, time: x.total + " min", meta: x.cuisine + " · effort " + x.effort + "/5 · cooked " + x.cooked + "× · ★" + x.rating,
+        go: () => this.setState({ rid: x.id, serv: x.serv }), bg: x.id === s.rid ? "var(--bg-hover)" : "transparent", edge: x.id === s.rid ? "var(--accent)" : "transparent", fg: x.id === s.rid ? "var(--fg-1)" : "var(--fg-2)" })),
+      recipe: { title: r.title, sourceType: r.src, srcBg: SRC[r.src][0], srcFg: SRC[r.src][1],
+        subline: r.cuisine + " · " + r.tags.join(" · ") + " · base recipe " + r.serv + " servings",
+        stats: [{ k: "prep", v: r.prep + " min", color: "var(--fg-1)" }, { k: "total", v: r.total + " min", color: "var(--fg-1)" }, { k: "effort", v: r.effort + "/5", color: r.effort > 3 ? "var(--orange)" : "var(--green)" }, { k: "cooked", v: r.cooked + "×", color: "var(--fg-1)" }, { k: "rating", v: "★ " + r.rating, color: A }],
+        steps: r.steps.map((t, i) => ({ n: (i + 1) + ".", t })) },
+      servings: s.serv, scaleNote: s.serv === r.serv ? "base recipe" : "scaled ×" + (Math.round(mult * 100) / 100) + " from " + r.serv,
+      ingredients: ing,
+      incServings: () => this.setState(p => ({ serv: Math.min(12, p.serv + 1) })),
+      decServings: () => this.setState(p => ({ serv: Math.max(1, p.serv - 1) })),
+      openCook: () => this.setState({ cook: 1 }),
+
+      stageTabs: [["input", "1 · paste"], ["loading", "2 · extracting"], ["review", "3 · review"]].map(([k, label]) => { const t = this.tab(s.stage === k); return { label, go: () => this.setState({ stage: k }), bg: t.bg, fg: t.fg, bd: t.bd }; }),
+      isStage: { input: s.stage === "input", loading: s.stage === "loading", review: s.stage === "review" },
+      toExtract: () => { this.setState({ stage: "loading" }); setTimeout(() => this.setState({ stage: "review" }), 1600); },
+      toInput: () => this.setState({ stage: "input" }),
+      skeletons: ["72%", "54%", "88%", "41%", "66%"].map(w => ({ w })),
+      reconLines: [
+        { raw: "3 dl ohrasuurimoita", bind: "Pearl barley · ohrasuurimo", qty: "300 g", state: "bound" },
+        { raw: "250 g metsäsieniä", bind: "unmatched — no catalog entry", qty: "250 g", state: "unresolved", newName: "Forest mushrooms", candidates: [{ name: "Mushroom, button", score: "0.61" }, { name: "Chanterelle", score: "0.58" }, { name: "Porcini, dried", score: "0.44" }] },
+        { raw: "1 iso sipuli", bind: "Onion · sipuli", qty: "150 g · assumed", state: "assumed" },
+        { raw: "40 g voita", bind: "Butter · voi", qty: "40 g", state: "bound" },
+        { raw: "9 dl kasvislientä", bind: "Vegetable stock", qty: "9 dl", state: "bound" },
+        { raw: "reilusti raastettua Oltermannia", bind: "Oltermanni cheese — quantity missing", qty: "? g", state: "unresolved", newName: "Oltermanni, grated", candidates: [{ name: "80 g", score: "typical" }, { name: "120 g", score: "generous" }, { name: "Oltermanni cheese", score: "bind only" }] },
+        { raw: "tilliä", bind: "Dill · tilli", qty: "10 g · optional", state: "assumed" }
+      ].map((l, i) => {
+        const m = l.state === "bound" ? ["var(--green)", "var(--green-bg)", "transparent", "var(--fg-2)"]
+          : l.state === "assumed" ? ["#e8a308", "color-mix(in srgb, #e8a308 14%, transparent)", "transparent", "#e8a308"]
+          : ["var(--red)", "var(--red-bg)", "color-mix(in srgb, var(--red) 5%, transparent)", "var(--red)"];
+        return Object.assign({}, l, { n: (i + 1) + ".", color: m[0], bg: m[1], rowBg: m[2], bindFg: m[3], unresolved: l.state === "unresolved" });
+      }),
+
+      week,
+      sugTabs: [["ok", "suggestions"], ["loading", "loading"], ["error", "error"]].map(([k, label]) => { const t = this.tab(s.sug === k); return { label, go: () => this.setState({ sug: k }), bg: t.bg, fg: t.fg, bd: t.bd }; }),
+      isSug: { ok: s.sug === "ok", loading: s.sug === "loading", error: s.sug === "error" },
+      sugOk: () => this.setState({ sug: "ok" }),
+      suggestions: [
+        sug("ti · snack", "Rahka & puolukka bowl", "5 min · effort 1/5 · 320 kcal · cooked 24×", "spoilage 0.91", "hot", [why("Uses 250 g quark that expires tomorrow", "spoil"), why("Lingonberries from the freezer — no shopping", "n"), why("Fits the 620 kcal you have left today", "n")]),
+        sug("to · lunch", "Uunilohi & juurekset", "45 min · effort 1/5 · 540 kcal", "spoilage 0.78", "hot", [why("Uses 600 g salmon and 300 g carrot before sunday", "spoil"), why("Late shift thursday — one tray, no attention", "n"), why("Was skipped once already; servings dropped 4 → 2", "n")]),
+        sug("su · dinner", "Karjalanpaisti", "190 min · effort 2/5 · 610 kcal", "score 0.64", "n", [why("Sunday is your long cooking slot", "n"), why("Makes 6 — covers monday and tuesday lunch", "n"), why("Needs 1.2 kg meat you don't have — adds 2 shopping lines", "block")]),
+        sug("su · lunch", "Ohrarisotto metsäsienillä", "40 min · effort 3/5 · 470 kcal", "score 0.58", "n", [why("Clears 300 g barley sitting since june", "n"), why("Vegetarian — 3 meat meals already this week", "n"), why("Effort 3 is at your weeknight ceiling, so weekend", "n")]),
+        sug("pe · breakfast", "Pinaattiletut", "25 min · effort 2/5 · 380 kcal", "spoilage 0.72", "hot", [why("Uses the last 200 g spinach and 4 dl milk", "spoil"), why("Lingonberry jam already in the freezer", "n")]),
+        sug("la · lunch", "Ruisleipä & graavilohi", "6 min · effort 1/5 · 410 kcal", "score 0.51", "n", [why("Rye bread goes stale in 4 days — 6 slices left", "spoil"), why("Rejected twice recently — will stop offering it", "block")])
+      ],
+
+      shop: { empty: s.shop === "empty", full: s.shop === "full", progress: done + " / " + total + " bought", pct: Math.round((done / total) * 100) + "%" },
+      shopGroups: groups,
+      shopReset: () => this.setState({ bought: {} }),
+      shopEmptyState: () => this.setState({ shop: "empty" }),
+      shopFull: () => this.setState({ shop: "full" }),
+
+      nutrTotals: [{ k: "week kcal", v: "15 240", note: "target 14 700–17 500", color: "var(--fg-1)" }, { k: "protein", v: "826 g", note: "target 910 g · 91%", color: "var(--orange)" }, { k: "carbs", v: "1 498 g", note: "target 1 610 g", color: "var(--fg-1)" }, { k: "fat", v: "553 g", note: "target 560 g", color: "var(--green)" }],
+      nutrDays: [["ma", 2240, 132, 218, 82], ["ti", 1480, 84, 141, 58], ["ke", 2310, 118, 246, 78], ["to", 1620, 96, 158, 61], ["pe", 2190, 121, 220, 84], ["la", 2400, 139, 232, 96], ["su", 0, 0, 0, 0]].map(([label, kcal, p, c, f]) => {
+        const max = 3000;
+        return { label, kcal: kcal ? kcal.toLocaleString("fi-FI").replace(",", " ") : "—", p: p || "—", c: c || "—", f: f || "—",
+          fg: label === "ti" ? A : "var(--fg-1)", barW: Math.round((kcal / max) * 100) + "%",
+          barColor: kcal === 0 ? "var(--bg-hover)" : kcal < 2100 ? "var(--orange)" : kcal > 2500 ? "var(--red)" : "var(--green)",
+          bandL: Math.round((2100 / max) * 100) + "%", bandW: Math.round((400 / max) * 100) + "%" };
+      }),
+
+      wasteStats: [{ k: "last 30 days", v: "980 g", note: "6 items · ~9,40 €", color: "var(--fg-1)" }, { k: "trend", v: "−38 %", note: "vs the 30 before", color: "var(--green)" }, { k: "worst category", v: "produce", note: "herbs and leaves, 4 of 6", color: "var(--orange)" }],
+      wasteWeeks: [["W26", 520], ["W27", 410], ["W28", 300], ["W29", 480], ["W30", 180], ["W31", 90], ["W32", 310], ["W33", 20]].map(([label, g]) => ({ label, g: g + "g", h: Math.max(3, Math.round((g / 520) * 56)) + "px", bar: g > 400 ? "var(--red)" : g > 200 ? "var(--orange)" : "var(--green)", color: g > 400 ? "var(--red)" : "var(--fg-2)" })),
+      wasteItems: [
+        { name: "Dill", detail: "tilli · fridge · 7 day shelf life", reason: "bought for one recipe", qty: "20 g" },
+        { name: "Spinach", detail: "pinaatti · fridge", reason: "planned, thursday skipped", qty: "120 g" },
+        { name: "Sour cream", detail: "smetana · opened 9 days", reason: "opened, half used", qty: "100 ml" },
+        { name: "Coriander", detail: "korianteri · fridge", reason: "disliked — stop buying", qty: "15 g" },
+        { name: "Rye bread", detail: "ruisleipä · counter", reason: "stale, 2 slices", qty: "2 pcs" }
+      ],
+      chipGroups: [
+        { name: "dietary restrictions", note: "hard filter", chips: [["no shellfish", "red"], ["low lactose", "orange"]].map(([label, c]) => ({ label, x: "×", bg: "color-mix(in srgb, var(--" + c + ") 12%, transparent)", fg: "var(--" + c + ")", bd: "color-mix(in srgb, var(--" + c + ") 40%, transparent)" })) },
+        { name: "disliked ingredients", note: "soft — down-weighted, never blocked", chips: ["coriander", "liver", "blue cheese", "olives"].map(label => ({ label, x: "×", bg: "var(--bg-raised)", fg: "var(--fg-2)", bd: "var(--border)" })) },
+        { name: "kitchen equipment", note: "gates suggestions", chips: ["oven", "hob 4", "cast iron", "blender", "no sous-vide", "no air fryer"].map(label => ({ label, x: "", bg: "var(--bg-raised)", fg: "var(--fg-2)", bd: "var(--border)" })) }
+      ],
+
+      modal: { cook: !!s.cook, fb: !!s.fb },
+      closeModals: () => this.setState({ cook: 0, fb: 0 }),
+      openFeedback: () => { this.setState({ cook: 0, fb: 1 }); this.say("Cooked · 8 pantry items deducted, oldest lots first."); },
+      deductions: [
+        { name: "Salmon fillet", lot: "lot 2.8. · expires today", take: this.fmt(400 * (s.serv / 4)) + " g", after: "0 g" },
+        { name: "Potato", lot: "lot 20.7. · pantry", take: this.fmt(500 * (s.serv / 4)) + " g", after: "1,5 kg" },
+        { name: "Carrot", lot: "lot 27.7. · fridge", take: this.fmt(150 * (s.serv / 4)) + " g", after: "550 g" },
+        { name: "Dill", lot: "lot 26.7. · EXPIRED 1d", take: this.fmt(15 * (s.serv / 4)) + " g", after: "5 g" },
+        { name: "Cream", lot: "not in pantry — buy first", take: this.fmt(2 * (s.serv / 4)) + " dl", after: "shopping" },
+        { name: "Fish stock", lot: "not in pantry — buy first", take: this.fmt(1 * (s.serv / 4)) + " l", after: "shopping" }
+      ],
+      fbRows: [
+        { label: "worth it?", opts: [["thumbs_up", "▲ yes"], ["thumbs_down", "▼ no"]].map(([k, label]) => this.fbOpt("rating", k, label)) },
+        { label: "effort felt", opts: [["felt_right", "right"], ["too_hard", "too hard"], ["too_easy", "too easy"]].map(([k, label]) => this.fbOpt("effort", k, label)) },
+        { label: "make again", opts: [["yes", "yes"], ["maybe", "maybe"], ["no", "no"]].map(([k, label]) => this.fbOpt("again", k, label)) },
+        { label: "cooked as written", opts: [["yes", "as-is"], ["no", "changed it"]].map(([k, label]) => this.fbOpt("asis", k, label)) }
+      ],
+      fbChanged: s.fbPick.asis === "no",
+      fbInvalid: "true",
+      fbError: "changesNote is required when you didn't cook it as written",
+
+      toast: { on: !!s.toast, text: s.toast },
+      hideToast: () => { clearTimeout(this._t); this.setState({ toast: "" }); }
+    };
+  }
+
+  fbOpt(group, k, label) {
+    const on = this.state.fbPick[group] === k;
+    return { label, pick: () => { this.setState(p => ({ fbPick: Object.assign({}, p.fbPick, { [group]: k }) })); },
+      bg: on ? "var(--accent-glow)" : "var(--bg-raised)", fg: on ? A : "var(--fg-2)", bd: on ? "color-mix(in srgb, var(--accent) 45%, transparent)" : "var(--border)" };
+  }
+
+}
+
+</script>
+</body>
+</html>
