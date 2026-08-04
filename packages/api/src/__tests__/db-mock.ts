@@ -79,6 +79,13 @@ export interface WriteRecord {
   values?: unknown;
   /** The .where() clause, when the handler applied one. */
   where?: unknown;
+  /**
+   * insert().onConflictDoUpdate({ target, set }) — the upsert's conflict clause.
+   * `set` is the assertion surface for a merge write: it says which columns the
+   * upsert rewrites on an existing row, which is exactly what separates
+   * generation-owned quantities from user-owned bought/customNote.
+   */
+  conflict?: { target: unknown; set: unknown };
 }
 
 /**
@@ -162,6 +169,15 @@ function makeRecorder(
         recorded.push(v);
         record.values = v;
         log();
+        return builder;
+      };
+    }
+    if (kind === 'insert') {
+      // Runs after .values() has already logged the statement, so it only
+      // annotates the existing record — a real upsert never raises the 23505
+      // that throwOnWrite would simulate here anyway.
+      builder.onConflictDoUpdate = (arg: { target?: unknown; set?: unknown }) => {
+        record.conflict = { target: arg?.target, set: arg?.set };
         return builder;
       };
     }
