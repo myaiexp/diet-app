@@ -1,5 +1,7 @@
 // Pure recipe view scaling for GET /recipes/:id?servings=N (no DB write)
 
+import { round6 } from './units.js';
+
 export type RecipeIngredientLineView = {
   id: string;
   recipeId?: string;
@@ -28,10 +30,6 @@ export type ScaledRecipe = RecipeWithIngredients & {
 export type ScaleResult =
   | { ok: true; recipe: ScaledRecipe }
   | { ok: false; error: 'invalid_target' | 'invalid_base' };
-
-function round6(n: number): number {
-  return Math.round(n * 1e6) / 1e6;
-}
 
 function asPositiveFinite(n: unknown): number | null {
   const v = typeof n === 'number' ? n : Number(n);

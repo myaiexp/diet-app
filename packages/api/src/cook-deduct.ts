@@ -1,6 +1,6 @@
 // Pure FEFO pantry deduction planner (recipe lines vs pantry rows)
 
-import { toBase, fromBase, resolveUnit, type Dimension } from './units.js';
+import { toBase, fromBase, resolveUnit, round6, type Dimension } from './units.js';
 
 export interface RecipeLine {
   ingredientId: string;
@@ -44,10 +44,6 @@ export interface Shortfall {
 }
 
 const EPSILON = 1e-9;
-
-function round6(n: number): number {
-  return Math.round(n * 1e6) / 1e6;
-}
 
 /** FEFO: soonest expiry → opened first → oldest createdAt. Copies input. */
 function sortFefo(rows: PantryRow[]): PantryRow[] {
