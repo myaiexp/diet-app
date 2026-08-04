@@ -57,6 +57,14 @@ export async function seedDatabase(
         )
         .onConflictDoUpdate({
           target: ingredients.name,
+          // isPantryStaple is deliberately absent here: it is user-owned,
+          // toggled through PATCH /api/ingredients/:id, and the JSON only
+          // carries an initial guess. Refreshing it on every re-seed — the
+          // idempotent path run whenever ingredient data is regenerated —
+          // would silently reset all 462 flags and wipe the user's curation.
+          // It stays in the .values() insert shape so a *new* ingredient still
+          // gets that guess. Every other column here is catalog data that must
+          // keep refreshing.
           set: {
             ...excludedColumns({
               aliases: ingredients.aliases,
@@ -65,7 +73,6 @@ export async function seedDatabase(
               nutritionPer100g: ingredients.nutritionPer100g,
               shelfLife: ingredients.shelfLife,
               tags: ingredients.tags,
-              isPantryStaple: ingredients.isPantryStaple,
             }),
             updatedAt: sql`now()`,
           },

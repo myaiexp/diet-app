@@ -17,6 +17,10 @@ function makeMockDb({ existingProfiles = [] as unknown[] } = {}) {
     transactionOpened: false,
     ingredientUpsertRows: null as unknown[] | null,
     onConflictTarget: undefined as unknown,
+    // The conflict-update SET map. Capturing only the target would leave the
+    // "does a re-seed overwrite isPantryStaple" question unobservable — the
+    // assertion below would pass whether or not the column is in the list.
+    onConflictSet: undefined as Record<string, unknown> | undefined,
     profileInserted: false,
   };
 
@@ -30,8 +34,9 @@ function makeMockDb({ existingProfiles = [] as unknown[] } = {}) {
           }
           calls.ingredientUpsertRows = rows as unknown[];
           return {
-            onConflictDoUpdate(arg: { target: unknown }) {
+            onConflictDoUpdate(arg: { target: unknown; set: Record<string, unknown> }) {
               calls.onConflictTarget = arg.target;
+              calls.onConflictSet = arg.set;
               return Promise.resolve();
             },
           };
@@ -96,6 +101,38 @@ describe('seedDatabase', () => {
 
     expect(calls.ingredientUpsertRows).toBeNull();
     expect(result.ingredientCount).toBe(0);
+  });
+
+  test('does not overwrite isPantryStaple on re-seed', async () => {
+    // The flag is user-owned (PATCH /api/ingredients/:id). If it appeared in the
+    // conflict-update set, every `pnpm db:seed` would reset the user's curation
+    // back to the JSON guess.
+    const { db, calls } = makeMockDb();
+    await seedDatabase(db, SAMPLE);
+
+    expect(Object.keys(calls.onConflictSet!)).not.toContain('isPantryStaple');
+    // ...while the genuine catalog columns must keep refreshing.
+    expect(Object.keys(calls.onConflictSet!)).toEqual(
+      expect.arrayContaining([
+        'aliases',
+        'category',
+        'defaultUnit',
+        'nutritionPer100g',
+        'shelfLife',
+        'tags',
+        'updatedAt',
+      ]),
+    );
+  });
+
+  test('still seeds isPantryStaple for a newly inserted ingredient', async () => {
+    const { db, calls } = makeMockDb();
+    await seedDatabase(db, SAMPLE);
+
+    expect(calls.ingredientUpsertRows![0]).toMatchObject({
+      name: 'potato',
+      isPantryStaple: true,
+    });
   });
 
   test('projects only known ingredient columns into the insert', async () => {
