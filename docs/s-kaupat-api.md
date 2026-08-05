@@ -179,32 +179,43 @@ Field names beyond what those documents cover (`nutrients`, `allergens`, the
 wrong guess returns `Cannot query field "x" on type "Y"` cheaply, and a right one
 returns data or a "must have a selection of subfields" error that names the type.
 
-## What login would add
+## What login adds — measured, not inferred
 
-Nothing for catalog data. The auth-gated operations on s-kaupat.fi are all personal:
-order history, favourites, shopping lists, saved payment cards, profile, and
-`personalizedSortedProducts` (recommendation ranking). Prices, nutrition, ingredients
-and the full assortment are already open.
+**Nothing, for catalog data.** This was tested with a real logged-in session rather
+than reasoned about, because the earlier inference-based version of this section got
+its reasoning wrong (it went looking at S-mobiili, when the login that matters is
+s-kaupat.fi's own, which is perfectly reachable in a browser).
 
-Nor can auth surface Jämsänkoski, and it is worth being precise about why, because
-"there must be more behind the login" is the natural assumption:
+The session lives in **localStorage, not a cookie** — key `session-…`, at
+`state.authTokens.accessToken` — and is sent as `Authorization: Bearer <jwt>`. The
+JWT is issued by `authorization.voikukka.fi`; its `sIdExp` claim expires the session
+one hour after issue, while `exp` runs ~14 days.
 
-- Its absence shows up in `Query.stores` — a **public, unauthenticated** field
-  returning all 706 e-commerce stores. An account cannot add a store to a list you
-  can already read in full.
-- `store(id: "726644899").navigation` is `null` and `products` is empty for that id,
-  which are the same public resolvers the logged-out site renders from.
-- `products` has **no user-scoped argument**: the full signature is `facets`,
-  `filters`, `from`, `limit`, `order`, `orderBy`, `queryString`, `slug`, `storeId`,
-  `availabilityDate`, `fallbackToGlobal`, `marketingId`. There is no seam through
-  which an account could change the assortment returned.
+Every catalog-relevant query returned **identical results** authenticated and
+anonymous:
 
-**S-mobiili is not a second chance at this.** It is a native app with no web surface
-at all — `s-mobiili.fi` serves a Play Store / App Store download splash, and
-`omat.`/`web.`/`app.`/`asiointi.`/`tunnistaudu.s-mobiili.fi` are all NXDOMAIN. So
-haxi cannot reach it either: haxi's ladder tops out at driving Chrome, and even its
-deferred rung 6 (HAR-recorded auth'd clients, helm idea #2546) records *browser*
-traffic. Getting Jämsänkoski's shelf prices would mean intercepting the Android app
-— mitmproxy plus defeating cert pinning — which is a different project with a small
-payoff, since nutrition is product-level and already open and chain pricing means
-Jämsä matches for chain-priced items. Tracked as diet-app idea #3240.
+| probe | anonymous | authenticated |
+| --- | --- | --- |
+| `store(726644899).navigation` | `null` | `null` |
+| `store(726644899).products` | `total: 0` | `total: 0` |
+| `stores` (e-com list) | 706, no Jämsänkoski | 706, no Jämsänkoski |
+| `searchPickupDeliveryAreas(storeId: 726644899)` | — | **0 areas** (Jämsä: 1) |
+| `personalizedSortedProducts` (auth-only) | n/a | **502 upstream** for Jämsänkoski, works for Jämsä |
+| pricing, 12 products at Jämsä | baseline | **byte-identical** |
+
+That last row matters for the exporter: there are no member-only prices, so
+`skaupat-export.py` needs no token and none was added to it.
+
+The auth-gated operations really are all personal — order history, favourites,
+shopping lists, saved payment cards, profile, recommendation ranking. And
+structurally there is no seam for an account to change assortment: `products` takes
+`facets`, `filters`, `from`, `limit`, `order`, `orderBy`, `queryString`, `slug`,
+`storeId`, `availabilityDate`, `fallbackToGlobal`, `marketingId` — nothing
+user-scoped.
+
+So Jämsänkoski's absence is a fact about the assortment system, not an access
+control. The only route left to its shelf prices is intercepting the S-mobiili
+native app (mitmproxy plus cert unpinning) — a different project from haxi, whose
+ladder drives a browser. Payoff is small: nutrition and ingredients are
+product-level and already open, and chain pricing means Jämsä matches for
+chain-priced items. Tracked as diet-app idea #3240.
