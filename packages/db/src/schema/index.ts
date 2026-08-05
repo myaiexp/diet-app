@@ -2,6 +2,7 @@
 export { ingredients } from './ingredients.js';
 export { recipes, recipeIngredients } from './recipes.js';
 export { pantryItems } from './pantry.js';
+export { products } from './products.js';
 export { mealPlanEntries, cookFeedback } from './meal-plans.js';
 export { shoppingLists, shoppingListItems } from './shopping-lists.js';
 export { userProfile, userDislikedIngredients } from './user-profile.js';

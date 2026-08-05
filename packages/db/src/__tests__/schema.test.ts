@@ -34,6 +34,28 @@ const COLUMN_SPECS: Record<string, Record<string, ColumnSpec>> = {
     createdAt: { type: 'PgTimestamp', notNull: true, hasDefault: true },
     updatedAt: { type: 'PgTimestamp', notNull: true, hasDefault: true },
   },
+  products: {
+    id: { type: 'PgUUID', notNull: true, hasDefault: true, primary: true },
+    // Uniqueness is the composite (store_id, ean), so neither column is unique alone.
+    ean: { type: 'PgText', notNull: true },
+    sokId: { type: 'PgText' },
+    storeId: { type: 'PgText', notNull: true },
+    name: { type: 'PgText', notNull: true },
+    brandName: { type: 'PgText' },
+    slug: { type: 'PgText' },
+    price: { type: 'PgNumeric' },
+    priceUnit: { type: 'PgText' },
+    comparisonPrice: { type: 'PgNumeric' },
+    comparisonUnit: { type: 'PgText' },
+    countryOfOrigin: { type: 'PgText' },
+    ingredientStatement: { type: 'PgText' },
+    nutritionPer100g: { type: 'PgJsonb' },
+    categoryPath: { type: 'PgArray', hasDefault: true },
+    frozen: { type: 'PgBoolean', hasDefault: true },
+    fetchedAt: { type: 'PgTimestamp', notNull: true, hasDefault: true },
+    createdAt: { type: 'PgTimestamp', notNull: true, hasDefault: true },
+    updatedAt: { type: 'PgTimestamp', notNull: true, hasDefault: true },
+  },
   recipes: {
     id: { type: 'PgUUID', notNull: true, hasDefault: true, primary: true },
     title: { type: 'PgText', notNull: true },
@@ -221,6 +243,17 @@ describe('schema exports', () => {
     for (const tableName of Object.keys(COLUMN_SPECS)) {
       expect(tables[tableName], `${tableName} should be exported`).toBeDefined();
     }
+  });
+
+  // Everything above loops COLUMN_SPECS, so a table added to the schema but not to
+  // the spec map is covered by nothing and the whole file still passes. This is the
+  // only assertion that reads the live schema, so it is what forces a new table to
+  // arrive with a spec.
+  test('every exported table has a COLUMN_SPECS entry', () => {
+    const exported = Object.entries(tables)
+      .filter(([, v]) => v != null && typeof v === 'object' && columnKeys(v).length > 0)
+      .map(([k]) => k);
+    expect(exported.sort()).toEqual(Object.keys(COLUMN_SPECS).sort());
   });
 
   test('all relations exported from index', () => {

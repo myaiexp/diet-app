@@ -11,6 +11,7 @@
     "migrate": "drizzle-kit migrate",
     "studio": "drizzle-kit studio",
     "seed": "tsx src/seed.ts",
+    "import-products": "tsx src/import-products-cli.ts",
     "db:seed": "node scripts/generate-ingredients.mjs && tsx src/seed.ts",
     "seed:demo": "node scripts/seed-demo.mjs",
     "setup:test-db": "bash scripts/setup-test-db.sh",

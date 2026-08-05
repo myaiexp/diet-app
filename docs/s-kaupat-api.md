@@ -73,6 +73,16 @@ query($storeId: ID!, $slug: String, $from: Int, $limit: Int) {
 enriching a pantry item someone scanned), `queryString` for free-text search,
 `orderBy`/`order`, and structured facets.
 
+**EANs are not all global.** Loose, weighed goods carry store-internal codes starting
+with `2` — the loose banana is `2000503600002`, the loose lime `2000507900009`. Those
+are assigned within S-group, so they are stable keys *here*, but they identify nothing
+outside it and must not be treated as global product identifiers. A packaged product's
+EAN (e.g. `6414893386488`) is global.
+
+An EAN also does not identify a row uniquely across stores: the same product carries a
+different price in a different store's assortment. Anything storing these needs
+`(storeId, ean)` as its key — see `packages/db/src/schema/products.ts`.
+
 Other useful roots: `stores` (all 706 e-com stores), `searchStores(query:)` (the
 full directory), `store(id:).navigation` (category tree), `product`, `pageContent`.
 
