@@ -62,7 +62,7 @@ distinct nutrient names** and two value formats:
 
 | S-kaupat name | target key | note |
 | --- | --- | --- |
-| `Energia` | `calories` | `"196 kJ / 47 kcal"` — take the kcal side |
+| `Energia` | `calories` + `energy_kj` | `"196 kJ / 47 kcal"` — **both** sides kept |
 | `Proteiinia` | `protein_g` | |
 | `Rasvaa` | `fat_g` | |
 | `Hiilihydraattia` | `carbs_g` | |
@@ -72,6 +72,19 @@ distinct nutrient names** and two value formats:
 | `- josta sokereita` | `sugars_g` | new key |
 
 Values are `<number><unit>` with a **Finnish decimal comma** (`"1,5 g"`, `"0 g"`).
+
+**The unit is parsed and checked, not assumed.** The table above declares a
+*dimension* (mass or energy) rather than a bare target key, and the unit handling is
+derived from it: a mass value is converted into the grams its `_g` key promises
+(`mg` ×1e-3, `µg` ×1e-6) and **refused** if the unit is unconvertible or absent.
+Every non-energy nutrient in the current dump happens to be grams, so an
+assume-grams parser would pass today and be wrong the first time an `mg` value
+arrives under a known name — sodium is routinely labelled that way, and 500 mg
+written as 500 g is off by a thousand. Absent is likewise not grams: a bare number
+on a mass key is rejected.
+
+Energy keeps **both** units. kJ is the EU's primary labelled figure and kcal the
+secondary one, so taking only kcal discards the legally primary value for no reason.
 
 The three new keys (`salt_g`, `saturated_fat_g`, `sugars_g`) are additive and safe.
 `nutritionPer100g` is `jsonb`, and while `GET /api/ingredients` does serialize the

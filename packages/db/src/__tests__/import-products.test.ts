@@ -60,7 +60,7 @@ describe('toProductRow', () => {
   });
 
   test('parses nutrients into the jsonb column', () => {
-    expect(toProductRow(lime, 'S').nutritionPer100g).toEqual({ calories: 30 });
+    expect(toProductRow(lime, 'S').nutritionPer100g).toEqual({ calories: 30, energy_kj: 126 });
   });
 
   test('stores null nutrition for a product that declares none', () => {

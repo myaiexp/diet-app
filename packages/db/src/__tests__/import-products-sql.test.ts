@@ -104,7 +104,7 @@ describe.skipIf(!hasDb)('importProducts against real SQL', () => {
       .select()
       .from(products)
       .where(and(eq(products.storeId, STORE_A), eq(products.ean, EAN)));
-    expect(row!.nutritionPer100g).toEqual({ calories: 47 });
+    expect(row!.nutritionPer100g).toEqual({ calories: 47, energy_kj: 196 });
   });
 
   test('a row without an ean is skipped rather than written', async () => {
