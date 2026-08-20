@@ -12,6 +12,26 @@ import { itemCreateSchema, itemPatchSchema } from '../schemas/shopping-lists.js'
 import { isFkViolation, isUniqueViolation } from '../pg-errors.js';
 import { toBase, baseUnit, round6 } from '../units.js';
 
+type Tx = Parameters<Parameters<Db['transaction']>[0]>[0];
+
+type ListLock =
+  | { kind: 'ok' }
+  | { kind: 'not_found' }
+  | { kind: 'done' };
+
+const DONE_LOCKED = 'Completed shopping list cannot be modified';
+
+async function lockList(tx: Tx, listId: string): Promise<ListLock> {
+  const [list] = await tx
+    .select()
+    .from(shoppingLists)
+    .where(eq(shoppingLists.id, listId))
+    .for('update');
+  if (!list) return { kind: 'not_found' };
+  if (list.status === 'done') return { kind: 'done' };
+  return { kind: 'ok' };
+}
+
 export function shoppingListItemsRoutes(db: Db): Hono {
   const app = new Hono();
 
@@ -37,26 +57,54 @@ export function shoppingListItemsRoutes(db: Db): Hono {
     if (data.quantityNeeded !== undefined) patch.quantityNeeded = String(data.quantityNeeded);
     if (data.netToBuy !== undefined) patch.netToBuy = String(data.netToBuy);
 
-    const [row] = await db
-      .update(shoppingListItems)
-      .set(patch)
-      .where(eq(shoppingListItems.id, id))
-      .returning();
+    const result = await db.transaction(async (tx) => {
+      const [item] = await tx
+        .select({ listId: shoppingListItems.listId })
+        .from(shoppingListItems)
+        .where(eq(shoppingListItems.id, id));
+      if (!item) return { kind: 'not_found' } as const;
 
-    if (!row) return notFound(c);
-    return c.json(row);
+      const lock = await lockList(tx, item.listId);
+      if (lock.kind !== 'ok') return lock;
+
+      const [row] = await tx
+        .update(shoppingListItems)
+        .set(patch)
+        .where(eq(shoppingListItems.id, id))
+        .returning();
+      if (!row) return { kind: 'not_found' } as const;
+      return { kind: 'ok' as const, row };
+    });
+
+    if (result.kind === 'not_found') return notFound(c);
+    if (result.kind === 'done') return conflict(c, DONE_LOCKED);
+    return c.json(result.row);
   });
 
   app.delete('/items/:id', async (c) => {
     const id = c.req.param('id');
     if (!isUuid(id)) return badRequest(c, 'Invalid id format');
 
-    const deleted = await db
-      .delete(shoppingListItems)
-      .where(eq(shoppingListItems.id, id))
-      .returning({ id: shoppingListItems.id });
+    const result = await db.transaction(async (tx) => {
+      const [item] = await tx
+        .select({ listId: shoppingListItems.listId })
+        .from(shoppingListItems)
+        .where(eq(shoppingListItems.id, id));
+      if (!item) return { kind: 'not_found' } as const;
 
-    if (deleted.length === 0) return notFound(c);
+      const lock = await lockList(tx, item.listId);
+      if (lock.kind !== 'ok') return lock;
+
+      const deleted = await tx
+        .delete(shoppingListItems)
+        .where(eq(shoppingListItems.id, id))
+        .returning({ id: shoppingListItems.id });
+      if (deleted.length === 0) return { kind: 'not_found' } as const;
+      return { kind: 'ok' } as const;
+    });
+
+    if (result.kind === 'not_found') return notFound(c);
+    if (result.kind === 'done') return conflict(c, DONE_LOCKED);
     return c.body(null, 204);
   });
 
@@ -68,16 +116,6 @@ export function shoppingListItemsRoutes(db: Db): Hono {
     if (!parsed.ok) return parsed.response;
     const data = parsed.data;
 
-    const list = await db.query.shoppingLists.findFirst({
-      where: eq(shoppingLists.id, listId),
-    });
-    if (!list) return notFound(c);
-
-    const ingredient = await db.query.ingredients.findFirst({
-      where: eq(ingredients.id, data.ingredientId),
-    });
-    if (!ingredient) return badRequest(c, 'Invalid reference');
-
     // Normalize to the dimension base before writing: the unique index is
     // (list_id, ingredient_id, unit), so an un-normalized 'kg' row would sit
     // beside a generated 'g' row for the same ingredient instead of colliding
@@ -88,28 +126,44 @@ export function shoppingListItemsRoutes(db: Db): Hono {
     const unit = baseUnit(based.dimension);
 
     try {
-      const [row] = await db
-        .insert(shoppingListItems)
-        .values({
-          listId,
-          ingredientId: data.ingredientId,
-          quantityNeeded: String(quantity),
-          // A manual row is never netted against the pantry: the user typed
-          // exactly what they want to buy, and regeneration never revisits
-          // manual rows (only generated ones), so a netted value here could
-          // never be refreshed later — a stale number forever beats an absent
-          // one only in appearance, not in usefulness.
-          quantityInPantry: '0',
-          netToBuy: String(quantity),
-          category: ingredient.category,
-          unit,
-          source: 'manual',
-          bought: false,
-          customNote: data.customNote ?? null,
-        })
-        .returning();
+      const result = await db.transaction(async (tx) => {
+        const lock = await lockList(tx, listId);
+        if (lock.kind !== 'ok') return lock;
 
-      return c.json(row, 201);
+        const [ingredient] = await tx
+          .select()
+          .from(ingredients)
+          .where(eq(ingredients.id, data.ingredientId));
+        if (!ingredient) return { kind: 'bad_ref' } as const;
+
+        const [row] = await tx
+          .insert(shoppingListItems)
+          .values({
+            listId,
+            ingredientId: data.ingredientId,
+            quantityNeeded: String(quantity),
+            // A manual row is never netted against the pantry: the user typed
+            // exactly what they want to buy, and regeneration never revisits
+            // manual rows (only generated ones), so a netted value here could
+            // never be refreshed later — a stale number forever beats an absent
+            // one only in appearance, not in usefulness.
+            quantityInPantry: '0',
+            netToBuy: String(quantity),
+            category: ingredient.category,
+            unit,
+            source: 'manual',
+            bought: false,
+            customNote: data.customNote ?? null,
+          })
+          .returning();
+
+        return { kind: 'ok' as const, row };
+      });
+
+      if (result.kind === 'not_found') return notFound(c);
+      if (result.kind === 'done') return conflict(c, DONE_LOCKED);
+      if (result.kind === 'bad_ref') return badRequest(c, 'Invalid reference');
+      return c.json(result.row, 201);
     } catch (err) {
       // Same (list, ingredient, unit) already has a row — collide, don't duplicate.
       if (isUniqueViolation(err)) {

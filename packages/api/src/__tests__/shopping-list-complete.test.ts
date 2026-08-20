@@ -320,4 +320,13 @@ describe('shoppingListCompleteRoutes', () => {
     const listRead = reads.find((r) => r.table === tableNameOf(shoppingLists));
     expect(listRead?.forUpdate).toBe(true);
   });
+
+  test('locks the item rows FOR UPDATE after the list', async () => {
+    const { db, reads } = makeCompleteMock();
+    await shoppingListCompleteRoutes(db).request(`/${LIST_ID}/complete`, jsonReq({}));
+    const listIdx = reads.findIndex((r) => r.table === tableNameOf(shoppingLists));
+    const itemIdx = reads.findIndex((r) => r.table === tableNameOf(shoppingListItems));
+    expect(itemIdx).toBeGreaterThan(listIdx);
+    expect(reads[itemIdx]?.forUpdate).toBe(true);
+  });
 });

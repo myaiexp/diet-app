@@ -70,7 +70,7 @@ function withSignal<T>(p: Promise<T>, signal: AbortSignal): Promise<T> {
 type SafeOk = { ok: true; url: URL };
 type SafeErr = { ok: false; error: 'invalid_url' | 'blocked_url' | 'fetch_failed' };
 
-async function assertUrlSafe(
+async function parseSafeUrl(
   raw: string,
   dnsLookup: DnsLookupFn,
   signal: AbortSignal,
@@ -148,6 +148,15 @@ function truncateText(text: string): { text: string; truncated: boolean } {
   return { text: text.slice(0, budget) + TRUNCATION_MARKER, truncated: true };
 }
 
+/** Drop an unread body so undici can release the socket. Cancel errors are noise. */
+async function cancelBody(res: Response): Promise<void> {
+  try {
+    await res.body?.cancel();
+  } catch {
+    /* ignore */
+  }
+}
+
 /**
  * Read body with a hard byte ceiling. Content-Length pre-check + stream cancel
  * if the running total exceeds maxBytes (never buffers a multi-GB body).
@@ -161,11 +170,7 @@ async function readBodyCapped(
   if (cl !== null) {
     const n = Number(cl);
     if (Number.isFinite(n) && n > maxBytes) {
-      try {
-        await res.body?.cancel();
-      } catch {
-        /* ignore */
-      }
+      await cancelBody(res);
       return { ok: false, reason: `content-length ${n} exceeds cap ${maxBytes}` };
     }
   }
@@ -242,7 +247,7 @@ export async function fetchUrlAsText(
         return { ok: false, error: 'fetch_failed' };
       }
 
-      const safe = await assertUrlSafe(current, dnsLookup, controller.signal);
+      const safe = await parseSafeUrl(current, dnsLookup, controller.signal);
       if (!safe.ok) {
         // A rejected redirect target answers the same 400 as a bad user URL —
         // log it so "my URL was fine" and "the redirect went somewhere blocked"
@@ -275,6 +280,7 @@ export async function fetchUrlAsText(
             url: safe.url.href,
             max: MAX_REDIRECTS,
           });
+          await cancelBody(res);
           return { ok: false, error: 'fetch_failed' };
         }
         const location = res.headers.get('location');
@@ -283,6 +289,7 @@ export async function fetchUrlAsText(
             url: safe.url.href,
             status: res.status,
           });
+          await cancelBody(res);
           return { ok: false, error: 'fetch_failed' };
         }
         let next: URL;
@@ -293,8 +300,10 @@ export async function fetchUrlAsText(
             url: safe.url.href,
             location,
           });
+          await cancelBody(res);
           return { ok: false, error: 'invalid_url' };
         }
+        await cancelBody(res);
         current = next.href;
         continue;
       }
@@ -305,6 +314,7 @@ export async function fetchUrlAsText(
           url: safe.url.href,
           status: res.status,
         });
+        await cancelBody(res);
         return { ok: false, error: 'fetch_failed' };
       }
 

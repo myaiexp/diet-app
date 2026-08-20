@@ -505,7 +505,9 @@ describe.skipIf(!hasDb)('shopping list flow', () => {
       const pantryRows = await pantryList.json();
       expect(pantryRows.some((r: any) => r.ingredientId === banana.id && r.quantity === '1000')).toBe(true);
 
-      // 9. done is terminal: no second completion, no delete, no status flip.
+      // 9. done is terminal: no second completion, no delete, no status flip,
+      // and no item-level mutation that would desync the purchase record from
+      // the pantry rows /complete just wrote.
       const again = await app!.request(`/api/shopping-lists/${listId}/complete`, json('POST', {}));
       expect(again.status).toBe(409);
 
@@ -514,6 +516,23 @@ describe.skipIf(!hasDb)('shopping list flow', () => {
 
       const del = await app!.request(`/api/shopping-lists/${listId}`, { method: 'DELETE' });
       expect(del.status).toBe(409);
+
+      const patchItem = await app!.request(
+        `/api/shopping-lists/items/${appleItem.id}`,
+        json('PATCH', { bought: false }),
+      );
+      expect(patchItem.status).toBe(409);
+
+      const delItem = await app!.request(`/api/shopping-lists/items/${appleItem.id}`, {
+        method: 'DELETE',
+      });
+      expect(delItem.status).toBe(409);
+
+      const addItem = await app!.request(
+        `/api/shopping-lists/${listId}/items`,
+        json('POST', { ingredientId: banana.id, quantityNeeded: 1, unit: 'g' }),
+      );
+      expect(addItem.status).toBe(409);
     } finally {
       await db!.delete(pantryItems).where(inArray(pantryItems.ingredientId, ingredientIds));
       if (listId) {

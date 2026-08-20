@@ -354,4 +354,26 @@ describe('shoppingListGenerateRoutes', () => {
     const listRead = mock.reads.find((r) => r.table === tableNameOf(shoppingLists));
     expect(listRead?.forUpdate).toBe(true);
   });
+
+  test('loads only the resolved recipe id for a substituted entry', async () => {
+    const SUB_ID = '88888888-8888-4888-8888-888888888888';
+    const mock = makeGenerateMock({
+      ...planFixtures(null),
+      entries: [
+        {
+          ...ENTRY,
+          recipeId: RECIPE_ID,
+          substituteRecipeId: SUB_ID,
+          status: 'substituted',
+        },
+      ],
+      recipes: [{ id: SUB_ID, title: 'Alt soup', servings: 2 }],
+      lines: [{ ...LINE, recipeId: SUB_ID }],
+    });
+    await post(mock.db, { weekStarting: MONDAY });
+    const recipeRead = mock.reads.find((r) => r.table === tableNameOf(recipes));
+    const loaded = recipeRead?.params.flat() ?? [];
+    expect(loaded).toContain(SUB_ID);
+    expect(loaded).not.toContain(RECIPE_ID);
+  });
 });

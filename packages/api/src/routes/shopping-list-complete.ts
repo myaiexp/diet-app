@@ -97,15 +97,18 @@ export function shoppingListCompleteRoutes(db: Db): Hono {
       if (!list) return { kind: 'not_found' };
       if (list.status === 'done') return { kind: 'already_done' };
 
-      // 2. Load every item for the list; bought/net-to-buy filtering happens
-      // here in application code rather than in the WHERE clause — net_to_buy
-      // is numeric (returned as a string), and comparing it against 0 belongs
-      // next to the rest of the per-item logic below.
+      // 2. Lock every item for the list so a concurrent PATCH can't change
+      // bought/netToBuy after this snapshot is what we file into pantry.
+      // bought/net-to-buy filtering happens here in application code rather
+      // than in the WHERE clause — net_to_buy is numeric (returned as a
+      // string), and comparing it against 0 belongs next to the rest of the
+      // per-item logic below.
       const items = await tx
         .select()
         .from(shoppingListItems)
         .where(eq(shoppingListItems.listId, id))
-        .orderBy(asc(shoppingListItems.id));
+        .orderBy(asc(shoppingListItems.id))
+        .for('update');
       const toFile = items.filter((i) => i.bought && Number(i.netToBuy) > 0);
 
       const ingredientIds = [...new Set(toFile.map((i) => i.ingredientId))];

@@ -70,12 +70,12 @@ async function runGenerate(tx: Tx, monday: string, sunday: string, today: string
     .from(mealPlanEntries)
     .where(and(gte(mealPlanEntries.date, monday), lte(mealPlanEntries.date, sunday)));
 
-  // substituteRecipeId ?? recipeId, deduped — mirrors the cook flow's resolution
-  // so the same entry needs exactly one recipe's lines loaded, not both.
+  // substituteRecipeId ?? recipeId, deduped — mirrors loadCookPlan so a
+  // substituted entry contributes exactly one recipe's lines, not both.
   const recipeIds = [
     ...new Set(
       entries
-        .flatMap((e) => [e.recipeId, e.substituteRecipeId])
+        .map((e) => e.substituteRecipeId ?? e.recipeId)
         .filter((id): id is string => id != null),
     ),
   ];

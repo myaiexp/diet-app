@@ -43,6 +43,28 @@ function mustNotFetch(): typeof fetch {
   };
 }
 
+/**
+ * A Response whose body stays open until cancel() — models the leak of leaving
+ * a 302/4xx/5xx payload unread. Tests assert cancel fired so undici can
+ * release the socket.
+ */
+function cancellableResponse(
+  init: ResponseInit,
+  payload = 'unread-payload',
+): { response: Response; cancelled: () => boolean } {
+  let cancelled = false;
+  const stream = new ReadableStream<Uint8Array>({
+    start(controller) {
+      controller.enqueue(new TextEncoder().encode(payload));
+      // Intentionally not closed: an unconsumed body staying open is the leak.
+    },
+    cancel() {
+      cancelled = true;
+    },
+  });
+  return { response: new Response(stream, init), cancelled: () => cancelled };
+}
+
 describe('fetchUrlAsText', () => {
   test('rejects non-http schemes', async () => {
     for (const url of [
@@ -250,6 +272,73 @@ describe('fetchUrlAsText', () => {
       dnsLookup: publicDns,
     });
     expect(result).toEqual({ ok: false, error: 'fetch_failed' });
+  });
+
+  test('cancels the redirect body before following Location', async () => {
+    const hop = cancellableResponse({
+      status: 302,
+      headers: { Location: 'https://example.com/final' },
+    });
+    const fetchImpl: typeof fetch = async (input) => {
+      const href = String(input);
+      if (href.endsWith('/start')) return hop.response;
+      return htmlResponse('<p>landed</p>');
+    };
+    const result = await fetchUrlAsText('https://example.com/start', {
+      fetchImpl,
+      dnsLookup: publicDns,
+    });
+    expect(result.ok).toBe(true);
+    expect(hop.cancelled()).toBe(true);
+  });
+
+  test('cancels the body of a redirect without Location', async () => {
+    const hop = cancellableResponse({ status: 302 });
+    const result = await fetchUrlAsText('https://example.com/start', {
+      fetchImpl: async () => hop.response,
+      dnsLookup: publicDns,
+    });
+    expect(result).toEqual({ ok: false, error: 'fetch_failed' });
+    expect(hop.cancelled()).toBe(true);
+  });
+
+  test('cancels every redirect body when the hop cap is exceeded', async () => {
+    const hops = Array.from({ length: 6 }, () =>
+      cancellableResponse({
+        status: 302,
+        headers: { Location: 'https://example.com/next' },
+      }),
+    );
+    let i = 0;
+    const result = await fetchUrlAsText('https://example.com/start', {
+      fetchImpl: async () => hops[i++]!.response,
+      dnsLookup: publicDns,
+    });
+    expect(result).toEqual({ ok: false, error: 'fetch_failed' });
+    expect(hops.map((h) => h.cancelled())).toEqual(hops.map(() => true));
+  });
+
+  test('cancels a non-success response body', async () => {
+    const failed = cancellableResponse({ status: 404 });
+    const result = await fetchUrlAsText('https://example.com/gone', {
+      fetchImpl: async () => failed.response,
+      dnsLookup: publicDns,
+    });
+    expect(result).toEqual({ ok: false, error: 'fetch_failed' });
+    expect(failed.cancelled()).toBe(true);
+  });
+
+  test('cancels a redirect body whose Location is unparseable', async () => {
+    const hop = cancellableResponse({
+      status: 302,
+      headers: { Location: 'http://[not-a-url' },
+    });
+    const result = await fetchUrlAsText('https://example.com/start', {
+      fetchImpl: async () => hop.response,
+      dnsLookup: publicDns,
+    });
+    expect(result).toEqual({ ok: false, error: 'invalid_url' });
+    expect(hop.cancelled()).toBe(true);
   });
 });
 

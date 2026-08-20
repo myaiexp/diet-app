@@ -1,8 +1,11 @@
 // Mock-based route tests for shoppingListItemsRoutes — deterministic, Postgres-free.
 
-import { describe, test, expect, vi } from 'vitest';
+import { describe, test, expect } from 'vitest';
+import { shoppingLists, shoppingListItems, ingredients } from '@diet-app/db';
 import { shoppingListItemsRoutes } from '../routes/shopping-list-items.js';
 import { makeDbMock, mergedRow, pgError } from './db-mock.js';
+import { makeSelectRouter } from './select-router.js';
+import { tableNameOf } from './drizzle-introspect.js';
 
 const LIST_ID = '11111111-1111-4111-8111-111111111111';
 const ITEM_ID = '22222222-2222-4222-8222-222222222222';
@@ -22,48 +25,55 @@ const EXISTING_ITEM = {
   customNote: null,
 };
 
-function makePostMock(
+const LIST_DRAFT = { id: LIST_ID, status: 'draft' as const };
+
+function makeItemsMock(
   opts: {
-    /** Existing shopping list for the pre-check; null → 404. */
-    list?: unknown;
+    /** Existing shopping list for the lock; null → 404. */
+    list?: { id: string; status: string } | null;
+    /** Parent-list status when `list` is omitted. */
+    listStatus?: string;
+    /** Item row PATCH/DELETE peek; null → 404. */
+    item?: typeof EXISTING_ITEM | null;
     /** Ingredient row read for category derivation; null → 400 Invalid reference. */
     ingredient?: { id: string; category: string } | null;
+    /** Full RETURNING array for UPDATE — pass [] for the 404 (missing item) case. */
+    updateRows?: unknown[];
+    deleteRows?: unknown[];
     throwOnWrite?: unknown;
   } = {},
 ) {
-  return makeDbMock({
-    throwOnWrite: () => opts.throwOnWrite,
+  const listRow =
+    opts.list === undefined
+      ? { ...LIST_DRAFT, status: opts.listStatus ?? 'draft' }
+      : opts.list;
+  const itemRow = opts.item === undefined ? EXISTING_ITEM : opts.item;
+  const ingredientRow =
+    opts.ingredient === undefined ? { id: INGREDIENT_ID, category: 'produce' } : opts.ingredient;
+
+  const router = makeSelectRouter([
+    [shoppingLists, listRow == null ? [] : [listRow]],
+    [shoppingListItems, itemRow == null ? [] : [itemRow]],
+    [ingredients, ingredientRow == null ? [] : [ingredientRow]],
+  ]);
+
+  const mock = makeDbMock({
+    select: router.select,
+    txSelect: router.select,
+    throwOnWrite: opts.throwOnWrite !== undefined ? () => opts.throwOnWrite : undefined,
     // id comes from the fixture (the route never sets it); every other column
     // comes straight from what the handler actually inserted, so each test
     // asserts against the real write instead of a hand-duplicated row.
     insertRows: mergedRow({ id: ITEM_ID }),
-    query: {
-      shoppingLists: {
-        findFirst: vi.fn(async () => (opts.list === undefined ? { id: LIST_ID } : opts.list)),
-      },
-      ingredients: {
-        findFirst: vi.fn(async () =>
-          opts.ingredient === undefined
-            ? { id: INGREDIENT_ID, category: 'produce' }
-            : opts.ingredient,
-        ),
-      },
-    },
-  });
-}
-
-function makeWriteMock(
-  opts: {
-    /** Full RETURNING array for UPDATE — pass [] for the 404 (missing item) case. */
-    updateRows?: unknown[];
-    deleteRows?: unknown[];
-  } = {},
-) {
-  return makeDbMock({
     updateRows: opts.updateRows !== undefined ? () => opts.updateRows! : mergedRow(EXISTING_ITEM),
     deleteRows: () => opts.deleteRows ?? [{ id: ITEM_ID }],
   });
+
+  return { ...mock, reads: router.reads };
 }
+
+const makePostMock = makeItemsMock;
+const makeWriteMock = makeItemsMock;
 
 describe('shoppingListItemsRoutes', () => {
   describe('POST /:id/items', () => {
@@ -188,6 +198,29 @@ describe('shoppingListItemsRoutes', () => {
       expect(res.status).toBe(404);
       expect(await res.json()).toEqual({ error: 'Not found' });
     });
+
+    test('returns 409 when the parent list is done', async () => {
+      const { db, inserts } = makePostMock({ list: { id: LIST_ID, status: 'done' } });
+      const res = await shoppingListItemsRoutes(db).request(`/${LIST_ID}/items`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ingredientId: INGREDIENT_ID, quantityNeeded: 1, unit: 'g' }),
+      });
+      expect(res.status).toBe(409);
+      expect(await res.json()).toEqual({ error: 'Completed shopping list cannot be modified' });
+      expect(inserts).toHaveLength(0);
+    });
+
+    test('locks the parent list FOR UPDATE before inserting', async () => {
+      const { db, reads } = makePostMock();
+      await shoppingListItemsRoutes(db).request(`/${LIST_ID}/items`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ingredientId: INGREDIENT_ID, quantityNeeded: 1, unit: 'g' }),
+      });
+      const listRead = reads.find((r) => r.table === tableNameOf(shoppingLists));
+      expect(listRead?.forUpdate).toBe(true);
+    });
   });
 
   describe('PATCH /items/:id', () => {
@@ -285,6 +318,29 @@ describe('shoppingListItemsRoutes', () => {
       expect(res.status).toBe(404);
       expect(await res.json()).toEqual({ error: 'Not found' });
     });
+
+    test('returns 409 when the parent list is done', async () => {
+      const { db, updates } = makeWriteMock({ listStatus: 'done' });
+      const res = await shoppingListItemsRoutes(db).request(`/items/${ITEM_ID}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bought: true }),
+      });
+      expect(res.status).toBe(409);
+      expect(await res.json()).toEqual({ error: 'Completed shopping list cannot be modified' });
+      expect(updates).toHaveLength(0);
+    });
+
+    test('locks the parent list FOR UPDATE before writing', async () => {
+      const { db, reads } = makeWriteMock();
+      await shoppingListItemsRoutes(db).request(`/items/${ITEM_ID}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bought: true }),
+      });
+      const listRead = reads.find((r) => r.table === tableNameOf(shoppingLists));
+      expect(listRead?.forUpdate).toBe(true);
+    });
   });
 
   describe('DELETE /items/:id', () => {
@@ -312,6 +368,16 @@ describe('shoppingListItemsRoutes', () => {
       });
       expect(res.status).toBe(404);
       expect(await res.json()).toEqual({ error: 'Not found' });
+    });
+
+    test('returns 409 when the parent list is done', async () => {
+      const { db, deletes } = makeWriteMock({ listStatus: 'done' });
+      const res = await shoppingListItemsRoutes(db).request(`/items/${ITEM_ID}`, {
+        method: 'DELETE',
+      });
+      expect(res.status).toBe(409);
+      expect(await res.json()).toEqual({ error: 'Completed shopping list cannot be modified' });
+      expect(deletes).toHaveLength(0);
     });
   });
 });
