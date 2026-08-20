@@ -1,9 +1,10 @@
-// Ingredient category → default pantry storage location
+// Ingredient category → default pantry storage location.
+// Single source for the closed location set: pantry create/patch and
+// /complete overrides both validate against this, and locationForCategory
+// returns a member of it so a generated insert cannot 400.
 
-// Must stay a subset of locationEnum in schemas/pantry.ts: /complete feeds this
-// straight into a pantry_items insert, so a location POST /pantry would reject
-// is a runtime failure rather than a type error.
-export type StorageLocation = 'fridge' | 'freezer' | 'pantry' | 'counter';
+export const LOCATIONS = ['fridge', 'freezer', 'pantry', 'counter'] as const;
+export type StorageLocation = (typeof LOCATIONS)[number];
 
 // The eight categories the seed data uses. Anything else falls through to
 // 'pantry' — the shelf-stable assumption, and the one location every

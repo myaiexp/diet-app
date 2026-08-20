@@ -2,11 +2,12 @@
 
 import { z } from 'zod';
 import { isUuid, isIsoDate } from '../validation.js';
+import { LOCATIONS } from '../pantry-location.js';
 
 const uuidField = z.string().refine(isUuid, { message: 'Invalid UUID' });
 const isoDateField = z.string().refine(isIsoDate, { message: 'Invalid date' });
 
-const locationEnum = z.enum(['fridge', 'freezer', 'pantry', 'counter']);
+const locationEnum = z.enum(LOCATIONS);
 
 export const pantryCreateSchema = z.object({
   ingredientId: uuidField,

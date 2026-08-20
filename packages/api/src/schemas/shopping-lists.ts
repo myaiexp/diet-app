@@ -2,12 +2,12 @@
 
 import { z } from 'zod';
 import { isUuid, isIsoDate } from '../validation.js';
+import { LOCATIONS } from '../pantry-location.js';
 
 const uuidField = z.string().refine(isUuid, { message: 'Invalid UUID' });
 const isoDateField = z.string().refine(isIsoDate, { message: 'Invalid date' });
 
 export const LIST_STATUSES = ['draft', 'shopping', 'done'] as const;
-export const LOCATIONS = ['fridge', 'freezer', 'pantry', 'counter'] as const;
 
 // Any date in the target week — the route snaps it to the ISO Monday.
 export const generateSchema = z
