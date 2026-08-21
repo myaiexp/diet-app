@@ -1,8 +1,3 @@
-// Structural wiring tests for createDb — verifies the pg.Pool → drizzle hookup
-// and full-schema registration WITHOUT opening a real connection. pg.Pool is
-// lazy (it connects on first query/.connect()), so constructing one against a
-// dummy connection string never touches the network here.
-
 import { describe, test, expect, vi, afterEach } from 'vitest';
 import { createDb, createPool, POOL_DEFAULTS } from '../connection.js';
 

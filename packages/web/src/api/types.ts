@@ -1,4 +1,4 @@
-// Response types mirroring the API (numeric columns arrive as strings)
+// Shared request and response types for the web API client
 
 export type PantryLocation = 'fridge' | 'freezer' | 'pantry' | 'counter';
 export type PantryStatus = 'fresh' | 'use_soon' | 'use_today' | 'expired';

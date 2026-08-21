@@ -1,7 +1,3 @@
-// UUID param validation for the ingredients :id route (audit #1388).
-// Deliberately DB-free: a mock db is passed in, and malformed ids are rejected
-// with 400 BEFORE any DB query runs, so these tests never open a connection.
-
 import { describe, test, expect } from 'vitest';
 import { asc } from 'drizzle-orm';
 import { ingredients } from '@diet-app/db';
