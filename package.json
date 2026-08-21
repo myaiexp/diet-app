@@ -3,11 +3,13 @@
   "private": true,
   "packageManager": "pnpm@10.33.0",
   "scripts": {
-    "dev:tunnel": "ssh -N -L 5433:localhost:5432 vps"
+    "dev:tunnel": "ssh -N -L 5433:localhost:5432 vps",
+    "test": "vitest run"
   },
   "devDependencies": {
+    "tsx": "^4.22.4",
     "typescript": "^5.9.3",
-    "tsx": "^4.22.4"
+    "vitest": "^4.1.10"
   },
   "comments": {
     "overrides": "Drops drizzle-kit's vestigial, deprecated @esbuild-kit/esm-loader (it loads TS configs via tsx, never imports esbuild-kit). See CLAUDE.md. Remove once drizzle-kit >0.31.10 drops the dead dep."

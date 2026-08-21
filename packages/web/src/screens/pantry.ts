@@ -201,7 +201,8 @@ export function pantryScreen(): Screen {
       chipsEl = el('div', { class: 'bar-wrap flex gap-2' });
       const bar = el(
         'div',
-        { class: 'bar-sticky' },
+        // .bar carries the opaque background .bar-sticky deliberately omits.
+        { class: 'bar bar-col bar-sticky' },
         chipsEl,
         el(
           'div',

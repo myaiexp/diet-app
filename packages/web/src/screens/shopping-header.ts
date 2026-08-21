@@ -131,7 +131,7 @@ export function buildShoppingHeader(
 
   return el(
     'div',
-    { class: 'bar-sticky shopping-header' },
+    { class: 'bar bar-col bar-sticky' },
     el('div', { class: 'shopping-count' }, `${boughtCount} / ${total} bought`),
     el('div', { class: 'shopping-meter' }, meterFill),
     el(

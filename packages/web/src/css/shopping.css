@@ -1,22 +1,11 @@
 /* Shopping list screen: sticky-header meter, category-tinted group headers,
-   tap-row checkbox, checked-row de-emphasis. Shared surfaces (.bar-sticky,
-   .row, .row-main/-title/-meta/-right, .empty-state, .error-panel,
+   tap-row checkbox, checked-row de-emphasis. Shared surfaces (.bar/.bar-col/
+   .bar-sticky, .row, .row-main/-title/-meta/-right, .empty-state, .error-panel,
    .section-header, .panel, .label*) live in base.css / app.css; form
    primitives (.pantry-field, .pantry-form, .pantry-chosen, .pantry-search-*,
    .helper-error, .form-label) are reused from pantry.css/pantry-form.ts the
    way plan-cell.ts and add-entry.ts already do — only genuinely
    shopping-specific rules below. */
-
-/* base.css's .bar-sticky is position/z-index only — an opaque background is on
-   the consumer, and without one the rows scroll visibly through the header. */
-.shopping-header {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 7px 10px;
-  background: var(--bg);
-  border-bottom: 1px solid var(--border);
-}
 
 .shopping-count { font-size: var(--text-md); font-weight: 700; }
 
