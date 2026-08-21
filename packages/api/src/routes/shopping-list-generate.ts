@@ -101,6 +101,7 @@ async function runGenerate(tx: Tx, monday: string, sunday: string, today: string
       substituteRecipeId: e.substituteRecipeId,
       servings: Number(e.servings),
       status: e.status,
+      date: e.date,
     })),
     recipesById: new Map(recipeRows.map((r) => [r.id, { servings: r.servings }])),
     linesByRecipe: groupLines(lineRows),

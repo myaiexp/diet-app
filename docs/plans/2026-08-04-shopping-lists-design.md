@@ -135,6 +135,14 @@ counts against Saturday's demand. Pricing that correctly needs per-day simulatio
 which is a different feature — and with a near-empty pantry it would almost never
 fire.
 
+> **Superseded (2026-08-21, idea #3230).** Per-day simulation shipped once the
+> shopping screen made `/complete` — the thing that actually populates the pantry —
+> reachable. Demand is now keyed `(ingredient, dimension, date)` and the week is
+> walked chronologically, consuming lots FEFO with an availability date of
+> `max(entryDate, today)`. The paragraph above describes the original behaviour
+> only. It also changed what `quantityInPantry` means (coverage of this week's
+> demand, capped at `quantityNeeded` — not raw stock); see CLAUDE.md.
+
 **Net.** `netToBuy = max(0, needed - inPantry)`, rounded to 6 decimals like
 `cook-deduct`. Rows where `netToBuy` is 0 are **kept**, not dropped —
 `quantityInPantry` showing full coverage is useful information, and keeping them
