@@ -126,6 +126,12 @@ resolves as `substituteRecipeId ?? recipeId`, identical to the cook flow.
 non-shortfall; an optional garnish should not send anyone to the shop. An
 `includeOptional` flag is filed as a deferred idea.
 
+> **Update (2026-08-21, idea #3228).** That flag shipped as an optional boolean on
+> the `POST /generate` body, defaulting false — the exclusion above is still the
+> behaviour of every request that doesn't ask otherwise. It is per-generation and
+> never persisted on the list: whether you want the garnish is a fact about this
+> shop, not about the week.
+
 **Supply.** Pantry rows for the ingredient whose unit resolves to the *same
 dimension*, summed in base units, **excluding rows already expired as of today** —
 that food is going in the bin, and counting it under-buys.
@@ -134,6 +140,14 @@ Mid-week expiry is deliberately not modelled: a yoghurt that dies Wednesday stil
 counts against Saturday's demand. Pricing that correctly needs per-day simulation,
 which is a different feature — and with a near-empty pantry it would almost never
 fire.
+
+> **Superseded (2026-08-21, idea #3230).** Per-day simulation shipped once the
+> shopping screen made `/complete` — the thing that actually populates the pantry —
+> reachable. Demand is now keyed `(ingredient, dimension, date)` and the week is
+> walked chronologically, consuming lots FEFO with an availability date of
+> `max(entryDate, today)`. The paragraph above describes the original behaviour
+> only. It also changed what `quantityInPantry` means (coverage of this week's
+> demand, capped at `quantityNeeded` — not raw stock); see CLAUDE.md.
 
 **Net.** `netToBuy = max(0, needed - inPantry)`, rounded to 6 decimals like
 `cook-deduct`. Rows where `netToBuy` is 0 are **kept**, not dropped —

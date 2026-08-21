@@ -9,6 +9,7 @@ import { recipesScreen } from './screens/recipes.js';
 import { importScreen } from './screens/import.js';
 import { planScreen } from './screens/plan.js';
 import { profileScreen } from './screens/profile.js';
+import { shoppingScreen } from './screens/shopping.js';
 
 export const ROUTES = [
   '/today',
@@ -45,8 +46,8 @@ export type ScreenFactory = () => Screen;
 
 /**
  * Out-of-scope screens render a shared placeholder rather than a broken screen:
- * shopping-list generation, AI suggestions (#380), nutrition (#385) and waste
- * (#389) have no endpoint yet, and the nav must still be complete.
+ * AI suggestions (#380), nutrition (#385) and waste (#389) have no endpoint
+ * yet, and the nav must still be complete.
  */
 const SCREENS: Record<Route, ScreenFactory> = {
   '/today': todayScreen,
@@ -55,19 +56,7 @@ const SCREENS: Record<Route, ScreenFactory> = {
   '/import': importScreen,
   '/plan': planScreen,
   '/profile': profileScreen,
-  '/shopping': () =>
-    placeholderScreen({
-      title: 'Shopping list',
-      subtitle: 'aisle order · needed minus pantry',
-      what: 'A week\'s plan minus the pantry, grouped in aisle order and checked off one-handed in the shop.',
-      // The API landed while this frontend was being built (#381/#382:
-      // generate, item and status writes, and the /complete pantry hand-off).
-      // The screen is the next plan — this placeholder names what exists so it
-      // reads as scheduled work rather than a missing backend.
-      blocker:
-        'The API is live (generate · check off · complete). The screen itself is the next piece of work.',
-      cta: { label: 'open the week →', route: '/plan' },
-    }),
+  '/shopping': shoppingScreen,
   '/suggest': () =>
     placeholderScreen({
       title: 'AI suggestions',

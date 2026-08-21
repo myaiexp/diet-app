@@ -50,7 +50,15 @@ function groupLines(rows: (typeof recipeIngredients.$inferSelect)[]): Map<string
   return byRecipe;
 }
 
-async function runGenerate(tx: Tx, monday: string, sunday: string, today: string): Promise<GenerateResult> {
+interface GenerateOptions {
+  monday: string;
+  sunday: string;
+  today: string;
+  includeOptional: boolean;
+}
+
+async function runGenerate(tx: Tx, opts: GenerateOptions): Promise<GenerateResult> {
+  const { monday, sunday, today, includeOptional } = opts;
   // Lock first: two concurrent generates for the same week must not both see
   // "missing" and both try to insert (the unique index catches that race, but
   // locking an existing row here also serializes two regenerates of one week).
@@ -101,6 +109,7 @@ async function runGenerate(tx: Tx, monday: string, sunday: string, today: string
       substituteRecipeId: e.substituteRecipeId,
       servings: Number(e.servings),
       status: e.status,
+      date: e.date,
     })),
     recipesById: new Map(recipeRows.map((r) => [r.id, { servings: r.servings }])),
     linesByRecipe: groupLines(lineRows),
@@ -114,6 +123,7 @@ async function runGenerate(tx: Tx, monday: string, sunday: string, today: string
     ),
     ingredientsById: new Map(ingredientRows.map((i) => [i.id, { category: i.category }])),
     today,
+    includeOptional,
   });
 
   if (items.length > 0) {
@@ -176,7 +186,14 @@ export function shoppingListGenerateRoutes(db: Db): Hono {
 
     let result: GenerateResult;
     try {
-      result = await db.transaction((tx) => runGenerate(tx, monday, sunday, today));
+      result = await db.transaction((tx) =>
+        runGenerate(tx, {
+          monday,
+          sunday,
+          today,
+          includeOptional: parsed.data.includeOptional ?? false,
+        }),
+      );
     } catch (err) {
       // The week_starting unique index turns a concurrent generate for the same
       // week into this 23505 instead of two draft lists racing each other.

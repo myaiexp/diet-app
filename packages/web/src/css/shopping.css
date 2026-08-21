@@ -1,0 +1,127 @@
+/* Shopping list screen: sticky-header meter, category-tinted group headers,
+   tap-row checkbox, checked-row de-emphasis. Shared surfaces (.bar-sticky,
+   .row, .row-main/-title/-meta/-right, .empty-state, .error-panel,
+   .section-header, .panel, .label*) live in base.css / app.css; form
+   primitives (.pantry-field, .pantry-form, .pantry-chosen, .pantry-search-*,
+   .helper-error, .form-label) are reused from pantry.css/pantry-form.ts the
+   way plan-cell.ts and add-entry.ts already do — only genuinely
+   shopping-specific rules below. */
+
+/* base.css's .bar-sticky is position/z-index only — an opaque background is on
+   the consumer, and without one the rows scroll visibly through the header. */
+.shopping-header {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 7px 10px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+
+.shopping-count { font-size: var(--text-md); font-weight: 700; }
+
+.shopping-meter {
+  height: 4px;
+  background: var(--bg-hover);
+  overflow: hidden;
+}
+.shopping-meter-fill {
+  height: 100%;
+  background: var(--accent);
+  transition: width var(--transition);
+}
+
+.shopping-readonly-note {
+  font-size: var(--text-xs);
+  color: var(--fg-3);
+}
+
+.shopping-actions { flex-wrap: wrap; }
+
+.shopping-notice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 9px;
+  background: var(--orange-bg);
+  border: 1px solid color-mix(in srgb, var(--orange) 40%, transparent);
+  color: var(--orange);
+  font-size: var(--text-sm);
+}
+
+.shopping-group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--bg-raised);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+/* One-handed in a shop: rows never shrink below the 54px tap target, and the
+   checkbox stays 26x26, regardless of viewport (Responsive Behavior, design doc). */
+.shopping-row {
+  min-height: 54px;
+  padding: 9px 10px;
+  gap: 10px;
+}
+
+/* Layout-only reset: this is a <button> used purely as the tap surface for
+   everything except the trailing delete control, not a styled control. */
+.shopping-row-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  padding: 0;
+  text-align: left;
+  color: inherit;
+  font: inherit;
+}
+
+.shopping-check {
+  width: 26px;
+  height: 26px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border-hover);
+  color: var(--green);
+  font-size: var(--text-md);
+}
+.shopping-check.is-checked {
+  border-color: var(--green);
+  background: var(--green-bg);
+}
+
+.shopping-row-title-line {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.shopping-alias { font-size: var(--text-sm); color: var(--fg-2); }
+
+.shopping-qty { font-size: var(--text-md); color: var(--accent-text); }
+
+.shopping-more-btn {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+/* Checked: green 5% wash, name struck through and muted, quantity de-emphasised. */
+.shopping-row.is-checked {
+  background: color-mix(in srgb, var(--green) 5%, transparent);
+}
+.shopping-row.is-checked .row-title {
+  text-decoration: line-through;
+  color: var(--fg-3);
+}
+.shopping-row.is-checked .shopping-qty { color: var(--fg-3); }

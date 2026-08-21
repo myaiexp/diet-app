@@ -8,7 +8,13 @@ import {
   type PantrySupplyRow,
 } from '../shopping-aggregate.js';
 
-const TODAY = '2026-08-04';
+const TODAY = '2026-08-04'; // a Tuesday
+const MONDAY = '2026-08-03'; // the day before TODAY, still inside the current week
+const WEDNESDAY = '2026-08-05';
+const THURSDAY = '2026-08-06';
+const FRIDAY = '2026-08-07';
+const SATURDAY = '2026-08-08';
+const SUNDAY = '2026-08-09';
 
 const ENTRY = (over: Partial<PlanEntry> = {}): PlanEntry => ({
   id: 'e1',
@@ -16,6 +22,7 @@ const ENTRY = (over: Partial<PlanEntry> = {}): PlanEntry => ({
   substituteRecipeId: null,
   servings: 4,
   status: 'planned',
+  date: TODAY,
   ...over,
 });
 
@@ -142,6 +149,26 @@ describe('aggregateShoppingList', () => {
     expect(skipped).toEqual([]);
   });
 
+  test('includes optional lines when includeOptional is set', () => {
+    const input = baseInput({
+      linesByRecipe: new Map([['r1', [LINE({ optional: true })]]]),
+      includeOptional: true,
+    });
+    const { items } = aggregateShoppingList(input);
+    expect(items).toHaveLength(1);
+    expect(items[0]).toMatchObject({ quantityNeeded: 400, netToBuy: 400 });
+  });
+
+  test('an optional line opted in still nets against the pantry like any other', () => {
+    const input = baseInput({
+      linesByRecipe: new Map([['r1', [LINE({ optional: true })]]]),
+      pantryRows: [ROW({ quantity: 150 })],
+      includeOptional: true,
+    });
+    const { items } = aggregateShoppingList(input);
+    expect(items[0]).toMatchObject({ quantityInPantry: 150, netToBuy: 250 });
+  });
+
   test('excludes cooked entries', () => {
     const input = baseInput({ entries: [ENTRY({ status: 'cooked' })] });
     const { items, skipped } = aggregateShoppingList(input);
@@ -237,14 +264,18 @@ describe('aggregateShoppingList', () => {
     expect(items[0]).toMatchObject({ quantityInPantry: 300, netToBuy: 100 });
   });
 
-  test('floors netToBuy at zero when pantry covers demand', () => {
+  test('floors netToBuy at zero and caps quantityInPantry at quantityNeeded when pantry covers demand', () => {
+    // Surplus stock (500 g) against 200 g of demand: the simulation only ever
+    // consumes what's needed, so quantityInPantry reads 200, not the raw 500 g
+    // sitting on the shelf — that raw total isn't a coherent answer once
+    // "available" is date-dependent (see GeneratedItem.quantityInPantry).
     const input = baseInput({
       linesByRecipe: new Map([['r1', [LINE({ quantity: 200 })]]]),
       pantryRows: [ROW({ quantity: 500 })],
     });
     const { items } = aggregateShoppingList(input);
     expect(items).toHaveLength(1);
-    expect(items[0]).toMatchObject({ quantityNeeded: 200, quantityInPantry: 500, netToBuy: 0 });
+    expect(items[0]).toMatchObject({ quantityNeeded: 200, quantityInPantry: 200, netToBuy: 0 });
   });
 
   test('keeps fully covered rows rather than dropping them', () => {
@@ -380,5 +411,102 @@ describe('aggregateShoppingList', () => {
       'iZ|g',
     ]);
     expect(second.items).toEqual(first.items);
+  });
+
+  describe('per-day simulation', () => {
+    test('a lot that expires mid-week no longer offsets demand from later in the week (the bug this fixes)', () => {
+      const input = baseInput({
+        entries: [ENTRY({ date: SATURDAY })],
+        linesByRecipe: new Map([['r1', [LINE({ quantity: 400 })]]]),
+        pantryRows: [ROW({ quantity: 500, expiresDate: WEDNESDAY })],
+      });
+      const { items } = aggregateShoppingList(input);
+      expect(items[0]).toMatchObject({ quantityNeeded: 400, quantityInPantry: 0, netToBuy: 400 });
+    });
+
+    test('the same mid-week-expiring stock still fully covers demand dated before it expires', () => {
+      const input = baseInput({
+        entries: [ENTRY({ date: TODAY })],
+        linesByRecipe: new Map([['r1', [LINE({ quantity: 400 })]]]),
+        pantryRows: [ROW({ quantity: 500, expiresDate: WEDNESDAY })],
+      });
+      const { items } = aggregateShoppingList(input);
+      expect(items[0]).toMatchObject({ quantityNeeded: 400, quantityInPantry: 400, netToBuy: 0 });
+    });
+
+    test('drains a short-dated lot on the first demand day, then falls back to a longer-dated lot on the second', () => {
+      const input = baseInput({
+        entries: [
+          ENTRY({ id: 'e1', recipeId: 'r1', date: TODAY }),
+          ENTRY({ id: 'e2', recipeId: 'r2', date: THURSDAY }),
+        ],
+        recipesById: new Map([
+          ['r1', { servings: 4 }],
+          ['r2', { servings: 4 }],
+        ]),
+        linesByRecipe: new Map([
+          ['r1', [LINE({ quantity: 200 })]],
+          ['r2', [LINE({ quantity: 250 })]],
+        ]),
+        // Lot A dies the same day it's fully consumed by; lot B outlives the week.
+        pantryRows: [ROW({ quantity: 200, expiresDate: TODAY }), ROW({ quantity: 300, expiresDate: FRIDAY })],
+      });
+      const { items } = aggregateShoppingList(input);
+      expect(items[0]).toMatchObject({ quantityNeeded: 450, quantityInPantry: 450, netToBuy: 0 });
+    });
+
+    test('a lot already expired as of today is excluded for every date in the week, not just today', () => {
+      const input = baseInput({
+        entries: [
+          ENTRY({ id: 'e1', recipeId: 'r1', date: MONDAY }),
+          ENTRY({ id: 'e2', recipeId: 'r2', date: SUNDAY }),
+        ],
+        recipesById: new Map([
+          ['r1', { servings: 4 }],
+          ['r2', { servings: 4 }],
+        ]),
+        linesByRecipe: new Map([
+          ['r1', [LINE({ quantity: 100 })]],
+          ['r2', [LINE({ quantity: 100 })]],
+        ]),
+        pantryRows: [
+          ROW({ quantity: 1000, expiresDate: '2026-08-01' }), // dead before TODAY
+          ROW({ quantity: 150, expiresDate: '2026-08-20' }), // alive all week
+        ],
+      });
+      const { items } = aggregateShoppingList(input);
+      expect(items[0]).toMatchObject({ quantityNeeded: 200, quantityInPantry: 150, netToBuy: 50 });
+    });
+
+    test('caps quantityInPantry at quantityNeeded across a multi-day week when surplus stock remains uneaten', () => {
+      const input = baseInput({
+        entries: [
+          ENTRY({ id: 'e1', recipeId: 'r1', date: TODAY }),
+          ENTRY({ id: 'e2', recipeId: 'r2', date: THURSDAY }),
+        ],
+        recipesById: new Map([
+          ['r1', { servings: 4 }],
+          ['r2', { servings: 4 }],
+        ]),
+        linesByRecipe: new Map([
+          ['r1', [LINE({ quantity: 100 })]],
+          ['r2', [LINE({ quantity: 100 })]],
+        ]),
+        pantryRows: [ROW({ quantity: 1000, expiresDate: '2026-12-01' })],
+      });
+      const { items } = aggregateShoppingList(input);
+      expect(items[0]).toMatchObject({ quantityNeeded: 200, quantityInPantry: 200, netToBuy: 0 });
+    });
+
+    test('an entry dated before today inside the current week does not resurrect stock that expired between then and now', () => {
+      const input = baseInput({
+        entries: [ENTRY({ date: MONDAY })],
+        linesByRecipe: new Map([['r1', [LINE({ quantity: 400 })]]]),
+        // Alive as of MONDAY (its own date), but dead as of TODAY.
+        pantryRows: [ROW({ quantity: 100, expiresDate: MONDAY })],
+      });
+      const { items } = aggregateShoppingList(input);
+      expect(items[0]).toMatchObject({ quantityInPantry: 0, netToBuy: 400 });
+    });
   });
 });

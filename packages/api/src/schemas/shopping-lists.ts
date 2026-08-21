@@ -10,9 +10,13 @@ const isoDateField = z.string().refine(isIsoDate, { message: 'Invalid date' });
 export const LIST_STATUSES = ['draft', 'shopping', 'done'] as const;
 
 // Any date in the target week — the route snaps it to the ISO Monday.
+// includeOptional opts the recipes' optional lines into the week's demand; it is
+// per-generation rather than persisted, since it describes this shop rather than
+// the list. Absent means false, so an old client's body behaves as before.
 export const generateSchema = z
   .object({
     weekStarting: isoDateField,
+    includeOptional: z.boolean().optional(),
   })
   .strict();
 

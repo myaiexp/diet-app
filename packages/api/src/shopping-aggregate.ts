@@ -8,6 +8,7 @@ export interface PlanEntry {
   substituteRecipeId: string | null;
   servings: number;
   status: string; // planned | cooked | skipped | substituted
+  date: string; // YYYY-MM-DD, the entry's day within the week — drives the per-day simulation below
 }
 
 export interface AggregateRecipeLine {
@@ -28,6 +29,11 @@ export interface GeneratedItem {
   ingredientId: string;
   unit: string; // base unit for the dimension
   quantityNeeded: number;
+  // How much of this week's demand the day-by-day simulation actually
+  // consumed — not "all non-expired stock summed up". Once a lot's expiry can
+  // fall mid-week, "how much do you have" has no single answer independent of
+  // when it's needed, so this is capped at quantityNeeded and can read lower
+  // than the raw sum of still-alive lots.
   quantityInPantry: number;
   netToBuy: number;
   category: string;
@@ -46,7 +52,13 @@ const DEMAND_STATUSES = new Set(['planned', 'substituted']);
 interface DemandEntry {
   ingredientId: string;
   dimension: Dimension;
-  quantity: number; // base units, running sum
+  quantity: number; // base units, running sum across the whole week
+  byDate: Map<string, number>; // base units needed on that calendar date
+}
+
+interface Lot {
+  quantity: number; // base units, mutated as the simulation consumes it
+  expiresDate: string; // YYYY-MM-DD
 }
 
 export function aggregateShoppingList(input: {
@@ -56,8 +68,17 @@ export function aggregateShoppingList(input: {
   pantryRows: PantrySupplyRow[];
   ingredientsById: Map<string, { category: string }>;
   today: string;
+  /**
+   * Opt the recipes' `optional` lines into the week's demand. Defaults off:
+   * an optional garnish shouldn't send anyone to the shop, and cook-deduct
+   * treats those lines as non-shortfall for the same reason. Whether you want
+   * the garnish this week is a taste call no logic here can make, which is why
+   * it's a per-generation flag rather than a derived rule.
+   */
+  includeOptional?: boolean;
 }): { items: GeneratedItem[]; skipped: SkippedLine[] } {
   const { entries, recipesById, linesByRecipe, pantryRows, ingredientsById, today } = input;
+  const includeOptional = input.includeOptional ?? false;
 
   // Keyed on ingredientId+dimension, never ingredientId alone: mass/volume/count
   // can't merge (units.ts has no density data to cross them), so the same
@@ -86,7 +107,7 @@ export function aggregateShoppingList(input: {
 
     const lines = linesByRecipe.get(recipeId) ?? []; // recipe with no lines is not an error
     for (const line of lines) {
-      if (line.optional) continue; // an optional garnish shouldn't send anyone to the shop
+      if (line.optional && !includeOptional) continue;
 
       const based = toBase(line.quantity * scale, line.unit);
       if (!based) {
@@ -95,40 +116,79 @@ export function aggregateShoppingList(input: {
       }
 
       const key = `${line.ingredientId}|${based.dimension}`;
-      const existing = demand.get(key);
-      if (existing) {
-        existing.quantity += based.value;
-      } else {
-        demand.set(key, {
+      let existing = demand.get(key);
+      if (!existing) {
+        existing = {
           ingredientId: line.ingredientId,
           dimension: based.dimension,
-          quantity: based.value,
-        });
+          quantity: 0,
+          byDate: new Map(),
+        };
+        demand.set(key, existing);
       }
+      existing.quantity += based.value;
+      existing.byDate.set(entry.date, (existing.byDate.get(entry.date) ?? 0) + based.value);
     }
   }
 
   // Supply only matters for keys that already have demand — a pantry row for an
-  // ingredient/dimension nobody needs never spawns an item on its own.
-  const supply = new Map<string, number>();
+  // ingredient/dimension nobody needs never spawns an item on its own. Lots are
+  // kept individually, not summed, because the simulation below needs each
+  // one's own expiry to decide, date by date, whether it's still usable —
+  // a single pooled total can't tell a Wednesday-dead lot from a June one.
+  const lots = new Map<string, Lot[]>();
   for (const row of pantryRows) {
-    if (row.expiresDate < today) continue; // already spoiled by today; would under-buy if counted
     const based = toBase(row.quantity, row.unit);
     if (!based) continue; // unresolvable pantry unit: not demand-side, so no skip to report
     const key = `${row.ingredientId}|${based.dimension}`;
     if (!demand.has(key)) continue;
-    supply.set(key, (supply.get(key) ?? 0) + based.value);
+    const lot: Lot = { quantity: based.value, expiresDate: row.expiresDate };
+    const existing = lots.get(key);
+    if (existing) existing.push(lot);
+    else lots.set(key, [lot]);
   }
 
   const items: GeneratedItem[] = [];
   for (const [key, d] of demand) {
-    const inPantry = supply.get(key) ?? 0;
+    // FEFO within a date only works if lots are tried soonest-expiry-first;
+    // sorting once up front is equivalent to re-sorting per date because a
+    // lot's relative expiry order never changes across the walk.
+    const keyLots = [...(lots.get(key) ?? [])].sort((a, b) =>
+      a.expiresDate < b.expiresDate ? -1 : a.expiresDate > b.expiresDate ? 1 : 0,
+    );
+
+    let consumed = 0;
+    // Walk the week's demand chronologically so a lot that dies mid-week stops
+    // covering demand that falls after it — netting the whole week's demand
+    // against the whole week's supply up front (the old behavior) is exactly
+    // what let a Saturday meal eat a Wednesday-expired lot.
+    for (const date of [...d.byDate.keys()].sort()) {
+      let need = d.byDate.get(date)!;
+
+      // A lot already dead as of today must stay dead no matter which day of
+      // the current week an entry falls on — otherwise an entry dated earlier
+      // in the week (already past) would "resurrect" stock that has since
+      // expired. A lot still alive today is instead checked against the
+      // entry's own date, so demand later in the week can still watch it
+      // expire out from under it. max(entryDate, today) is exactly that rule.
+      const availableFrom = date < today ? today : date;
+
+      for (const lot of keyLots) {
+        if (need <= 0) break;
+        if (lot.quantity <= 0 || lot.expiresDate < availableFrom) continue;
+        const take = Math.min(need, lot.quantity);
+        lot.quantity -= take;
+        need -= take;
+        consumed += take;
+      }
+    }
+
     items.push({
       ingredientId: d.ingredientId,
       unit: baseUnit(d.dimension),
       quantityNeeded: round6(d.quantity),
-      quantityInPantry: round6(inPantry),
-      netToBuy: round6(Math.max(0, d.quantity - inPantry)),
+      quantityInPantry: round6(consumed),
+      netToBuy: round6(Math.max(0, d.quantity - consumed)),
       category: ingredientsById.get(d.ingredientId)?.category ?? 'other',
     });
   }

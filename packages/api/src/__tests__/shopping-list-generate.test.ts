@@ -376,4 +376,37 @@ describe('shoppingListGenerateRoutes', () => {
     expect(loaded).toContain(SUB_ID);
     expect(loaded).not.toContain(RECIPE_ID);
   });
+
+  test('skips an optional recipe line by default', async () => {
+    const mock = makeGenerateMock({
+      ...planFixtures(null),
+      lines: [{ ...LINE, optional: true }],
+      findManyItems: [],
+    });
+    const res = await post(mock.db, { weekStarting: MONDAY });
+    expect(res.status).toBe(200);
+    expect(mock.insertsTo(shoppingListItems)).toHaveLength(0);
+  });
+
+  test('buys an optional recipe line when includeOptional is set', async () => {
+    const mock = makeGenerateMock({
+      ...planFixtures(null),
+      lines: [{ ...LINE, optional: true }],
+    });
+    const res = await post(mock.db, { weekStarting: MONDAY, includeOptional: true });
+    expect(res.status).toBe(200);
+
+    const itemInsert = mock.insertsTo(shoppingListItems)[0]!;
+    expect(itemInsert.values).toEqual([
+      {
+        listId: LIST_ID,
+        ingredientId: ING_ID,
+        unit: 'g',
+        quantityNeeded: '400',
+        quantityInPantry: '100',
+        netToBuy: '300',
+        category: 'produce',
+      },
+    ]);
+  });
 });
