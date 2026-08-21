@@ -5,6 +5,8 @@
   --accent: #06b6d4;
   --accent-text: #22d3ee;
   --ramp-amber: #e8a308;
+  /* .screen's padding — shared so a sticky bar can cancel it exactly. */
+  --screen-pad: 10px;
 }
 
 /* ===== Shell ===== */
@@ -63,7 +65,19 @@
 .screen-sub, .screen-date { font-size: var(--text-sm); color: var(--fg-3); }
 .screen-date { font-size: var(--text-xs); }
 
-.screen { padding: 10px; }
+/* A variable, not a literal, because .bar-sticky cancels exactly this value on
+   the sides to reach the edges of the scroll port — see its rule below. */
+.screen { padding: var(--screen-pad); }
+
+/* A screen whose content starts with a sticky bar gives up its TOP padding.
+   A stickily positioned box is confined to its containing block, so it can
+   never pin higher than .screen's *content* box — pinned at `top: 0` it still
+   sits a padding's width below the scroll port's edge, and rows keep scrolling
+   through that band no matter how opaque the bar is. A negative margin does
+   not fix it: that moves the static position, and the containing-block clamp
+   still applies the moment scrolling starts. The bar's own 7px padding is the
+   spacing the screen padding was providing. */
+.screen:has(.bar-sticky) { padding-top: 0; }
 
 /* ===== Bottom tabs (phone) ===== */
 
@@ -187,6 +201,25 @@
   border-bottom: 1px solid var(--border);
 }
 .bar-wrap { flex-wrap: wrap; }
+/* Stacked bar — a sticky filter/summary bar whose rows sit above each other
+   rather than inline. */
+.bar-col { flex-direction: column; align-items: stretch; }
+
+/* base.css's .bar-sticky is position and z-index ONLY: the opaque background is
+   the consumer's job, and a sticky bar without one has the list scrolling
+   visibly through it. Always pair it with .bar (plus .bar-col when stacked) —
+   never use .bar-sticky bare.
+
+   The side margins cancel .screen's horizontal padding so the bar spans the
+   scroll port edge to edge, which is how the design draws these bars — and it
+   is what makes the opaque background actually cover the full width a row
+   occupies. Its partner rule is .screen:has(.bar-sticky) above. Every sticky
+   bar in this app lives inside .screen, so this is unscoped on purpose: one
+   that did not would have to opt out. */
+.bar-sticky {
+  margin-left: calc(-1 * var(--screen-pad));
+  margin-right: calc(-1 * var(--screen-pad));
+}
 
 .text-pretty { text-wrap: pretty; }
 
