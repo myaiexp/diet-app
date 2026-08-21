@@ -149,6 +149,26 @@ describe('aggregateShoppingList', () => {
     expect(skipped).toEqual([]);
   });
 
+  test('includes optional lines when includeOptional is set', () => {
+    const input = baseInput({
+      linesByRecipe: new Map([['r1', [LINE({ optional: true })]]]),
+      includeOptional: true,
+    });
+    const { items } = aggregateShoppingList(input);
+    expect(items).toHaveLength(1);
+    expect(items[0]).toMatchObject({ quantityNeeded: 400, netToBuy: 400 });
+  });
+
+  test('an optional line opted in still nets against the pantry like any other', () => {
+    const input = baseInput({
+      linesByRecipe: new Map([['r1', [LINE({ optional: true })]]]),
+      pantryRows: [ROW({ quantity: 150 })],
+      includeOptional: true,
+    });
+    const { items } = aggregateShoppingList(input);
+    expect(items[0]).toMatchObject({ quantityInPantry: 150, netToBuy: 250 });
+  });
+
   test('excludes cooked entries', () => {
     const input = baseInput({ entries: [ENTRY({ status: 'cooked' })] });
     const { items, skipped } = aggregateShoppingList(input);

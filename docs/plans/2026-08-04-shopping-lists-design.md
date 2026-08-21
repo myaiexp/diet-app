@@ -126,6 +126,12 @@ resolves as `substituteRecipeId ?? recipeId`, identical to the cook flow.
 non-shortfall; an optional garnish should not send anyone to the shop. An
 `includeOptional` flag is filed as a deferred idea.
 
+> **Update (2026-08-21, idea #3228).** That flag shipped as an optional boolean on
+> the `POST /generate` body, defaulting false — the exclusion above is still the
+> behaviour of every request that doesn't ask otherwise. It is per-generation and
+> never persisted on the list: whether you want the garnish is a fact about this
+> shop, not about the week.
+
 **Supply.** Pantry rows for the ingredient whose unit resolves to the *same
 dimension*, summed in base units, **excluding rows already expired as of today** —
 that food is going in the bin, and counting it under-buys.

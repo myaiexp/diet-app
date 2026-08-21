@@ -68,8 +68,17 @@ export function aggregateShoppingList(input: {
   pantryRows: PantrySupplyRow[];
   ingredientsById: Map<string, { category: string }>;
   today: string;
+  /**
+   * Opt the recipes' `optional` lines into the week's demand. Defaults off:
+   * an optional garnish shouldn't send anyone to the shop, and cook-deduct
+   * treats those lines as non-shortfall for the same reason. Whether you want
+   * the garnish this week is a taste call no logic here can make, which is why
+   * it's a per-generation flag rather than a derived rule.
+   */
+  includeOptional?: boolean;
 }): { items: GeneratedItem[]; skipped: SkippedLine[] } {
   const { entries, recipesById, linesByRecipe, pantryRows, ingredientsById, today } = input;
+  const includeOptional = input.includeOptional ?? false;
 
   // Keyed on ingredientId+dimension, never ingredientId alone: mass/volume/count
   // can't merge (units.ts has no density data to cross them), so the same
@@ -98,7 +107,7 @@ export function aggregateShoppingList(input: {
 
     const lines = linesByRecipe.get(recipeId) ?? []; // recipe with no lines is not an error
     for (const line of lines) {
-      if (line.optional) continue; // an optional garnish shouldn't send anyone to the shop
+      if (line.optional && !includeOptional) continue;
 
       const based = toBase(line.quantity * scale, line.unit);
       if (!based) {
