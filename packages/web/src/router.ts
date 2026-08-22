@@ -109,7 +109,12 @@ async function render(route: Route): Promise<void> {
   shell?.setActive(route);
   shell?.setTitle(screen.title, screen.subtitle ?? '');
 
-  mountPoint.replaceChildren();
+  // Each render gets its own node. A stale mount that writes after the user
+  // has moved on paints into a detached tree, not the live pane — the token
+  // on setSubtitle is not enough, because mount() itself writes to `root`.
+  const pane = document.createElement('div');
+  pane.className = 'screen-mount';
+  mountPoint.replaceChildren(pane);
   mountPoint.scrollTop = 0;
 
   const ctx: ScreenContext = {
@@ -121,7 +126,13 @@ async function render(route: Route): Promise<void> {
     navigate,
   };
 
-  await screen.mount(mountPoint, ctx);
+  await screen.mount(pane, ctx);
+  if (token !== renderToken) {
+    // unmount() already ran at the start of the newer render, but that was
+    // before this mount finished — anything it registered after its await
+    // (recipe detail handles, timers) still needs tearing down.
+    screen.unmount?.();
+  }
 }
 
 export function navigate(to: Route): void {

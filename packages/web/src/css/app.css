@@ -69,6 +69,11 @@
    the sides to reach the edges of the scroll port — see its rule below. */
 .screen { padding: var(--screen-pad); }
 
+/* Per-render mount node (router.ts). Isolates a stale async screen's writes
+   after navigation. display:contents so it is not a layout box — sticky bars
+   and .screen padding keep the same containing block as a direct child. */
+.screen-mount { display: contents; }
+
 /* A screen whose content starts with a sticky bar gives up its TOP padding.
    A stickily positioned box is confined to its containing block, so it can
    never pin higher than .screen's *content* box — pinned at `top: 0` it still
