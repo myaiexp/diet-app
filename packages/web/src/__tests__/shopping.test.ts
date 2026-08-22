@@ -9,79 +9,8 @@ import { configureClient, resetClient } from '../api/client.js';
 import { closeModal } from '../ui/modal.js';
 import { shoppingScreen } from '../screens/shopping/index.js';
 import { groupByAisle, pantryLine } from '../screens/shopping/groups.js';
-import type { ShoppingItem, ShoppingList, Ingredient } from '../api/types.js';
-
-function jsonResponse(status: number, body: unknown): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'content-type': 'application/json' },
-  });
-}
-
-function flush(ms = 0): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-function pathOf(url: string): string {
-  return new URL(url, 'http://x').pathname;
-}
-
-function mountRoot(): HTMLElement {
-  const root = document.createElement('div');
-  document.body.appendChild(root);
-  return root;
-}
-
-function makeCtx() {
-  return { setSubtitle: vi.fn(), navigate: vi.fn(), isStale: () => false };
-}
-
-function makeIngredient(overrides: Partial<Ingredient> = {}): Ingredient {
-  return {
-    id: 'ing-1',
-    name: 'Leek',
-    aliases: ['purjo'],
-    category: 'produce',
-    defaultUnit: 'pieces',
-    nutritionPer100g: null,
-    shelfLife: null,
-    tags: null,
-    isPantryStaple: false,
-    createdAt: '2026-01-01T00:00:00.000Z',
-    updatedAt: '2026-01-01T00:00:00.000Z',
-    ...overrides,
-  };
-}
-
-function makeItem(overrides: Partial<ShoppingItem> = {}): ShoppingItem {
-  return {
-    id: 'item-1',
-    listId: 'list-1',
-    ingredientId: 'ing-1',
-    quantityNeeded: '400',
-    quantityInPantry: '0',
-    netToBuy: '400',
-    category: 'produce',
-    unit: 'g',
-    source: 'generated',
-    bought: false,
-    customNote: null,
-    ingredient: makeIngredient(),
-    ...overrides,
-  };
-}
-
-function makeList(overrides: Partial<ShoppingList> = {}): ShoppingList {
-  return {
-    id: 'list-1',
-    weekStarting: '2026-08-17',
-    status: 'draft',
-    createdAt: '2026-08-17T00:00:00.000Z',
-    updatedAt: '2026-08-17T00:00:00.000Z',
-    items: [],
-    ...overrides,
-  };
-}
+import { flush, jsonResponse, makeCtx, mountRoot, pathOf, routeFetch } from './harness.js';
+import { makeIngredient, makeShoppingItem, makeShoppingList } from './fixtures.js';
 
 let fetchMock: ReturnType<typeof vi.fn>;
 
@@ -102,10 +31,10 @@ describe('groupByAisle (pure)', () => {
     // 'c' is a pantry staple the server already sunk to the bottom of
     // 'produce' — grouping must not re-sort it back up.
     const items = [
-      makeItem({ id: 'a', category: 'dairy' }),
-      makeItem({ id: 'b', category: 'produce' }),
-      makeItem({ id: 'c', category: 'produce', ingredient: makeIngredient({ isPantryStaple: true }) }),
-      makeItem({ id: 'd', category: 'protein' }),
+      makeShoppingItem({ id: 'a', category: 'dairy' }),
+      makeShoppingItem({ id: 'b', category: 'produce' }),
+      makeShoppingItem({ id: 'c', category: 'produce', ingredient: makeIngredient({ isPantryStaple: true }) }),
+      makeShoppingItem({ id: 'd', category: 'protein' }),
     ];
 
     const groups = groupByAisle(items);
@@ -116,9 +45,9 @@ describe('groupByAisle (pure)', () => {
 
   test('appends a category outside the named aisle order, in first-seen order', () => {
     const items = [
-      makeItem({ id: 'a', category: 'produce' }),
-      makeItem({ id: 'b', category: 'frozen' }),
-      makeItem({ id: 'c', category: 'frozen' }),
+      makeShoppingItem({ id: 'a', category: 'produce' }),
+      makeShoppingItem({ id: 'b', category: 'frozen' }),
+      makeShoppingItem({ id: 'c', category: 'frozen' }),
     ];
 
     const groups = groupByAisle(items);
@@ -130,32 +59,32 @@ describe('groupByAisle (pure)', () => {
 
 describe('pantryLine (pure)', () => {
   test('nothing in the pantry', () => {
-    expect(pantryLine(makeItem({ quantityInPantry: '0', netToBuy: '400' }))).toBe(
+    expect(pantryLine(makeShoppingItem({ quantityInPantry: '0', netToBuy: '400' }))).toBe(
       'nothing in the pantry',
     );
   });
 
   test('fully covered by the pantry', () => {
-    expect(pantryLine(makeItem({ quantityInPantry: '400', netToBuy: '0' }))).toBe(
+    expect(pantryLine(makeShoppingItem({ quantityInPantry: '400', netToBuy: '0' }))).toBe(
       'covered by the pantry',
     );
   });
 
   test('partial coverage names both amounts', () => {
     expect(
-      pantryLine(makeItem({ quantityInPantry: '200', netToBuy: '200', unit: 'g' })),
+      pantryLine(makeShoppingItem({ quantityInPantry: '200', netToBuy: '200', unit: 'g' })),
     ).toBe('pantry covers 200 g · 200 g short');
   });
 });
 
 describe('shopping screen', () => {
   test('renders the first-run state on a 404', async () => {
-    fetchMock.mockImplementation(async (url: string) => {
-      if (pathOf(url) === '/api/shopping-lists/current') {
-        return jsonResponse(404, { error: 'Not found' });
-      }
-      return jsonResponse(404, { error: 'unhandled' });
-    });
+    fetchMock.mockImplementation(
+      routeFetch(
+        { 'GET /api/shopping-lists/current': jsonResponse(404, { error: 'Not found' }) },
+        { unmatched: '404' },
+      ),
+    );
 
     const root = mountRoot();
     await shoppingScreen().mount(root, makeCtx());
@@ -165,12 +94,9 @@ describe('shopping screen', () => {
   });
 
   test('renders the empty state on a 200 with zero items', async () => {
-    fetchMock.mockImplementation(async (url: string) => {
-      if (pathOf(url) === '/api/shopping-lists/current') {
-        return jsonResponse(200, makeList({ items: [] }));
-      }
-      return jsonResponse(404, { error: 'unhandled' });
-    });
+    fetchMock.mockImplementation(
+      routeFetch({ 'GET /api/shopping-lists/current': makeShoppingList({ items: [] }) }, { unmatched: '404' }),
+    );
 
     const root = mountRoot();
     await shoppingScreen().mount(root, makeCtx());
@@ -180,18 +106,16 @@ describe('shopping screen', () => {
   });
 
   test('toggling a row PATCHes bought:true and reverts it on a failure response', async () => {
-    const item = makeItem({ id: 'item-1', bought: false });
-    fetchMock.mockImplementation(async (url: string, init?: RequestInit) => {
-      const path = pathOf(url);
-      const method = init?.method ?? 'GET';
-      if (path === '/api/shopping-lists/current' && method === 'GET') {
-        return jsonResponse(200, makeList({ items: [item] }));
-      }
-      if (path === '/api/shopping-lists/items/item-1' && method === 'PATCH') {
-        return jsonResponse(500, { error: 'boom' });
-      }
-      return jsonResponse(404, { error: 'unhandled' });
-    });
+    const item = makeShoppingItem({ id: 'item-1', bought: false });
+    fetchMock.mockImplementation(
+      routeFetch(
+        {
+          'GET /api/shopping-lists/current': makeShoppingList({ items: [item] }),
+          'PATCH /api/shopping-lists/items/:id': jsonResponse(500, { error: 'boom' }),
+        },
+        { unmatched: '404' },
+      ),
+    );
 
     const root = mountRoot();
     await shoppingScreen().mount(root, makeCtx());
@@ -213,13 +137,13 @@ describe('shopping screen', () => {
   });
 
   test('a done list renders read-only — no PATCH fires on a row click', async () => {
-    const item = makeItem({ id: 'item-1', bought: true });
-    fetchMock.mockImplementation(async (url: string) => {
-      if (pathOf(url) === '/api/shopping-lists/current') {
-        return jsonResponse(200, makeList({ status: 'done', items: [item] }));
-      }
-      return jsonResponse(404, { error: 'unhandled' });
-    });
+    const item = makeShoppingItem({ id: 'item-1', bought: true });
+    fetchMock.mockImplementation(
+      routeFetch(
+        { 'GET /api/shopping-lists/current': makeShoppingList({ status: 'done', items: [item] }) },
+        { unmatched: '404' },
+      ),
+    );
 
     const root = mountRoot();
     await shoppingScreen().mount(root, makeCtx());
@@ -237,27 +161,25 @@ describe('shopping screen', () => {
   });
 
   test('generate surfaces a non-empty skipped array as a dismissible notice', async () => {
-    fetchMock.mockImplementation(async (url: string, init?: RequestInit) => {
-      const path = pathOf(url);
-      const method = init?.method ?? 'GET';
-      if (path === '/api/shopping-lists/current' && method === 'GET') {
-        return jsonResponse(404, { error: 'Not found' });
-      }
-      if (path === '/api/shopping-lists/generate' && method === 'POST') {
-        return jsonResponse(200, {
-          list: {
-            id: 'list-9',
-            weekStarting: '2026-08-17',
-            status: 'draft',
-            createdAt: '2026-08-17T00:00:00.000Z',
-            updatedAt: '2026-08-17T00:00:00.000Z',
+    fetchMock.mockImplementation(
+      routeFetch(
+        {
+          'GET /api/shopping-lists/current': jsonResponse(404, { error: 'Not found' }),
+          'POST /api/shopping-lists/generate': {
+            list: {
+              id: 'list-9',
+              weekStarting: '2026-08-17',
+              status: 'draft',
+              createdAt: '2026-08-17T00:00:00.000Z',
+              updatedAt: '2026-08-17T00:00:00.000Z',
+            },
+            items: [makeShoppingItem({ id: 'item-1' })],
+            skipped: [{ ingredientId: null, entryId: 'entry-1', reason: 'unknown_unit' }],
           },
-          items: [makeItem({ id: 'item-1' })],
-          skipped: [{ ingredientId: null, entryId: 'entry-1', reason: 'unknown_unit' }],
-        });
-      }
-      return jsonResponse(404, { error: 'unhandled' });
-    });
+        },
+        { unmatched: '404' },
+      ),
+    );
 
     const root = mountRoot();
     await shoppingScreen().mount(root, makeCtx());
@@ -271,21 +193,19 @@ describe('shopping screen', () => {
   });
 
   test('the include-optional chip sends includeOptional on the next generate', async () => {
-    fetchMock.mockImplementation(async (url: string, init?: RequestInit) => {
-      const path = pathOf(url);
-      const method = init?.method ?? 'GET';
-      if (path === '/api/shopping-lists/current' && method === 'GET') {
-        return jsonResponse(200, makeList({ items: [makeItem()] }));
-      }
-      if (path === '/api/shopping-lists/generate' && method === 'POST') {
-        return jsonResponse(200, {
-          list: makeList(),
-          items: [makeItem()],
-          skipped: [],
-        });
-      }
-      return jsonResponse(404, { error: 'unhandled' });
-    });
+    fetchMock.mockImplementation(
+      routeFetch(
+        {
+          'GET /api/shopping-lists/current': makeShoppingList({ items: [makeShoppingItem()] }),
+          'POST /api/shopping-lists/generate': {
+            list: makeShoppingList(),
+            items: [makeShoppingItem()],
+            skipped: [],
+          },
+        },
+        { unmatched: '404' },
+      ),
+    );
 
     const root = mountRoot();
     await shoppingScreen().mount(root, makeCtx());
@@ -313,17 +233,17 @@ describe('shopping screen', () => {
   });
 
   test('deleting a generated row warns that regeneration brings it back', async () => {
-    fetchMock.mockImplementation(async (url: string, init?: RequestInit) => {
-      const path = pathOf(url);
-      const method = init?.method ?? 'GET';
-      if (path === '/api/shopping-lists/current' && method === 'GET') {
-        return jsonResponse(200, makeList({ items: [makeItem({ source: 'generated' })] }));
-      }
-      if (path === '/api/shopping-lists/items/item-1' && method === 'DELETE') {
-        return new Response(null, { status: 204 });
-      }
-      return jsonResponse(404, { error: 'unhandled' });
-    });
+    fetchMock.mockImplementation(
+      routeFetch(
+        {
+          'GET /api/shopping-lists/current': makeShoppingList({
+            items: [makeShoppingItem({ source: 'generated' })],
+          }),
+          'DELETE /api/shopping-lists/items/:id': new Response(null, { status: 204 }),
+        },
+        { unmatched: '404' },
+      ),
+    );
 
     const root = mountRoot();
     await shoppingScreen().mount(root, makeCtx());
@@ -337,21 +257,21 @@ describe('shopping screen', () => {
   });
 
   test('a completion that skipped items says they did NOT reach the pantry', async () => {
-    fetchMock.mockImplementation(async (url: string, init?: RequestInit) => {
-      const path = pathOf(url);
-      const method = init?.method ?? 'GET';
-      if (path === '/api/shopping-lists/current' && method === 'GET') {
-        return jsonResponse(200, makeList({ items: [makeItem({ bought: true })] }));
-      }
-      if (path === '/api/shopping-lists/list-1/complete' && method === 'POST') {
-        return jsonResponse(200, {
-          list: { ...makeList(), status: 'done' },
-          added: [],
-          skipped: [{ itemId: 'item-1', reason: 'no_shelf_life' }],
-        });
-      }
-      return jsonResponse(404, { error: 'unhandled' });
-    });
+    fetchMock.mockImplementation(
+      routeFetch(
+        {
+          'GET /api/shopping-lists/current': makeShoppingList({
+            items: [makeShoppingItem({ bought: true })],
+          }),
+          'POST /api/shopping-lists/:id/complete': {
+            list: { ...makeShoppingList(), status: 'done' },
+            added: [],
+            skipped: [{ itemId: 'item-1', reason: 'no_shelf_life' }],
+          },
+        },
+        { unmatched: '404' },
+      ),
+    );
 
     const root = mountRoot();
     await shoppingScreen().mount(root, makeCtx());

@@ -10,38 +10,18 @@ import {
   readQuantityUnit,
   SEARCH_DEBOUNCE_MS,
 } from '../ui/ingredient-picker.js';
-import type { Ingredient } from '../api/types.js';
+import { flush, jsonResponse, pathOf } from './harness.js';
+import { makeIngredient } from './fixtures.js';
 
-function jsonResponse(status: number, body: unknown): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'content-type': 'application/json' },
-  });
-}
-
-function flush(ms = 0): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-function makeIngredient(overrides: Partial<Ingredient> = {}): Ingredient {
-  return {
-    id: 'ing-1',
+function makePotato(overrides: Parameters<typeof makeIngredient>[0] = {}) {
+  return makeIngredient({
     name: 'Potato',
     aliases: ['peruna'],
     category: 'produce',
     defaultUnit: 'kg',
-    nutritionPer100g: null,
-    shelfLife: null,
-    tags: null,
     isPantryStaple: false,
-    createdAt: '2026-01-01T00:00:00.000Z',
-    updatedAt: '2026-01-01T00:00:00.000Z',
     ...overrides,
-  };
-}
-
-function pathOf(url: string): string {
-  return new URL(url, 'http://x').pathname;
+  });
 }
 
 let fetchMock: ReturnType<typeof vi.fn>;
@@ -58,7 +38,7 @@ afterEach(() => {
 
 describe('attachIngredientSearch', () => {
   test('debounces, renders name + alias, and calls onPick', async () => {
-    const potato = makeIngredient();
+    const potato = makePotato();
     fetchMock.mockResolvedValue(jsonResponse(200, [potato]));
 
     const input = el('input', { class: 'input', type: 'text' }) as HTMLInputElement;
@@ -129,7 +109,7 @@ describe('attachIngredientSearch', () => {
   });
 
   test('renderResult replaces the default row', async () => {
-    fetchMock.mockResolvedValue(jsonResponse(200, [makeIngredient()]));
+    fetchMock.mockResolvedValue(jsonResponse(200, [makePotato()]));
     const input = el('input', { class: 'input', type: 'text' }) as HTMLInputElement;
     const results = el('div');
     attachIngredientSearch(input, results, vi.fn(), {
@@ -143,7 +123,7 @@ describe('attachIngredientSearch', () => {
   });
 
   test('immediate searches the current value without waiting for input', async () => {
-    fetchMock.mockResolvedValue(jsonResponse(200, [makeIngredient()]));
+    fetchMock.mockResolvedValue(jsonResponse(200, [makePotato()]));
     const input = el('input', { class: 'input', type: 'text', value: 'peruna' }) as HTMLInputElement;
     const results = el('div');
     document.body.append(input, results);
@@ -174,7 +154,7 @@ describe('attachIngredientSearch', () => {
     input.dispatchEvent(new Event('input', { bubbles: true }));
     await flush(SEARCH_DEBOUNCE_MS + 50);
     expect(results.querySelector('.pantry-search-result')?.textContent).toContain('Leek');
-    finishSlow(jsonResponse(200, [makeIngredient()]));
+    finishSlow(jsonResponse(200, [makePotato()]));
     await flush(20);
     expect(results.querySelector('.pantry-search-result')?.textContent).toContain('Leek');
     expect(results.textContent).not.toContain('Potato');
@@ -259,7 +239,7 @@ describe('createIngredientQuantityForm', () => {
       /peruna/i,
     );
 
-    form.selectIngredient(makeIngredient());
+    form.selectIngredient(makePotato());
     expect(form.pickStep.classList.contains('hidden')).toBe(true);
     expect(form.detailStep.classList.contains('hidden')).toBe(false);
     expect(form.unitInput.value).toBe('kg');
@@ -277,7 +257,7 @@ describe('createIngredientQuantityForm', () => {
     expect(form.read()).toBeNull();
     expect(form.err.textContent).toMatch(/Pick an ingredient first/i);
 
-    const ing = makeIngredient({ aliases: [] });
+    const ing = makePotato({ aliases: [] });
     form.selectIngredient(ing);
     expect(form.detailStep.querySelector('.pantry-chosen')?.textContent).toBe('Potato');
     expect(form.err.classList.contains('hidden')).toBe(true);

@@ -4,59 +4,21 @@ import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 import { configureClient, resetClient } from '../api/client.js';
 import { closeModal } from '../ui/modal.js';
 import { openAddItemModal } from '../modals/pantry-form.js';
-import type { Ingredient, PantryItem, PantryLocation } from '../api/types.js';
+import type { PantryLocation } from '../api/types.js';
+import { flush, jsonResponse, pathOf, routeFetch } from './harness.js';
+import { makeIngredient, makePantryItem } from './fixtures.js';
 
 const NO_SHELF_LIFE =
   'expiresDate is required when ingredient has no shelf life for this location';
 
-function jsonResponse(status: number, body: unknown): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'content-type': 'application/json' },
-  });
-}
-
-function flush(ms = 0): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-function makeIngredient(overrides: Partial<Ingredient> = {}): Ingredient {
-  return {
-    id: 'ing-1',
+function spice(overrides: Parameters<typeof makeIngredient>[0] = {}) {
+  return makeIngredient({
     name: 'Mystery spice',
     aliases: [],
     category: 'other',
     defaultUnit: 'g',
-    nutritionPer100g: null,
-    shelfLife: null,
-    tags: null,
-    isPantryStaple: null,
-    createdAt: '2026-01-01T00:00:00.000Z',
-    updatedAt: '2026-01-01T00:00:00.000Z',
     ...overrides,
-  };
-}
-
-function makeItem(overrides: Partial<PantryItem> = {}): PantryItem {
-  return {
-    id: 'item-1',
-    ingredientId: 'ing-1',
-    quantity: '1',
-    unit: 'g',
-    location: 'fridge',
-    addedDate: '2026-08-01',
-    expiresDate: '2026-08-10',
-    opened: false,
-    status: 'fresh',
-    ingredient: makeIngredient(),
-    createdAt: '2026-08-01T00:00:00.000Z',
-    updatedAt: '2026-08-01T00:00:00.000Z',
-    ...overrides,
-  };
-}
-
-function pathOf(url: string): string {
-  return new URL(url, 'http://x').pathname;
+  });
 }
 
 function expiresField(): HTMLElement {
@@ -109,21 +71,21 @@ afterEach(() => {
 
 describe('openAddItemModal shelf-life fallback', () => {
   test('no-shelf-life 400 reveals expiresDate; retry sends it', async () => {
-    fetchMock.mockImplementation(async (url: string, init?: RequestInit) => {
-      const path = pathOf(url);
-      const method = init?.method ?? 'GET';
-      if (path === '/api/pantry' && method === 'POST') {
-        const body = JSON.parse(String(init?.body ?? '{}')) as { expiresDate?: string };
-        if (!body.expiresDate) {
-          return jsonResponse(400, { error: NO_SHELF_LIFE });
-        }
-        return jsonResponse(201, makeItem({ expiresDate: body.expiresDate }));
-      }
-      return jsonResponse(404, { error: 'unhandled' });
-    });
+    fetchMock.mockImplementation(
+      routeFetch(
+        {
+          'POST /api/pantry': ({ json }) => {
+            const body = json<{ expiresDate?: string }>();
+            if (!body.expiresDate) return jsonResponse(400, { error: NO_SHELF_LIFE });
+            return jsonResponse(201, makePantryItem({ expiresDate: body.expiresDate }));
+          },
+        },
+        { unmatched: '404' },
+      ),
+    );
 
     const onCreated = vi.fn();
-    openAddItemModal({ onCreated }, makeIngredient());
+    openAddItemModal({ onCreated }, spice());
 
     expect(expiresField().classList.contains('hidden')).toBe(true);
 
@@ -148,16 +110,14 @@ describe('openAddItemModal shelf-life fallback', () => {
   });
 
   test('a different 400 does not reveal the expires field, and a typed date is not sent', async () => {
-    fetchMock.mockImplementation(async (url: string, init?: RequestInit) => {
-      const path = pathOf(url);
-      const method = init?.method ?? 'GET';
-      if (path === '/api/pantry' && method === 'POST') {
-        return jsonResponse(400, { error: 'Invalid reference' });
-      }
-      return jsonResponse(404, { error: 'unhandled' });
-    });
+    fetchMock.mockImplementation(
+      routeFetch(
+        { 'POST /api/pantry': jsonResponse(400, { error: 'Invalid reference' }) },
+        { unmatched: '404' },
+      ),
+    );
 
-    openAddItemModal({ onCreated: vi.fn() }, makeIngredient());
+    openAddItemModal({ onCreated: vi.fn() }, spice());
     clickSave();
     await flush(50);
 
@@ -175,27 +135,24 @@ describe('openAddItemModal shelf-life fallback', () => {
   });
 
   test('changing location after reveal still sends the filled expiresDate', async () => {
-    fetchMock.mockImplementation(async (url: string, init?: RequestInit) => {
-      const path = pathOf(url);
-      const method = init?.method ?? 'GET';
-      if (path === '/api/pantry' && method === 'POST') {
-        const body = JSON.parse(String(init?.body ?? '{}')) as {
-          expiresDate?: string;
-          location?: PantryLocation;
-        };
-        if (!body.expiresDate) {
-          return jsonResponse(400, { error: NO_SHELF_LIFE });
-        }
-        return jsonResponse(
-          201,
-          makeItem({ expiresDate: body.expiresDate, location: body.location ?? 'fridge' }),
-        );
-      }
-      return jsonResponse(404, { error: 'unhandled' });
-    });
+    fetchMock.mockImplementation(
+      routeFetch(
+        {
+          'POST /api/pantry': ({ json }) => {
+            const body = json<{ expiresDate?: string; location?: PantryLocation }>();
+            if (!body.expiresDate) return jsonResponse(400, { error: NO_SHELF_LIFE });
+            return jsonResponse(
+              201,
+              makePantryItem({ expiresDate: body.expiresDate, location: body.location ?? 'fridge' }),
+            );
+          },
+        },
+        { unmatched: '404' },
+      ),
+    );
 
     const onCreated = vi.fn();
-    openAddItemModal({ onCreated }, makeIngredient());
+    openAddItemModal({ onCreated }, spice());
     clickSave();
     await flush(50);
 

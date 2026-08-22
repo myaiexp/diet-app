@@ -11,12 +11,7 @@ import {
 import { ApiError, userMessage, fieldErrors } from '../api/errors.js';
 import { extractDraft, IMPORT_TIMEOUT_MS } from '../api/recipe-import.js';
 
-function jsonResponse(status: number, body: unknown): Response {
-  return new Response(body === undefined ? '' : JSON.stringify(body), {
-    status,
-    headers: { 'content-type': 'application/json' },
-  });
-}
+import { jsonResponse } from './harness.js';
 
 let fetchMock: Mock;
 let expired: Mock<() => void>;

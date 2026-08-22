@@ -4,7 +4,8 @@
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 import { configureClient, resetClient } from '../api/client.js';
 import { importScreen } from '../screens/import/index.js';
-import type { RecipeDraft, DraftIngredientLine, Ingredient } from '../api/types.js';
+import { flush, jsonResponse, makeCtx, mountRoot, routeFetch } from './harness.js';
+import { makeDraft, makeIngredient, makeLine } from './fixtures.js';
 
 interface PostedLine {
   ingredientId: string | null;
@@ -16,31 +17,6 @@ interface PostedRecipe {
   ingredients: PostedLine[];
 }
 
-function jsonResponse(status: number, body: unknown): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'content-type': 'application/json' },
-  });
-}
-
-function flush(ms = 20): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-function pathOf(url: string): string {
-  return new URL(url, 'http://x').pathname;
-}
-
-function mountRoot(): HTMLElement {
-  const root = document.createElement('div');
-  document.body.appendChild(root);
-  return root;
-}
-
-function makeCtx() {
-  return { setSubtitle: vi.fn(), navigate: vi.fn(), isStale: () => false };
-}
-
 /** Fills the url field and clicks `extract draft`. */
 function submit(root: HTMLElement, url = 'https://example.com/recipe'): void {
   const input = root.querySelector<HTMLInputElement>('.import-paste input')!;
@@ -49,52 +25,19 @@ function submit(root: HTMLElement, url = 'https://example.com/recipe'): void {
   root.querySelector<HTMLButtonElement>('.import-paste .btn-primary')!.click();
 }
 
-function makeLine(overrides: Partial<DraftIngredientLine> = {}): DraftIngredientLine {
-  return {
-    rawName: '3 dl ohrasuurimoita',
-    ingredientId: 'ing-barley',
-    quantity: 300,
-    unit: 'ml',
-    optional: false,
-    notes: null,
-    match: 'exact',
-    quantityInferred: false,
-    ...overrides,
-  };
-}
-
-function makeDraft(overrides: Partial<RecipeDraft> = {}): RecipeDraft {
-  return {
-    title: 'Ohrarisotto metsäsienillä',
-    sourceType: 'imported',
-    sourceUrl: 'https://example.com/recipe',
-    steps: ['Step one', 'Step two'],
-    servings: 4,
-    prepTime: 15,
-    totalTime: 40,
-    effortScore: 3,
-    tags: ['oven'],
-    cuisineType: 'Finnish',
-    ingredients: [makeLine()],
-    ...overrides,
-  };
-}
-
-function makeIngredient(overrides: Partial<Ingredient> = {}): Ingredient {
-  return {
-    id: 'ing-x',
-    name: 'Mushroom, button',
-    aliases: null,
-    category: 'produce',
-    defaultUnit: 'g',
-    nutritionPer100g: null,
-    shelfLife: null,
-    tags: null,
-    isPantryStaple: null,
-    createdAt: '2026-01-01T00:00:00.000Z',
-    updatedAt: '2026-01-01T00:00:00.000Z',
-    ...overrides,
-  };
+function draftFetch(
+  draft: ReturnType<typeof makeDraft>,
+  unmatchedCount = 0,
+  extra: Parameters<typeof routeFetch>[0] = {},
+) {
+  return routeFetch(
+    {
+      '/api/recipes/import': { draft, unmatchedCount },
+      '/api/ingredients': [],
+      ...extra,
+    },
+    { unmatched: '404' },
+  );
 }
 
 let fetchMock: ReturnType<typeof vi.fn>;
@@ -110,12 +53,7 @@ afterEach(() => resetClient());
 describe('recipe import screen', () => {
   test('moves paste → extracting → review on submit', async () => {
     const draft = makeDraft();
-    fetchMock.mockImplementation(async (url: string) => {
-      const path = pathOf(url);
-      if (path === '/api/recipes/import') return jsonResponse(200, { draft, unmatchedCount: 0 });
-      if (path === '/api/ingredients') return jsonResponse(200, []);
-      return jsonResponse(404, { error: 'unhandled' });
-    });
+    fetchMock.mockImplementation(draftFetch(draft, 0));
 
     const root = mountRoot();
     await importScreen().mount(root, makeCtx());
@@ -127,7 +65,7 @@ describe('recipe import screen', () => {
     expect(root.querySelector('.import-extracting')).not.toBeNull();
     expect(root.querySelectorAll('.shimmer')).toHaveLength(5);
 
-    await flush();
+    await flush(20);
     expect(root.querySelector('.import-review')).not.toBeNull();
   });
 
@@ -139,17 +77,12 @@ describe('recipe import screen', () => {
         makeLine({ rawName: 'no match line', ingredientId: null, quantity: 250, match: 'none', quantityInferred: false }),
       ],
     });
-    fetchMock.mockImplementation(async (url: string) => {
-      const path = pathOf(url);
-      if (path === '/api/recipes/import') return jsonResponse(200, { draft, unmatchedCount: 1 });
-      if (path === '/api/ingredients') return jsonResponse(200, []);
-      return jsonResponse(404, { error: 'unhandled' });
-    });
+    fetchMock.mockImplementation(draftFetch(draft, 1));
 
     const root = mountRoot();
     await importScreen().mount(root, makeCtx());
     submit(root);
-    await flush();
+    await flush(20);
 
     const classes = [...root.querySelectorAll('.import-line')].map((r) => r.className);
     expect(classes).toEqual([
@@ -170,17 +103,12 @@ describe('recipe import screen', () => {
         makeLine({ rawName: 'round qty', ingredientId: 'ing-1', quantity: 100, quantityInferred: false, match: 'alias' }),
       ],
     });
-    fetchMock.mockImplementation(async (url: string) => {
-      const path = pathOf(url);
-      if (path === '/api/recipes/import') return jsonResponse(200, { draft, unmatchedCount: 0 });
-      if (path === '/api/ingredients') return jsonResponse(200, []);
-      return jsonResponse(404, { error: 'unhandled' });
-    });
+    fetchMock.mockImplementation(draftFetch(draft, 0));
 
     const root = mountRoot();
     await importScreen().mount(root, makeCtx());
     submit(root);
-    await flush();
+    await flush(20);
 
     expect(root.querySelector('.import-line')!.className).toBe('import-line import-line--bound');
   });
@@ -193,17 +121,12 @@ describe('recipe import screen', () => {
         makeLine({ rawName: 'unmatched b', ingredientId: null, quantity: 10, match: 'none' }),
       ],
     });
-    fetchMock.mockImplementation(async (url: string) => {
-      const path = pathOf(url);
-      if (path === '/api/recipes/import') return jsonResponse(200, { draft, unmatchedCount: 2 });
-      if (path === '/api/ingredients') return jsonResponse(200, []);
-      return jsonResponse(404, { error: 'unhandled' });
-    });
+    fetchMock.mockImplementation(draftFetch(draft, 2));
 
     const root = mountRoot();
     await importScreen().mount(root, makeCtx());
     submit(root);
-    await flush();
+    await flush(20);
 
     const saveBtn = root.querySelector<HTMLButtonElement>('.import-footer .btn-primary')!;
     expect(saveBtn.disabled).toBe(true);
@@ -219,17 +142,12 @@ describe('recipe import screen', () => {
         makeLine({ rawName: 'assumed', ingredientId: 'ing-2', quantity: 150, match: 'alias', quantityInferred: true }),
       ],
     });
-    fetchMock.mockImplementation(async (url: string) => {
-      const path = pathOf(url);
-      if (path === '/api/recipes/import') return jsonResponse(200, { draft, unmatchedCount: 0 });
-      if (path === '/api/ingredients') return jsonResponse(200, []);
-      return jsonResponse(404, { error: 'unhandled' });
-    });
+    fetchMock.mockImplementation(draftFetch(draft, 0));
 
     const root = mountRoot();
     await importScreen().mount(root, makeCtx());
     submit(root);
-    await flush();
+    await flush(20);
 
     const saveBtn = root.querySelector<HTMLButtonElement>('.import-footer .btn-primary')!;
     expect(saveBtn.disabled).toBe(false);
@@ -241,20 +159,19 @@ describe('recipe import screen', () => {
       ingredients: [makeLine({ rawName: 'metsäsieniä', ingredientId: null, quantity: 250, unit: 'g', match: 'none' })],
     });
     const hit = makeIngredient({ id: 'ing-mush', name: 'Mushroom, button' });
-    fetchMock.mockImplementation(async (url: string) => {
-      const path = pathOf(url);
-      if (path === '/api/recipes/import') return jsonResponse(200, { draft, unmatchedCount: 1 });
-      if (path === '/api/ingredients') {
-        expect(new URL(url, 'http://x').searchParams.get('q')).toBe('metsäsieniä');
-        return jsonResponse(200, [hit]);
-      }
-      return jsonResponse(404, { error: 'unhandled' });
-    });
+    fetchMock.mockImplementation(
+      draftFetch(draft, 1, {
+        '/api/ingredients': ({ url }) => {
+          expect(url.searchParams.get('q')).toBe('metsäsieniä');
+          return [hit];
+        },
+      }),
+    );
 
     const root = mountRoot();
     await importScreen().mount(root, makeCtx());
     submit(root);
-    await flush();
+    await flush(20);
 
     const names = [...root.querySelectorAll('.import-candidate-results .btn-sm')].map((b) => b.textContent);
     expect(names).toContain('Mushroom, button');
@@ -307,23 +224,20 @@ describe('recipe import screen', () => {
       ],
     });
     let posted: PostedRecipe | null = null;
-    fetchMock.mockImplementation(async (url: string, init?: RequestInit) => {
-      const path = pathOf(url);
-      const method = init?.method ?? 'GET';
-      if (path === '/api/recipes/import') return jsonResponse(200, { draft, unmatchedCount: 1 });
-      if (path === '/api/ingredients') return jsonResponse(200, []);
-      if (path === '/api/recipes' && method === 'POST') {
-        posted = JSON.parse(init!.body as string) as PostedRecipe;
-        return jsonResponse(201, { id: 'r1' });
-      }
-      return jsonResponse(404, { error: 'unhandled' });
-    });
+    fetchMock.mockImplementation(
+      draftFetch(draft, 1, {
+        'POST /api/recipes': ({ json }) => {
+          posted = json<PostedRecipe>();
+          return jsonResponse(201, { id: 'r1' });
+        },
+      }),
+    );
 
     const root = mountRoot();
     const ctx = makeCtx();
     await importScreen().mount(root, ctx);
     submit(root);
-    await flush();
+    await flush(20);
 
     const skipBtn = [...root.querySelectorAll<HTMLButtonElement>('.import-candidates .btn-ghost')].find(
       (b) => b.textContent === 'skip line',
@@ -333,7 +247,7 @@ describe('recipe import screen', () => {
     const saveBtn = root.querySelector<HTMLButtonElement>('.import-footer .btn-primary')!;
     expect(saveBtn.disabled).toBe(false);
     saveBtn.click();
-    await flush();
+    await flush(20);
 
     expect(posted).not.toBeNull();
     expect(posted!.ingredients).toEqual([{ ingredientId: 'ing-1', quantity: 100, unit: 'g', optional: false, notes: null }]);
@@ -348,25 +262,22 @@ describe('recipe import screen', () => {
       ],
     });
     let posted: PostedRecipe | null = null;
-    fetchMock.mockImplementation(async (url: string, init?: RequestInit) => {
-      const path = pathOf(url);
-      const method = init?.method ?? 'GET';
-      if (path === '/api/recipes/import') return jsonResponse(200, { draft, unmatchedCount: 0 });
-      if (path === '/api/ingredients') return jsonResponse(200, []);
-      if (path === '/api/recipes' && method === 'POST') {
-        posted = JSON.parse(init!.body as string) as PostedRecipe;
-        return jsonResponse(201, { id: 'r1' });
-      }
-      return jsonResponse(404, { error: 'unhandled' });
-    });
+    fetchMock.mockImplementation(
+      draftFetch(draft, 0, {
+        'POST /api/recipes': ({ json }) => {
+          posted = json<PostedRecipe>();
+          return jsonResponse(201, { id: 'r1' });
+        },
+      }),
+    );
 
     const root = mountRoot();
     await importScreen().mount(root, makeCtx());
     submit(root);
-    await flush();
+    await flush(20);
 
     root.querySelector<HTMLButtonElement>('.import-footer .btn-primary')!.click();
-    await flush();
+    await flush(20);
 
     expect(posted).not.toBeNull();
     expect(posted!.ingredients.length).toBeGreaterThan(0);
@@ -377,32 +288,34 @@ describe('recipe import screen', () => {
   });
 
   test('renders 503 as the AI-not-configured message', async () => {
-    fetchMock.mockImplementation(async (url: string) => {
-      if (pathOf(url) === '/api/recipes/import') return jsonResponse(503, { error: 'AI not configured' });
-      return jsonResponse(404, { error: 'unhandled' });
-    });
+    fetchMock.mockImplementation(
+      routeFetch(
+        { '/api/recipes/import': jsonResponse(503, { error: 'AI not configured' }) },
+        { unmatched: '404' },
+      ),
+    );
 
     const root = mountRoot();
     await importScreen().mount(root, makeCtx());
     submit(root);
-    await flush();
+    await flush(20);
 
     expect(root.querySelector('.import-paste')).not.toBeNull();
     expect(root.textContent).toContain('AI import is not configured on the server.');
   });
 
   test('renders 502 as a retryable extraction failure', async () => {
-    fetchMock.mockImplementation(async (url: string) => {
-      if (pathOf(url) === '/api/recipes/import') {
-        return jsonResponse(502, { error: 'Recipe extraction failed' });
-      }
-      return jsonResponse(404, { error: 'unhandled' });
-    });
+    fetchMock.mockImplementation(
+      routeFetch(
+        { '/api/recipes/import': jsonResponse(502, { error: 'Recipe extraction failed' }) },
+        { unmatched: '404' },
+      ),
+    );
 
     const root = mountRoot();
     await importScreen().mount(root, makeCtx());
     submit(root);
-    await flush();
+    await flush(20);
 
     expect(root.querySelector('.import-paste')).not.toBeNull();
     expect(root.textContent).toContain('Recipe extraction failed');

@@ -75,6 +75,20 @@ none of those tables has a unique key to conflict on. It **refuses a database
 whose name doesn't end in `_test`/`_dev`** unless `--force` — production is
 `dietapp`.
 
+## Web test harness
+
+Screen and client suites compose `packages/web/src/__tests__/harness.ts` and
+`fixtures.ts` — they do not re-derive `jsonResponse` / `pathOf` / `flush` /
+`mountRoot` / `makeCtx`, or the per-resource `make*` builders.
+
+`routeFetch(routes, { unmatched })` is the fetch-side analog of
+`makeSelectRouter`: keys are `"GET /api/pantry"` or `"/api/ingredients"` (any
+method) or `"GET /api/recipes/:id"`. Static segments beat params at the same
+depth (`/shopping-lists/current` wins over `/shopping-lists/:id`). A handler
+may return a `Response`, a JSON body (wrapped as 200), or a function of
+`{ url, method, path, init, params, json() }`. Unmatched requests throw
+`unhandled request: METHOD /path` unless `{ unmatched: '404' }`.
+
 ## Route-test mocks
 
 Mock-based route suites build their fake db from `__tests__/db-mock.ts` — never

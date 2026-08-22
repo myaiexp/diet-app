@@ -6,12 +6,8 @@ import { configureClient, resetClient } from '../api/client.js';
 import { closeModal, isModalOpen } from '../ui/modal.js';
 import type { MealPlanEntry, RecipeWithIngredients, PantryItem } from '../api/types.js';
 
-function jsonResponse(status: number, body: unknown): Response {
-  return new Response(body === undefined ? '' : JSON.stringify(body), {
-    status,
-    headers: { 'content-type': 'application/json' },
-  });
-}
+import { jsonResponse, routeFetch } from './harness.js';
+import { makeEntry, makeIngredient, makePantryItem } from './fixtures.js';
 
 function click(selector: string): void {
   const node = document.querySelector<HTMLButtonElement>(selector);
@@ -34,35 +30,24 @@ function ingredientLine(ingredientId: string, name: string, quantity: string) {
     unit: 'g',
     optional: false,
     notes: null,
-    ingredient: {
+    ingredient: makeIngredient({
       id: ingredientId,
       name,
       aliases: null,
       category: 'misc',
       defaultUnit: 'g',
-      nutritionPer100g: null,
-      shelfLife: null,
-      tags: null,
-      isPantryStaple: null,
       createdAt: '',
       updatedAt: '',
-    },
+    }),
   };
 }
 
-const ENTRY: MealPlanEntry = {
-  id: 'e1',
+const ENTRY: MealPlanEntry = makeEntry({
   date: '2026-08-04',
-  slot: 'dinner',
   recipeId: 'r1',
   freeformNote: null,
   servings: '4',
-  status: 'planned',
-  substituteRecipeId: null,
-  notes: null,
-  createdAt: '2026-08-01T00:00:00.000Z',
-  updatedAt: '2026-08-01T00:00:00.000Z',
-};
+});
 
 const RECIPE: RecipeWithIngredients = {
   id: 'r1',
@@ -86,32 +71,21 @@ const RECIPE: RecipeWithIngredients = {
 };
 
 const PANTRY: PantryItem[] = [
-  {
+  makePantryItem({
     id: 'p1',
     ingredientId: 'salmon',
     quantity: '500',
-    unit: 'g',
-    location: 'fridge',
     addedDate: isoDaysFromNow(-2),
     expiresDate: isoDaysFromNow(0),
-    opened: false,
     status: 'use_today',
-    ingredient: {
+    ingredient: makeIngredient({
       id: 'salmon',
       name: 'Salmon',
       aliases: ['lohi'],
       category: 'protein',
       defaultUnit: 'g',
-      nutritionPer100g: null,
-      shelfLife: null,
-      tags: null,
-      isPantryStaple: null,
-      createdAt: '2026-08-01T00:00:00.000Z',
-      updatedAt: '2026-08-01T00:00:00.000Z',
-    },
-    createdAt: '2026-08-01T00:00:00.000Z',
-    updatedAt: '2026-08-01T00:00:00.000Z',
-  },
+    }),
+  }),
 ];
 
 function deductionPlan(servings: number) {
@@ -140,37 +114,31 @@ interface RouteOpts {
 /** Routes the entry-e1 flow: recipe, pantry, preview, PATCH, cook, feedback. */
 function buildRouter(opts: RouteOpts = {}) {
   const state = { servings: 4 };
-  return vi.fn(async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
-    const u = new URL(typeof input === 'string' ? input : input.toString(), 'http://localhost');
-    const method = (init?.method ?? 'GET').toUpperCase();
-
-    if (method === 'GET' && u.pathname === '/api/recipes/r1') return jsonResponse(200, RECIPE);
-    if (method === 'GET' && u.pathname === '/api/pantry') return jsonResponse(200, PANTRY);
-    if (method === 'GET' && u.pathname === '/api/meal-plans/e1/cook-preview') {
-      const servings = Number(u.searchParams.get('servings') ?? state.servings);
-      return jsonResponse(200, { ...deductionPlan(servings), servings });
-    }
-    if (method === 'PATCH' && u.pathname === '/api/meal-plans/e1') {
-      const body = init?.body
-        ? (JSON.parse(String(init.body)) as { servings?: number; status?: MealPlanEntry['status'] })
-        : {};
+  return routeFetch({
+    'GET /api/recipes/:id': RECIPE,
+    'GET /api/pantry': PANTRY,
+    'GET /api/meal-plans/:id/cook-preview': ({ url }) => {
+      const servings = Number(url.searchParams.get('servings') ?? state.servings);
+      return { ...deductionPlan(servings), servings };
+    },
+    'PATCH /api/meal-plans/:id': ({ json }) => {
+      const body = json<{ servings?: number; status?: MealPlanEntry['status'] }>();
       if (typeof body.servings === 'number') state.servings = body.servings;
-      return jsonResponse(200, {
+      return {
         ...ENTRY,
         servings: String(state.servings),
         ...(body.status ? { status: body.status } : {}),
-      });
-    }
-    if (method === 'POST' && u.pathname === '/api/meal-plans/e1/cook') {
+      };
+    },
+    'POST /api/meal-plans/:id/cook': () => {
       if (opts.cookStatus === 409) return jsonResponse(409, { error: 'Meal plan entry already cooked' });
-      return jsonResponse(200, {
-        entry: { ...ENTRY, status: 'cooked', servings: String(state.servings) },
+      return {
+        entry: { ...ENTRY, status: 'cooked' as const, servings: String(state.servings) },
         ...deductionPlan(state.servings),
-      });
-    }
-    if (method === 'POST' && u.pathname === '/api/meal-plans/e1/feedback') {
-      const body = init?.body ? JSON.parse(String(init.body)) : {};
-      return jsonResponse(201, {
+      };
+    },
+    'POST /api/meal-plans/:id/feedback': ({ json }) =>
+      jsonResponse(201, {
         id: 'fb1',
         mealPlanEntryId: 'e1',
         rating: 'thumbs_up',
@@ -180,10 +148,8 @@ function buildRouter(opts: RouteOpts = {}) {
         changesNote: null,
         createdAt: '',
         updatedAt: '',
-        ...body,
-      });
-    }
-    throw new Error(`unhandled request: ${method} ${u.pathname}`);
+        ...json<Record<string, unknown>>(),
+      }),
   });
 }
 
@@ -325,15 +291,12 @@ describe('cook confirm', () => {
 
   test('a freeform entry previews as an empty plan without erroring', async () => {
     const freeform: MealPlanEntry = { ...ENTRY, id: 'e2', recipeId: null, substituteRecipeId: null, freeformNote: 'Leftovers' };
-    fetchMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
-      const u = new URL(typeof input === 'string' ? input : input.toString(), 'http://localhost');
-      const method = (init?.method ?? 'GET').toUpperCase();
-      if (method === 'GET' && u.pathname === '/api/pantry') return jsonResponse(200, []);
-      if (method === 'GET' && u.pathname === '/api/meal-plans/e2/cook-preview') {
-        return jsonResponse(200, { deductions: [], shortfalls: [], servings: 4 });
-      }
-      throw new Error(`unhandled request: ${method} ${u.pathname}`);
-    });
+    fetchMock.mockImplementation(
+      routeFetch({
+        'GET /api/pantry': [],
+        'GET /api/meal-plans/:id/cook-preview': { deductions: [], shortfalls: [], servings: 4 },
+      }),
+    );
 
     openCookFlow({ entry: freeform });
 

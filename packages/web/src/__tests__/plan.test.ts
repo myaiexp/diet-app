@@ -10,66 +10,8 @@ import { closeModal, isModalOpen } from '../ui/modal.js';
 import { planScreen } from '../screens/plan/index.js';
 import { mondayOf, isoToday } from '../format/date.js';
 import type { MealPlanEntry, Recipe } from '../api/types.js';
-
-function jsonResponse(status: number, body: unknown): Response {
-  return new Response(body === undefined ? '' : JSON.stringify(body), {
-    status,
-    headers: { 'content-type': 'application/json' },
-  });
-}
-
-function pathOf(url: string): string {
-  return new URL(url, 'http://x').pathname;
-}
-
-function mountRoot(): HTMLElement {
-  const root = document.createElement('div');
-  document.body.appendChild(root);
-  return root;
-}
-
-function makeCtx() {
-  return { setSubtitle: vi.fn(), navigate: vi.fn(), isStale: () => false };
-}
-
-function makeRecipe(overrides: Partial<Recipe> = {}): Recipe {
-  return {
-    id: 'r1',
-    title: 'Lohikeitto',
-    sourceType: 'manual',
-    sourceUrl: null,
-    parentRecipeId: null,
-    steps: [],
-    prepTime: 15,
-    totalTime: 35,
-    servings: 4,
-    effortScore: 2,
-    tags: null,
-    cuisineType: null,
-    userRating: null,
-    timesCooked: 11,
-    createdAt: '2026-08-01T00:00:00.000Z',
-    updatedAt: '2026-08-01T00:00:00.000Z',
-    ...overrides,
-  };
-}
-
-function makeEntry(overrides: Partial<MealPlanEntry> = {}): MealPlanEntry {
-  return {
-    id: 'e1',
-    date: MONDAY,
-    slot: 'dinner',
-    recipeId: null,
-    freeformNote: 'Leftovers',
-    servings: '2',
-    status: 'planned',
-    substituteRecipeId: null,
-    notes: null,
-    createdAt: '2026-08-01T00:00:00.000Z',
-    updatedAt: '2026-08-01T00:00:00.000Z',
-    ...overrides,
-  };
-}
+import { jsonResponse, makeCtx, mountRoot, pathOf, routeFetch } from './harness.js';
+import { makeEntry, makeRecipe } from './fixtures.js';
 
 const MONDAY = mondayOf(isoToday());
 
@@ -84,18 +26,11 @@ function buildRouter(opts: RouterOpts = {}) {
   const recipes = opts.recipes ?? [];
   let createdCount = 0;
 
-  return vi.fn(async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
-    const u = new URL(typeof input === 'string' ? input : input.toString(), 'http://localhost');
-    const method = (init?.method ?? 'GET').toUpperCase();
-
-    if (method === 'GET' && u.pathname.startsWith('/api/meal-plans/week/')) {
-      return jsonResponse(200, entries);
-    }
-    if (method === 'GET' && u.pathname === '/api/recipes') {
-      return jsonResponse(200, recipes);
-    }
-    if (method === 'POST' && u.pathname === '/api/meal-plans') {
-      const body = JSON.parse(String(init?.body ?? '{}')) as Record<string, unknown>;
+  return routeFetch({
+    'GET /api/meal-plans/week/:monday': entries,
+    'GET /api/recipes': recipes,
+    'POST /api/meal-plans': ({ json }) => {
+      const body = json<Record<string, unknown>>();
       const entry = makeEntry({
         id: `new-${createdCount++}`,
         date: String(body['date'] ?? MONDAY),
@@ -106,18 +41,15 @@ function buildRouter(opts: RouterOpts = {}) {
         status: 'planned',
       });
       return jsonResponse(201, entry);
-    }
-    if (method === 'GET' && u.pathname.endsWith('/cook-preview')) {
-      return jsonResponse(200, { deductions: [], shortfalls: [], servings: 4 });
-    }
-    if (method === 'PATCH' && u.pathname.startsWith('/api/meal-plans/')) {
-      const id = u.pathname.split('/').pop();
-      const body = JSON.parse(String(init?.body ?? '{}')) as Record<string, unknown>;
+    },
+    'GET /api/meal-plans/:id/cook-preview': { deductions: [], shortfalls: [], servings: 4 },
+    'PATCH /api/meal-plans/:id': ({ params, json }) => {
+      const id = params['id'];
+      const body = json<Record<string, unknown>>();
       const base = entries.find((e) => e.id === id) ?? makeEntry({ id });
-      return jsonResponse(200, { ...base, ...body, servings: String(body['servings'] ?? base.servings) });
-    }
-    if (method === 'GET' && u.pathname === '/api/pantry') return jsonResponse(200, []);
-    throw new Error(`unhandled request: ${method} ${u.pathname}`);
+      return { ...base, ...body, servings: String(body['servings'] ?? base.servings) };
+    },
+    'GET /api/pantry': [],
   });
 }
 

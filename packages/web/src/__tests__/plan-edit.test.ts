@@ -11,68 +11,22 @@ import { closeModal } from '../ui/modal.js';
 import { planScreen } from '../screens/plan/index.js';
 import { mondayOf, isoToday } from '../format/date.js';
 import type { MealPlanEntry, Recipe } from '../api/types.js';
-
-function jsonResponse(status: number, body: unknown): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'content-type': 'application/json' },
-  });
-}
-
-function pathOf(url: string): string {
-  return new URL(url, 'http://x').pathname;
-}
-
-function mountRoot(): HTMLElement {
-  const root = document.createElement('div');
-  document.body.appendChild(root);
-  return root;
-}
-
-function makeCtx() {
-  return { setSubtitle: vi.fn(), navigate: vi.fn(), isStale: () => false };
-}
-
-function makeRecipe(overrides: Partial<Recipe> = {}): Recipe {
-  return {
-    id: 'r1',
-    title: 'Lohikeitto',
-    sourceType: 'manual',
-    sourceUrl: null,
-    parentRecipeId: null,
-    steps: [],
-    prepTime: 15,
-    totalTime: 35,
-    servings: 4,
-    effortScore: 2,
-    tags: null,
-    cuisineType: null,
-    userRating: null,
-    timesCooked: 11,
-    createdAt: '2026-08-01T00:00:00.000Z',
-    updatedAt: '2026-08-01T00:00:00.000Z',
-    ...overrides,
-  };
-}
-
-function makeEntry(overrides: Partial<MealPlanEntry> = {}): MealPlanEntry {
-  return {
-    id: 'e-sub',
-    date: MONDAY,
-    slot: 'dinner',
-    recipeId: 'r-orig',
-    freeformNote: null,
-    servings: '2',
-    status: 'substituted',
-    substituteRecipeId: 'r-sub',
-    notes: null,
-    createdAt: '2026-08-01T00:00:00.000Z',
-    updatedAt: '2026-08-01T00:00:00.000Z',
-    ...overrides,
-  };
-}
+import { makeCtx, mountRoot, pathOf, routeFetch } from './harness.js';
+import { makeEntry as makeSharedEntry, makeRecipe } from './fixtures.js';
 
 const MONDAY = mondayOf(isoToday());
+
+function makeEntry(overrides: Partial<MealPlanEntry> = {}): MealPlanEntry {
+  return makeSharedEntry({
+    id: 'e-sub',
+    date: MONDAY,
+    recipeId: 'r-orig',
+    freeformNote: null,
+    status: 'substituted',
+    substituteRecipeId: 'r-sub',
+    ...overrides,
+  });
+}
 
 const RECIPES = [
   makeRecipe({ id: 'r-orig', title: 'Original Dish' }),
@@ -89,24 +43,15 @@ function resolvedRecipeId(entry: {
 }
 
 function buildRouter(entries: MealPlanEntry[], recipes: Recipe[] = RECIPES) {
-  return vi.fn(async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
-    const u = new URL(typeof input === 'string' ? input : input.toString(), 'http://localhost');
-    const method = (init?.method ?? 'GET').toUpperCase();
-    if (method === 'GET' && u.pathname.startsWith('/api/meal-plans/week/')) {
-      return jsonResponse(200, entries);
-    }
-    if (method === 'GET' && u.pathname === '/api/recipes') return jsonResponse(200, recipes);
-    if (method === 'PATCH' && u.pathname.startsWith('/api/meal-plans/')) {
-      const id = u.pathname.split('/').pop();
-      const body = JSON.parse(String(init?.body ?? '{}')) as Record<string, unknown>;
+  return routeFetch({
+    'GET /api/meal-plans/week/:monday': entries,
+    'GET /api/recipes': recipes,
+    'PATCH /api/meal-plans/:id': ({ params, json }) => {
+      const id = params['id'];
+      const body = json<Record<string, unknown>>();
       const base = entries.find((e) => e.id === id) ?? makeEntry({ id });
-      return jsonResponse(200, {
-        ...base,
-        ...body,
-        servings: String(body['servings'] ?? base.servings),
-      });
-    }
-    throw new Error(`unhandled request: ${method} ${u.pathname}`);
+      return { ...base, ...body, servings: String(body['servings'] ?? base.servings) };
+    },
   });
 }
 

@@ -10,119 +10,12 @@ import { configureClient, resetClient } from '../api/client.js';
 import { closeModal, isModalOpen } from '../ui/modal.js';
 import { todayScreen } from '../screens/today/index.js';
 import { mondayOf, isoToday } from '../format/date.js';
-import type { MealPlanEntry, PantryItem, Ingredient, CookFeedback, Recipe } from '../api/types.js';
+import type { MealPlanEntry, PantryItem, Recipe } from '../api/types.js';
+import { jsonResponse, makeCtx, mountRoot, routeFetch } from './harness.js';
+import { makeEntry, makeFeedback, makeIngredient, makePantryItem, makeRecipe } from './fixtures.js';
 
 const TODAY = isoToday();
 const MONDAY = mondayOf(TODAY);
-
-function jsonResponse(status: number, body: unknown): Response {
-  return new Response(body === undefined ? '' : JSON.stringify(body), {
-    status,
-    headers: { 'content-type': 'application/json' },
-  });
-}
-
-function pathOf(url: string): string {
-  return new URL(url, 'http://x').pathname;
-}
-
-function mountRoot(): HTMLElement {
-  const root = document.createElement('div');
-  document.body.appendChild(root);
-  return root;
-}
-
-function makeCtx() {
-  return { setSubtitle: vi.fn(), navigate: vi.fn(), isStale: () => false };
-}
-
-function makeIngredient(overrides: Partial<Ingredient> = {}): Ingredient {
-  return {
-    id: 'ing-1',
-    name: 'Milk',
-    aliases: ['maito'],
-    category: 'dairy',
-    defaultUnit: 'l',
-    nutritionPer100g: null,
-    shelfLife: null,
-    tags: null,
-    isPantryStaple: null,
-    createdAt: '2026-01-01T00:00:00.000Z',
-    updatedAt: '2026-01-01T00:00:00.000Z',
-    ...overrides,
-  };
-}
-
-function makeItem(overrides: Partial<PantryItem> = {}): PantryItem {
-  return {
-    id: 'item-1',
-    ingredientId: 'ing-1',
-    quantity: '400',
-    unit: 'g',
-    location: 'fridge',
-    addedDate: '2026-08-01',
-    expiresDate: '2026-08-10',
-    opened: false,
-    status: 'fresh',
-    ingredient: makeIngredient(),
-    createdAt: '2026-08-01T00:00:00.000Z',
-    updatedAt: '2026-08-01T00:00:00.000Z',
-    ...overrides,
-  };
-}
-
-function makeEntry(overrides: Partial<MealPlanEntry> = {}): MealPlanEntry {
-  return {
-    id: 'e1',
-    date: TODAY,
-    slot: 'dinner',
-    recipeId: null,
-    freeformNote: 'Leftovers',
-    servings: '2',
-    status: 'planned',
-    substituteRecipeId: null,
-    notes: null,
-    createdAt: '2026-08-01T00:00:00.000Z',
-    updatedAt: '2026-08-01T00:00:00.000Z',
-    ...overrides,
-  };
-}
-
-function makeRecipe(overrides: Partial<Recipe> = {}): Recipe {
-  return {
-    id: 'r1',
-    title: 'Lohikeitto',
-    sourceType: 'manual',
-    sourceUrl: null,
-    parentRecipeId: null,
-    steps: [],
-    prepTime: null,
-    totalTime: null,
-    servings: 4,
-    effortScore: null,
-    tags: null,
-    cuisineType: null,
-    userRating: null,
-    timesCooked: 0,
-    createdAt: '2026-08-01T00:00:00.000Z',
-    updatedAt: '2026-08-01T00:00:00.000Z',
-    ...overrides,
-  };
-}
-
-function makeFeedback(entryId: string): CookFeedback {
-  return {
-    id: `fb-${entryId}`,
-    mealPlanEntryId: entryId,
-    rating: 'thumbs_up',
-    effortCheck: 'felt_right',
-    makeAgain: 'yes',
-    usedAsIs: true,
-    changesNote: null,
-    createdAt: '2026-08-01T00:00:00.000Z',
-    updatedAt: '2026-08-01T00:00:00.000Z',
-  };
-}
 
 interface RouterOpts {
   entries?: MealPlanEntry[];
@@ -139,26 +32,15 @@ function buildRouter(opts: RouterOpts = {}) {
   const recipes = opts.recipes ?? [];
   const rated = new Set(opts.ratedEntryIds ?? []);
 
-  return vi.fn(async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
-    const u = new URL(typeof input === 'string' ? input : input.toString(), 'http://localhost');
-    const method = (init?.method ?? 'GET').toUpperCase();
-
-    if (method === 'GET' && u.pathname === `/api/meal-plans/week/${MONDAY}`) {
-      return jsonResponse(200, entries);
-    }
-    if (method === 'GET' && u.pathname === '/api/pantry') {
-      return jsonResponse(200, pantry);
-    }
-    if (method === 'GET' && u.pathname === '/api/recipes') {
-      return jsonResponse(200, recipes);
-    }
-    const feedbackMatch = /^\/api\/meal-plans\/([^/]+)\/feedback$/.exec(u.pathname);
-    if (method === 'GET' && feedbackMatch) {
-      const id = feedbackMatch[1]!;
+  return routeFetch({
+    [`GET /api/meal-plans/week/${MONDAY}`]: entries,
+    'GET /api/pantry': pantry,
+    'GET /api/recipes': recipes,
+    'GET /api/meal-plans/:id/feedback': ({ params }) => {
+      const id = params['id']!;
       if (rated.has(id)) return jsonResponse(200, makeFeedback(id));
       return jsonResponse(404, { error: 'Not found' });
-    }
-    throw new Error(`unhandled request: ${method} ${u.pathname}`);
+    },
   });
 }
 
@@ -209,7 +91,7 @@ describe('today slots', () => {
   test('an empty slot opens the add-entry affordance without navigating', async () => {
     // A non-empty pantry keeps this out of the first-run state, which has no
     // per-slot fill buttons at all.
-    fetchMock.mockImplementation(buildRouter({ pantry: [makeItem()] }));
+    fetchMock.mockImplementation(buildRouter({ pantry: [makePantryItem()] }));
     const root = mountRoot();
     const ctx = makeCtx();
     await todayScreen().mount(root, ctx);
@@ -240,7 +122,7 @@ describe('spoiling panel', () => {
     // Deliberately not sorted alphabetically nor by expiry — only trusting
     // the response as-is reproduces this order.
     const pantry = ['Dill', 'Salmon', 'Quark', 'Milk', 'Spinach', 'Chicken'].map((name, i) =>
-      makeItem({
+      makePantryItem({
         id: `p-${i}`,
         ingredientId: `ing-${i}`,
         ingredient: makeIngredient({ id: `ing-${i}`, name }),
@@ -262,29 +144,24 @@ describe('spoiling panel', () => {
     // listPantry() with no paging — the unbounded mock used elsewhere
     // silently hid the truncation.
     const pantry = Array.from({ length: 51 }, (_, i) =>
-      makeItem({
+      makePantryItem({
         id: `p-${i}`,
         ingredientId: `ing-${i}`,
         status: 'expired',
         ingredient: makeIngredient({ id: `ing-${i}`, name: `Item ${i}` }),
       }),
     );
-    fetchMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
-      const u = new URL(typeof input === 'string' ? input : input.toString(), 'http://localhost');
-      const method = (init?.method ?? 'GET').toUpperCase();
-      if (method === 'GET' && u.pathname === `/api/meal-plans/week/${MONDAY}`) {
-        return jsonResponse(200, []);
-      }
-      if (method === 'GET' && u.pathname === '/api/pantry') {
-        const limit = Number(u.searchParams.get('limit') ?? 50);
-        const offset = Number(u.searchParams.get('offset') ?? 0);
-        return jsonResponse(200, pantry.slice(offset, offset + limit));
-      }
-      if (method === 'GET' && u.pathname === '/api/recipes') {
-        return jsonResponse(200, []);
-      }
-      throw new Error(`unhandled request: ${method} ${u.pathname}`);
-    });
+    fetchMock.mockImplementation(
+      routeFetch({
+        [`GET /api/meal-plans/week/${MONDAY}`]: [],
+        'GET /api/pantry': ({ url }) => {
+          const limit = Number(url.searchParams.get('limit') ?? 50);
+          const offset = Number(url.searchParams.get('offset') ?? 0);
+          return pantry.slice(offset, offset + limit);
+        },
+        'GET /api/recipes': [],
+      }),
+    );
 
     const root = mountRoot();
     await todayScreen().mount(root, makeCtx());
@@ -304,9 +181,9 @@ describe('request budget', () => {
       makeEntry({ id: 'e4', slot: 'snack', status: 'planned' }),
     ];
     const pantry = [
-      makeItem({ id: 'p-expired', status: 'expired', ingredient: makeIngredient({ name: 'Dill' }) }),
-      makeItem({ id: 'p-today', status: 'use_today', ingredient: makeIngredient({ name: 'Salmon' }) }),
-      makeItem({ id: 'p-fresh', status: 'fresh', ingredient: makeIngredient({ name: 'Carrot' }) }),
+      makePantryItem({ id: 'p-expired', status: 'expired', ingredient: makeIngredient({ name: 'Dill' }) }),
+      makePantryItem({ id: 'p-today', status: 'use_today', ingredient: makeIngredient({ name: 'Salmon' }) }),
+      makePantryItem({ id: 'p-fresh', status: 'fresh', ingredient: makeIngredient({ name: 'Carrot' }) }),
     ];
     const recipes = [makeRecipe({ id: 'r1', title: 'Lohikeitto' })];
     fetchMock.mockImplementation(buildRouter({ entries, pantry, recipes }));
@@ -336,7 +213,7 @@ describe('request budget', () => {
       }
     }
     const pantry = Array.from({ length: 20 }, (_, i) =>
-      makeItem({
+      makePantryItem({
         id: `p-${i}`,
         ingredientId: `ing-${i}`,
         ingredient: makeIngredient({ id: `ing-${i}`, name: `Item ${i}` }),
@@ -360,7 +237,7 @@ describe('recipe titles', () => {
       makeEntry({ id: 'e1', slot: 'dinner', status: 'planned', freeformNote: null, recipeId: 'r-lohikeitto' }),
     ];
     const recipes = [makeRecipe({ id: 'r-lohikeitto', title: 'Lohikeitto' })];
-    fetchMock.mockImplementation(buildRouter({ entries, recipes, pantry: [makeItem()] }));
+    fetchMock.mockImplementation(buildRouter({ entries, recipes, pantry: [makePantryItem()] }));
 
     const root = mountRoot();
     await todayScreen().mount(root, makeCtx());
@@ -383,7 +260,7 @@ describe('recipe titles', () => {
       makeRecipe({ id: 'r-original', title: 'Original Dish' }),
       makeRecipe({ id: 'r-sub', title: 'Substitute Dish' }),
     ];
-    fetchMock.mockImplementation(buildRouter({ entries, recipes, pantry: [makeItem()] }));
+    fetchMock.mockImplementation(buildRouter({ entries, recipes, pantry: [makePantryItem()] }));
 
     const root = mountRoot();
     await todayScreen().mount(root, makeCtx());
@@ -395,7 +272,7 @@ describe('recipe titles', () => {
     const entries = [
       makeEntry({ id: 'e1', slot: 'snack', status: 'planned', freeformNote: null, recipeId: 'r-unknown' }),
     ];
-    fetchMock.mockImplementation(buildRouter({ entries, recipes: [], pantry: [makeItem()] }));
+    fetchMock.mockImplementation(buildRouter({ entries, recipes: [], pantry: [makePantryItem()] }));
 
     const root = mountRoot();
     await todayScreen().mount(root, makeCtx());
@@ -406,7 +283,7 @@ describe('recipe titles', () => {
 
 describe('stat strip', () => {
   test('renders a muted placeholder, never a number, for tiles with no backing endpoint', async () => {
-    fetchMock.mockImplementation(buildRouter({ pantry: [makeItem({ status: 'fresh' })] }));
+    fetchMock.mockImplementation(buildRouter({ pantry: [makePantryItem({ status: 'fresh' })] }));
     const root = mountRoot();
     await todayScreen().mount(root, makeCtx());
 
@@ -423,7 +300,7 @@ describe('stat strip', () => {
 
 describe('what now', () => {
   test('each row navigates to the screen that resolves it', async () => {
-    const pantry = [makeItem({ id: 'p-expired', status: 'expired', ingredient: makeIngredient({ name: 'Dill' }) })];
+    const pantry = [makePantryItem({ id: 'p-expired', status: 'expired', ingredient: makeIngredient({ name: 'Dill' }) })];
     fetchMock.mockImplementation(buildRouter({ entries: [], pantry }));
 
     const root = mountRoot();
@@ -460,7 +337,7 @@ describe('what now', () => {
         entries.push(makeEntry({ id: `e-${iso}-${slot}`, date: iso, slot, status }));
       }
     }
-    const pantry = [makeItem({ status: 'fresh' })];
+    const pantry = [makePantryItem({ status: 'fresh' })];
     fetchMock.mockImplementation(buildRouter({ entries, pantry }));
 
     const root = mountRoot();

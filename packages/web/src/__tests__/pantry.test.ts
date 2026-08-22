@@ -5,68 +5,9 @@ import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 import { configureClient, resetClient } from '../api/client.js';
 import { closeModal } from '../ui/modal.js';
 import { pantryScreen } from '../screens/pantry/index.js';
-import type { PantryItem, Ingredient } from '../api/types.js';
-
-function jsonResponse(status: number, body: unknown): Response {
-  return new Response(JSON.stringify(body), {
-    status,
-    headers: { 'content-type': 'application/json' },
-  });
-}
-
-function flush(ms = 0): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-function makeItem(overrides: Partial<PantryItem> = {}): PantryItem {
-  return {
-    id: 'item-1',
-    ingredientId: 'ing-1',
-    quantity: '400',
-    unit: 'g',
-    location: 'fridge',
-    addedDate: '2026-08-01',
-    expiresDate: '2026-08-10',
-    opened: false,
-    status: 'fresh',
-    // Every pantry endpoint eager-loads this — the row arrives renderable.
-    ingredient: makeIngredient(),
-    createdAt: '2026-08-01T00:00:00.000Z',
-    updatedAt: '2026-08-01T00:00:00.000Z',
-    ...overrides,
-  };
-}
-
-function makeIngredient(overrides: Partial<Ingredient> = {}): Ingredient {
-  return {
-    id: 'ing-1',
-    name: 'Milk',
-    aliases: ['maito'],
-    category: 'dairy',
-    defaultUnit: 'l',
-    nutritionPer100g: null,
-    shelfLife: null,
-    tags: null,
-    isPantryStaple: null,
-    createdAt: '2026-01-01T00:00:00.000Z',
-    updatedAt: '2026-01-01T00:00:00.000Z',
-    ...overrides,
-  };
-}
-
-function mountRoot(): HTMLElement {
-  const root = document.createElement('div');
-  document.body.appendChild(root);
-  return root;
-}
-
-function makeCtx() {
-  return { setSubtitle: vi.fn(), navigate: vi.fn(), isStale: () => false };
-}
-
-function pathOf(url: string): string {
-  return new URL(url, 'http://x').pathname;
-}
+import type { Ingredient } from '../api/types.js';
+import { flush, jsonResponse, makeCtx, mountRoot, pathOf, routeFetch } from './harness.js';
+import { makeIngredient, makePantryItem } from './fixtures.js';
 
 let fetchMock: ReturnType<typeof vi.fn>;
 
@@ -88,30 +29,26 @@ describe('pantry screen', () => {
     // 'Banana' 8/15, 'Zucchini' 8/20) matches this order — only trusting the
     // response as-is reproduces it.
     const items = [
-      makeItem({
+      makePantryItem({
         id: 'p-3',
         ingredientId: 'ing-c',
         expiresDate: '2026-08-20',
         ingredient: makeIngredient({ id: 'ing-c', name: 'Zucchini' }),
       }),
-      makeItem({
+      makePantryItem({
         id: 'p-1',
         ingredientId: 'ing-a',
         expiresDate: '2026-08-01',
         ingredient: makeIngredient({ id: 'ing-a', name: 'Apple' }),
       }),
-      makeItem({
+      makePantryItem({
         id: 'p-2',
         ingredientId: 'ing-b',
         expiresDate: '2026-08-15',
         ingredient: makeIngredient({ id: 'ing-b', name: 'Banana' }),
       }),
     ];
-    fetchMock.mockImplementation(async (url: string) => {
-      const path = pathOf(url);
-      if (path === '/api/pantry') return jsonResponse(200, items);
-      return jsonResponse(404, { error: 'unhandled' });
-    });
+    fetchMock.mockImplementation(routeFetch({ 'GET /api/pantry': items }, { unmatched: '404' }));
 
     const root = mountRoot();
     await pantryScreen().mount(root, makeCtx());
@@ -127,13 +64,16 @@ describe('pantry screen', () => {
     // Deliberately contradictory fixture: a status of 'expired' with a
     // far-future expiresDate. A client that recomputed status from the date
     // would render this as fresh; rendering must follow `status` alone.
-    const item = makeItem({ expiresDate: '2099-01-01', status: 'expired' });
-    fetchMock.mockImplementation(async (url: string) => {
-      const path = pathOf(url);
-      if (path === '/api/pantry') return jsonResponse(200, [item]);
-      if (path === '/api/ingredients/ing-1') return jsonResponse(200, makeIngredient());
-      return jsonResponse(404, { error: 'unhandled' });
-    });
+    const item = makePantryItem({ expiresDate: '2099-01-01', status: 'expired' });
+    fetchMock.mockImplementation(
+      routeFetch(
+        {
+          'GET /api/pantry': [item],
+          'GET /api/ingredients/:id': makeIngredient(),
+        },
+        { unmatched: '404' },
+      ),
+    );
 
     const root = mountRoot();
     await pantryScreen().mount(root, makeCtx());
@@ -145,22 +85,24 @@ describe('pantry screen', () => {
 
   test('filters by location client-side without refetching', async () => {
     const items = [
-      makeItem({ id: 'p-1', ingredientId: 'ing-1', location: 'fridge' }),
-      makeItem({ id: 'p-2', ingredientId: 'ing-2', location: 'freezer' }),
-      makeItem({ id: 'p-3', ingredientId: 'ing-3', location: 'pantry' }),
+      makePantryItem({ id: 'p-1', ingredientId: 'ing-1', location: 'fridge' }),
+      makePantryItem({ id: 'p-2', ingredientId: 'ing-2', location: 'freezer' }),
+      makePantryItem({ id: 'p-3', ingredientId: 'ing-3', location: 'pantry' }),
     ];
     const byId: Record<string, Ingredient> = {
       'ing-1': makeIngredient({ id: 'ing-1', name: 'Milk' }),
       'ing-2': makeIngredient({ id: 'ing-2', name: 'Peas' }),
       'ing-3': makeIngredient({ id: 'ing-3', name: 'Rice' }),
     };
-    fetchMock.mockImplementation(async (url: string) => {
-      const path = pathOf(url);
-      if (path === '/api/pantry') return jsonResponse(200, items);
-      const m = /^\/api\/ingredients\/(.+)$/.exec(path);
-      if (m) return jsonResponse(200, byId[m[1]!]);
-      return jsonResponse(404, { error: 'unhandled' });
-    });
+    fetchMock.mockImplementation(
+      routeFetch(
+        {
+          'GET /api/pantry': items,
+          'GET /api/ingredients/:id': ({ params }) => byId[params['id']!],
+        },
+        { unmatched: '404' },
+      ),
+    );
 
     const root = mountRoot();
     await pantryScreen().mount(root, makeCtx());
@@ -177,23 +119,26 @@ describe('pantry screen', () => {
   });
 
   test('searches ingredients by Finnish alias', async () => {
-    fetchMock.mockImplementation(async (url: string) => {
-      const path = pathOf(url);
-      if (path === '/api/pantry') return jsonResponse(200, []);
-      if (path === '/api/ingredients') {
-        expect(new URL(url, 'http://x').searchParams.get('q')).toBe('peruna');
-        return jsonResponse(200, [
-          makeIngredient({
-            id: 'ing-potato',
-            name: 'Potato',
-            aliases: ['peruna'],
-            category: 'produce',
-            defaultUnit: 'kg',
-          }),
-        ]);
-      }
-      return jsonResponse(404, { error: 'unhandled' });
-    });
+    fetchMock.mockImplementation(
+      routeFetch(
+        {
+          'GET /api/pantry': [],
+          'GET /api/ingredients': ({ url }) => {
+            expect(url.searchParams.get('q')).toBe('peruna');
+            return [
+              makeIngredient({
+                id: 'ing-potato',
+                name: 'Potato',
+                aliases: ['peruna'],
+                category: 'produce',
+                defaultUnit: 'kg',
+              }),
+            ];
+          },
+        },
+        { unmatched: '404' },
+      ),
+    );
 
     const root = mountRoot();
     await pantryScreen().mount(root, makeCtx());
@@ -212,20 +157,18 @@ describe('pantry screen', () => {
   });
 
   test('shows the API error message when create fails', async () => {
-    fetchMock.mockImplementation(async (url: string, init?: RequestInit) => {
-      const path = pathOf(url);
-      const method = init?.method ?? 'GET';
-      if (path === '/api/pantry' && method === 'GET') return jsonResponse(200, []);
-      if (path === '/api/ingredients') {
-        return jsonResponse(200, [
-          makeIngredient({ id: 'ing-x', name: 'Xylitol', aliases: [], defaultUnit: 'g' }),
-        ]);
-      }
-      if (path === '/api/pantry' && method === 'POST') {
-        return jsonResponse(400, { error: 'Invalid reference' });
-      }
-      return jsonResponse(404, { error: 'unhandled' });
-    });
+    fetchMock.mockImplementation(
+      routeFetch(
+        {
+          'GET /api/pantry': [],
+          'GET /api/ingredients': [
+            makeIngredient({ id: 'ing-x', name: 'Xylitol', aliases: [], defaultUnit: 'g' }),
+          ],
+          'POST /api/pantry': jsonResponse(400, { error: 'Invalid reference' }),
+        },
+        { unmatched: '404' },
+      ),
+    );
 
     const root = mountRoot();
     await pantryScreen().mount(root, makeCtx());
@@ -248,18 +191,18 @@ describe('pantry screen', () => {
 
   test('loads the next page when the list hits the default 50-item limit', async () => {
     const page1 = Array.from({ length: 50 }, (_, i) =>
-      makeItem({ id: `p-${i}`, expiresDate: `2026-08-${String((i % 27) + 1).padStart(2, '0')}` }),
+      makePantryItem({ id: `p-${i}`, expiresDate: `2026-08-${String((i % 27) + 1).padStart(2, '0')}` }),
     );
-    const page2 = [makeItem({ id: 'p-50', expiresDate: '2026-09-01' })];
-    fetchMock.mockImplementation(async (url: string) => {
-      const path = pathOf(url);
-      if (path === '/api/pantry') {
-        const offset = new URL(url, 'http://x').searchParams.get('offset') ?? '0';
-        return jsonResponse(200, offset === '0' ? page1 : page2);
-      }
-      if (path === '/api/ingredients/ing-1') return jsonResponse(200, makeIngredient());
-      return jsonResponse(404, { error: 'unhandled' });
-    });
+    const page2 = [makePantryItem({ id: 'p-50', expiresDate: '2026-09-01' })];
+    fetchMock.mockImplementation(
+      routeFetch(
+        {
+          'GET /api/pantry': ({ url }) => ((url.searchParams.get('offset') ?? '0') === '0' ? page1 : page2),
+          'GET /api/ingredients/:id': makeIngredient(),
+        },
+        { unmatched: '404' },
+      ),
+    );
 
     const root = mountRoot();
     await pantryScreen().mount(root, makeCtx());
@@ -279,11 +222,7 @@ describe('pantry screen', () => {
   });
 
   test('renders an empty state when the pantry has no items', async () => {
-    fetchMock.mockImplementation(async (url: string) => {
-      const path = pathOf(url);
-      if (path === '/api/pantry') return jsonResponse(200, []);
-      return jsonResponse(404, { error: 'unhandled' });
-    });
+    fetchMock.mockImplementation(routeFetch({ 'GET /api/pantry': [] }, { unmatched: '404' }));
 
     const root = mountRoot();
     await pantryScreen().mount(root, makeCtx());

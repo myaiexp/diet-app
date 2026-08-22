@@ -6,39 +6,34 @@
 // Editing must always read from an unscaled recipe, even when the scaler is
 // showing a scaled view — see the dedicated test for that.
 
-import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, test, expect, beforeEach, afterEach } from 'vitest';
 import { configureClient, resetClient } from '../api/client.js';
 import { closeModal } from '../ui/modal.js';
 import { recipesScreen } from '../screens/recipes/index.js';
-import type { ScreenContext } from '../router.js';
 import type { PantryItem, RecipeLineInput, RecipeWithIngredients } from '../api/types.js';
 
-function jsonResponse(status: number, body: unknown): Response {
-  return new Response(body === undefined ? '' : JSON.stringify(body), {
-    status,
-    headers: { 'content-type': 'application/json' },
-  });
-}
-
-async function flush(): Promise<void> {
-  await new Promise((resolve) => setTimeout(resolve, 0));
-}
+import { flush, jsonResponse, makeCtx, mountRoot, routeFetch } from './harness.js';
+import { makeIngredient, makePantryItem, makeRecipe } from './fixtures.js';
 
 async function settle(): Promise<void> {
   // The scaler debounces refetches ~150ms; wait comfortably past it.
   await new Promise((resolve) => setTimeout(resolve, 250));
 }
 
-const ING_SALMON = {
-  id: 'ing-salmon', name: 'Salmon fillet', aliases: ['lohifile'], category: 'protein',
-  defaultUnit: 'g', nutritionPer100g: null, shelfLife: null, tags: null, isPantryStaple: null,
-  createdAt: 't', updatedAt: 't',
-};
-const ING_DILL = {
-  id: 'ing-dill', name: 'Dill', aliases: ['tilli'], category: 'produce',
-  defaultUnit: 'g', nutritionPer100g: null, shelfLife: null, tags: null, isPantryStaple: null,
-  createdAt: 't', updatedAt: 't',
-};
+const ING_SALMON = makeIngredient({
+  id: 'ing-salmon',
+  name: 'Salmon fillet',
+  aliases: ['lohifile'],
+  category: 'protein',
+  defaultUnit: 'g',
+});
+const ING_DILL = makeIngredient({
+  id: 'ing-dill',
+  name: 'Dill',
+  aliases: ['tilli'],
+  category: 'produce',
+  defaultUnit: 'g',
+});
 
 function makeR1(): RecipeWithIngredients {
   return {
@@ -95,16 +90,7 @@ function makeR4(): RecipeWithIngredients {
 }
 
 const PANTRY: PantryItem[] = [
-  {
-    id: 'p1', ingredientId: 'ing-salmon', quantity: '400', unit: 'g', location: 'fridge',
-    addedDate: '2026-08-01', expiresDate: '2026-08-10', opened: false, status: 'fresh',
-    ingredient: {
-      id: 'ing-salmon', name: 'Salmon fillet', aliases: ['lohifile'], category: 'protein',
-      defaultUnit: 'g', nutritionPer100g: null, shelfLife: null, tags: null,
-      isPantryStaple: null, createdAt: 't', updatedAt: 't',
-    },
-    createdAt: 't', updatedAt: 't',
-  },
+  makePantryItem({ id: 'p1', ingredientId: 'ing-salmon', ingredient: ING_SALMON }),
 ];
 
 let recipesById: Map<string, RecipeWithIngredients>;
@@ -130,109 +116,98 @@ function resetFixtures(): void {
   idCounter = 0;
 }
 
-async function router(url: string, init: RequestInit = {}): Promise<Response> {
-  const u = new URL(url, 'http://x');
-  const method = (init.method ?? 'GET').toUpperCase();
-
-  if (u.pathname === '/api/pantry') {
-    pantryRequestCount += 1;
-    return jsonResponse(200, PANTRY);
-  }
-
-  if (u.pathname === '/api/recipes' && method === 'GET') {
-    const tags = u.searchParams.get('tags') ?? undefined;
-    recipeRequests.push({ tags });
-    let list = [...recipesById.values()];
-    if (tags) {
-      const wanted = tags.split(',');
-      list = list.filter((r) => wanted.every((t) => (r.tags ?? []).includes(t)));
-    }
-    return jsonResponse(200, list);
-  }
-
-  if (u.pathname === '/api/recipes' && method === 'POST') {
-    const body = JSON.parse(String(init.body)) as Record<string, unknown>;
-    postRequests.push(body);
-    idCounter += 1;
-    const id = `forked-${idCounter}`;
-    const created: RecipeWithIngredients = {
-      id,
-      title: String(body['title']),
-      sourceType: (body['sourceType'] as RecipeWithIngredients['sourceType']) ?? 'manual',
-      sourceUrl: (body['sourceUrl'] as string | null) ?? null,
-      parentRecipeId: (body['parentRecipeId'] as string | null) ?? null,
-      steps: (body['steps'] as string[]) ?? [],
-      prepTime: (body['prepTime'] as number | null) ?? null,
-      totalTime: (body['totalTime'] as number | null) ?? null,
-      servings: (body['servings'] as number) ?? 1,
-      effortScore: (body['effortScore'] as number | null) ?? null,
-      tags: (body['tags'] as string[]) ?? [],
-      cuisineType: (body['cuisineType'] as string | null) ?? null,
-      userRating: null,
-      timesCooked: 0,
-      createdAt: 't',
-      updatedAt: 't',
-      recipeIngredients: ((body['ingredients'] as RecipeLineInput[]) ?? []).map((l, i) => ({
-        id: `line-${id}-${i}`,
-        recipeId: id,
-        ingredientId: l.ingredientId,
-        quantity: String(l.quantity),
-        unit: l.unit,
-        optional: l.optional ?? false,
-        notes: l.notes ?? null,
-      })),
-    };
-    recipesById.set(id, created);
-    return jsonResponse(201, created);
-  }
-
-  const detailMatch = u.pathname.match(/^\/api\/recipes\/([^/]+)$/);
-  if (detailMatch && method === 'GET') {
-    const id = detailMatch[1]!;
-    const servings = u.searchParams.get('servings') ?? undefined;
-    detailRequests.push({ id, servings });
-    if (id === 'r1' && servings === '6') return jsonResponse(200, makeR1Scaled6());
-    const found = recipesById.get(id);
-    if (!found) return jsonResponse(404, { error: 'Not found' });
-    return jsonResponse(200, found);
-  }
-
-  if (detailMatch && method === 'PATCH') {
-    const id = detailMatch[1]!;
-    const body = JSON.parse(String(init.body)) as Record<string, unknown>;
-    const existing = recipesById.get(id)!;
-    const updated: RecipeWithIngredients = {
-      ...existing,
-      title: (body['title'] as string) ?? existing.title,
-      servings: (body['servings'] as number) ?? existing.servings,
-      cuisineType: (body['cuisineType'] as string | null) ?? existing.cuisineType,
-      tags: (body['tags'] as string[]) ?? existing.tags,
-      steps: (body['steps'] as string[]) ?? existing.steps,
-      recipeIngredients: ((body['ingredients'] as RecipeLineInput[]) ?? []).map((l, i) => ({
-        id: `line-${id}-${i}`,
-        recipeId: id,
-        ingredientId: l.ingredientId,
-        quantity: String(l.quantity),
-        unit: l.unit,
-        optional: l.optional ?? false,
-        notes: l.notes ?? null,
-        ingredient: existing.recipeIngredients.find((x) => x.ingredientId === l.ingredientId)?.ingredient,
-      })),
-    };
-    patchRequests.push({ id, body: updated });
-    recipesById.set(id, updated);
-    return jsonResponse(200, updated);
-  }
-
-  throw new Error(`unhandled request: ${method} ${url}`);
+function appRouter() {
+  return routeFetch({
+    'GET /api/pantry': () => {
+      pantryRequestCount += 1;
+      return PANTRY;
+    },
+    'GET /api/recipes': ({ url }) => {
+      const tags = url.searchParams.get('tags') ?? undefined;
+      recipeRequests.push({ tags });
+      let list = [...recipesById.values()];
+      if (tags) {
+        const wanted = tags.split(',');
+        list = list.filter((r) => wanted.every((t) => (r.tags ?? []).includes(t)));
+      }
+      return list;
+    },
+    'POST /api/recipes': ({ json }) => {
+      const body = json<Record<string, unknown>>();
+      postRequests.push(body);
+      idCounter += 1;
+      const id = `forked-${idCounter}`;
+      const created: RecipeWithIngredients = {
+        ...makeRecipe({
+          id,
+          title: String(body['title']),
+          sourceType: (body['sourceType'] as RecipeWithIngredients['sourceType']) ?? 'manual',
+          sourceUrl: (body['sourceUrl'] as string | null) ?? null,
+          parentRecipeId: (body['parentRecipeId'] as string | null) ?? null,
+          steps: (body['steps'] as string[]) ?? [],
+          prepTime: (body['prepTime'] as number | null) ?? null,
+          totalTime: (body['totalTime'] as number | null) ?? null,
+          servings: (body['servings'] as number) ?? 1,
+          effortScore: (body['effortScore'] as number | null) ?? null,
+          tags: (body['tags'] as string[]) ?? [],
+          cuisineType: (body['cuisineType'] as string | null) ?? null,
+          userRating: null,
+          timesCooked: 0,
+        }),
+        recipeIngredients: ((body['ingredients'] as RecipeLineInput[]) ?? []).map((l, i) => ({
+          id: `line-${id}-${i}`,
+          recipeId: id,
+          ingredientId: l.ingredientId,
+          quantity: String(l.quantity),
+          unit: l.unit,
+          optional: l.optional ?? false,
+          notes: l.notes ?? null,
+        })),
+      };
+      recipesById.set(id, created);
+      return jsonResponse(201, created);
+    },
+    'GET /api/recipes/:id': ({ params, url }) => {
+      const id = params['id']!;
+      const servings = url.searchParams.get('servings') ?? undefined;
+      detailRequests.push({ id, servings });
+      if (id === 'r1' && servings === '6') return makeR1Scaled6();
+      const found = recipesById.get(id);
+      return found ?? jsonResponse(404, { error: 'Not found' });
+    },
+    'PATCH /api/recipes/:id': ({ params, json }) => {
+      const id = params['id']!;
+      const body = json<Record<string, unknown>>();
+      const existing = recipesById.get(id)!;
+      const updated: RecipeWithIngredients = {
+        ...existing,
+        title: (body['title'] as string) ?? existing.title,
+        servings: (body['servings'] as number) ?? existing.servings,
+        cuisineType: (body['cuisineType'] as string | null) ?? existing.cuisineType,
+        tags: (body['tags'] as string[]) ?? existing.tags,
+        steps: (body['steps'] as string[]) ?? existing.steps,
+        recipeIngredients: ((body['ingredients'] as RecipeLineInput[]) ?? []).map((l, i) => ({
+          id: `line-${id}-${i}`,
+          recipeId: id,
+          ingredientId: l.ingredientId,
+          quantity: String(l.quantity),
+          unit: l.unit,
+          optional: l.optional ?? false,
+          notes: l.notes ?? null,
+          ingredient: existing.recipeIngredients.find((x) => x.ingredientId === l.ingredientId)?.ingredient,
+        })),
+      };
+      patchRequests.push({ id, body: updated });
+      recipesById.set(id, updated);
+      return updated;
+    },
+  });
 }
 
-async function mountScreen(): Promise<{ root: HTMLElement; ctx: ScreenContext }> {
-  const root = document.createElement('div');
-  document.body.appendChild(root);
-  const ctx: ScreenContext = { setSubtitle: vi.fn(), navigate: vi.fn(), isStale: () => false };
-  const screen = recipesScreen();
-  await screen.mount(root, ctx);
+async function mountScreen(): Promise<{ root: HTMLElement; ctx: ReturnType<typeof makeCtx> }> {
+  const root = mountRoot();
+  const ctx = makeCtx();
+  await recipesScreen().mount(root, ctx);
   return { root, ctx };
 }
 
@@ -240,8 +215,7 @@ beforeEach(() => {
   document.body.replaceChildren();
   closeModal();
   resetFixtures();
-  const fetchMock = vi.fn((url: string, init?: RequestInit) => router(url, init ?? {}));
-  configureClient({ fetch: fetchMock as unknown as typeof fetch });
+  configureClient({ fetch: appRouter() as unknown as typeof fetch });
 });
 
 afterEach(() => {

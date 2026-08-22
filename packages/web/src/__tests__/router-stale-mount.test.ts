@@ -34,6 +34,7 @@ vi.mock('../screens/today/index.js', () => ({
 
 import { mountShell } from '../ui/shell.js';
 import { startRouter, navigate } from '../router.js';
+import { flush } from './harness.js';
 
 function boot(path = '/today') {
   window.history.replaceState({}, '', path);
@@ -42,10 +43,6 @@ function boot(path = '/today') {
   const shell = mountShell(root, navigate);
   startRouter(shell.content);
   return { root, shell };
-}
-
-function flush(ms = 0): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 beforeEach(() => {

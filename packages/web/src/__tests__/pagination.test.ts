@@ -6,12 +6,7 @@ import { fetchAllPages, PAGE_LIMIT } from '../api/pagination.js';
 import { listAllRecipes } from '../api/recipes.js';
 import { listAllPantry } from '../api/pantry.js';
 
-function jsonResponse(status: number, body: unknown): Response {
-  return new Response(body === undefined ? '' : JSON.stringify(body), {
-    status,
-    headers: { 'content-type': 'application/json' },
-  });
-}
+import { jsonResponse } from './harness.js';
 
 function ids(n: number, prefix: string): Array<{ id: string }> {
   return Array.from({ length: n }, (_, i) => ({ id: `${prefix}-${i}` }));

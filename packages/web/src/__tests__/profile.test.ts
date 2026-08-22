@@ -11,6 +11,8 @@ import { configureClient, resetClient } from '../api/client.js';
 import { closeModal } from '../ui/modal.js';
 import { profileScreen } from '../screens/profile.js';
 import type { UserProfile, Ingredient } from '../api/types.js';
+import { flush, jsonResponse, makeCtx, mountRoot, pathOf, routeFetch } from './harness.js';
+import { makeIngredient, makeProfile } from './fixtures.js';
 
 const WHITELIST = [
   'name', 'calorieTargetMin', 'calorieTargetMax', 'macroTargets', 'dietaryRestrictions',
@@ -24,52 +26,7 @@ const INGREDIENTS: Record<string, Ingredient> = {
 };
 
 function ing(id: string, name: string): Ingredient {
-  return {
-    id, name, aliases: [], category: 'other', defaultUnit: 'g',
-    nutritionPer100g: null, shelfLife: null, tags: null, isPantryStaple: null,
-    createdAt: 't', updatedAt: 't',
-  };
-}
-
-function makeProfile(overrides: Partial<UserProfile> = {}): UserProfile {
-  return {
-    id: 'profile-1',
-    name: 'Mase',
-    calorieTargetMin: 2100,
-    calorieTargetMax: 2500,
-    macroTargets: { protein: 130, carbs: 230, fat: 80 },
-    dietaryRestrictions: ['no shellfish', 'low lactose'],
-    cookingSkill: 'competent',
-    kitchenEquipment: ['oven', 'hob 4'],
-    householdSize: 2,
-    scheduleProfile: { note: 'late shift tue+thu' },
-    dislikedIngredientIds: ['ing-1', 'ing-2'],
-    createdAt: 't',
-    updatedAt: 't',
-    ...overrides,
-  };
-}
-
-function jsonResponse(status: number, body: unknown): Response {
-  return new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
-}
-
-function pathOf(url: string): string {
-  return new URL(url, 'http://x').pathname;
-}
-
-function flush(ms = 0): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-function mountRoot(): HTMLElement {
-  const root = document.createElement('div');
-  document.body.appendChild(root);
-  return root;
-}
-
-function makeCtx() {
-  return { setSubtitle: vi.fn(), navigate: vi.fn(), isStale: () => false };
+  return makeIngredient({ id, name, aliases: [], category: 'other', defaultUnit: 'g' });
 }
 
 /** A minimal stateful fake of the profile + ingredients endpoints. Every
@@ -79,27 +36,26 @@ function makeCtx() {
 function makeServer(initial: UserProfile) {
   let profile = initial;
   const patchCalls: Array<Record<string, unknown>> = [];
-  async function handle(url: string, init?: RequestInit): Promise<Response> {
-    const path = pathOf(url);
-    const method = init?.method ?? 'GET';
-    if (path === '/api/profile' && method === 'GET') return jsonResponse(200, profile);
-    if (path === '/api/profile' && method === 'PATCH') {
-      const body = JSON.parse(String(init?.body)) as Record<string, unknown>;
-      patchCalls.push(body);
-      profile = { ...profile, ...body } as UserProfile;
-      return jsonResponse(200, profile);
-    }
-    const m = /^\/api\/ingredients\/(.+)$/.exec(path);
-    if (m && method === 'GET') {
-      const found = INGREDIENTS[m[1]!];
-      return found ? jsonResponse(200, found) : jsonResponse(404, { error: 'Not found' });
-    }
-    if (path === '/api/ingredients' && method === 'GET') {
-      const q = (new URL(url, 'http://x').searchParams.get('q') ?? '').toLowerCase();
-      return jsonResponse(200, Object.values(INGREDIENTS).filter((i) => i.name.toLowerCase().includes(q)));
-    }
-    return jsonResponse(404, { error: 'unhandled' });
-  }
+  const handle = routeFetch(
+    {
+      'GET /api/profile': () => profile,
+      'PATCH /api/profile': ({ json }) => {
+        const body = json<Record<string, unknown>>();
+        patchCalls.push(body);
+        profile = { ...profile, ...body } as UserProfile;
+        return profile;
+      },
+      'GET /api/ingredients/:id': ({ params }) => {
+        const found = INGREDIENTS[params['id']!];
+        return found ?? jsonResponse(404, { error: 'Not found' });
+      },
+      'GET /api/ingredients': ({ url }) => {
+        const q = (url.searchParams.get('q') ?? '').toLowerCase();
+        return Object.values(INGREDIENTS).filter((i) => i.name.toLowerCase().includes(q));
+      },
+    },
+    { unmatched: '404' },
+  );
   return { handle, patchCalls, current: () => profile };
 }
 
@@ -257,16 +213,14 @@ describe('profile screen', () => {
 
   test("surfaces the API's calorieTargetMin > calorieTargetMax validation message", async () => {
     const server = makeServer(makeProfile());
-    fetchMock.mockImplementation(async (url: string, init?: RequestInit) => {
-      const path = pathOf(url);
-      const method = init?.method ?? 'GET';
-      if (path === '/api/profile' && method === 'PATCH') {
+    fetchMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      if (pathOf(input) === '/api/profile' && (init?.method ?? 'GET') === 'PATCH') {
         return jsonResponse(400, {
           error: 'Validation failed',
           details: { formErrors: ['calorieTargetMin must be ≤ calorieTargetMax'] },
         });
       }
-      return server.handle(url, init);
+      return server.handle(input, init);
     });
     const root = mountRoot();
     await profileScreen().mount(root, makeCtx());
