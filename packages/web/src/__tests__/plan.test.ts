@@ -277,7 +277,7 @@ describe('add-entry affordance', () => {
   });
 });
 
-describe('cell click behavior by status', () => {
+describe('planned and cooked cell clicks', () => {
   test('opens the cook modal from a planned cell', async () => {
     const entry = makeEntry({ id: 'e-planned', slot: 'dinner', status: 'planned', freeformNote: 'Lohikeitto' });
     fetchMock.mockImplementation(buildRouter({ entries: [entry] }));
@@ -304,30 +304,5 @@ describe('cell click behavior by status', () => {
     expect(isModalOpen()).toBe(false);
     expect(fetchMock.mock.calls.length).toBe(before);
     expect(document.querySelector('.toast')?.textContent).toMatch(/locked/i);
-  });
-
-  test('reopens a skipped entry for editing', async () => {
-    const entry = makeEntry({ id: 'e-skip', slot: 'dinner', status: 'skipped', freeformNote: 'Skipped dinner' });
-    fetchMock.mockImplementation(buildRouter({ entries: [entry] }));
-    const root = mountRoot();
-    await planScreen().mount(root, makeCtx());
-
-    root.querySelector<HTMLButtonElement>('.plan-cell[data-status="skipped"]')!.click();
-
-    expect(isModalOpen()).toBe(true);
-    expect(document.querySelector('.plan-edit-save')).not.toBeNull();
-    expect(document.querySelector('.add-entry-note')).not.toBeNull();
-  });
-
-  test('reopens a substituted entry for editing', async () => {
-    const entry = makeEntry({ id: 'e-sub', slot: 'snack', status: 'substituted', freeformNote: 'Rye bread & cheese' });
-    fetchMock.mockImplementation(buildRouter({ entries: [entry] }));
-    const root = mountRoot();
-    await planScreen().mount(root, makeCtx());
-
-    root.querySelector<HTMLButtonElement>('.plan-cell[data-status="substituted"]')!.click();
-
-    expect(isModalOpen()).toBe(true);
-    expect(document.querySelector('.plan-edit-save')).not.toBeNull();
   });
 });

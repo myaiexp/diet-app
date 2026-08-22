@@ -1,4 +1,4 @@
-// Edit-entry PATCH: the picker writes the column cook/title actually resolve.
+// Edit-entry PATCH for skipped/substituted cells — picker maps onto cook's resolve.
 //
 // Cook, shopping, and cell titles all read `substituteRecipeId ?? recipeId`.
 // Seeding the picker from that pair and then PATCHing only recipeId leaves a
@@ -121,8 +121,8 @@ function patchBodies(fetchMock: ReturnType<typeof vi.fn>): Record<string, unknow
     .map(([, init]) => JSON.parse(String((init as RequestInit).body)) as Record<string, unknown>);
 }
 
-async function openSubstitutedEdit(root: HTMLElement): Promise<void> {
-  root.querySelector<HTMLButtonElement>('.plan-cell[data-status="substituted"]')!.click();
+async function openEdit(root: HTMLElement, status: 'skipped' | 'substituted'): Promise<void> {
+  root.querySelector<HTMLButtonElement>(`.plan-cell[data-status="${status}"]`)!.click();
   await vi.waitFor(() => expect(document.querySelector('.plan-edit-save')).not.toBeNull());
 }
 
@@ -153,7 +153,7 @@ describe('edit substituted entry', () => {
     const root = mountRoot();
     await planScreen().mount(root, makeCtx());
 
-    await openSubstitutedEdit(root);
+    await openEdit(root, 'substituted');
 
     expect(document.querySelector('.add-entry-recipe-row[data-id="r-sub"]')?.classList.contains('is-selected')).toBe(
       true,
@@ -171,7 +171,7 @@ describe('edit substituted entry', () => {
 
     expect(root.querySelector('.plan-cell-title')?.textContent).toBe('Substitute Dish');
 
-    await openSubstitutedEdit(root);
+    await openEdit(root, 'substituted');
     document.querySelector<HTMLButtonElement>('.add-entry-recipe-row[data-id="r-new"]')!.click();
     const body = await saveAndPatch(fetchMock);
 
@@ -192,7 +192,7 @@ describe('edit substituted entry', () => {
     const root = mountRoot();
     await planScreen().mount(root, makeCtx());
 
-    await openSubstitutedEdit(root);
+    await openEdit(root, 'substituted');
     const statusSelect = document.querySelector<HTMLSelectElement>('.plan-edit-status')!;
     statusSelect.value = 'planned';
     const body = await saveAndPatch(fetchMock);
@@ -211,7 +211,7 @@ describe('edit substituted entry', () => {
     const root = mountRoot();
     await planScreen().mount(root, makeCtx());
 
-    await openSubstitutedEdit(root);
+    await openEdit(root, 'substituted');
     document.querySelector<HTMLButtonElement>('.add-entry-recipe-row[data-id="r-new"]')!.click();
     const body = await saveAndPatch(fetchMock);
 
@@ -229,7 +229,7 @@ describe('edit substituted entry', () => {
     const root = mountRoot();
     await planScreen().mount(root, makeCtx());
 
-    await openSubstitutedEdit(root);
+    await openEdit(root, 'substituted');
     const noteInput = document.querySelector<HTMLInputElement>('.add-entry-note')!;
     noteInput.value = 'Työlounas — canteen';
     noteInput.dispatchEvent(new Event('input', { bubbles: true }));
@@ -241,5 +241,55 @@ describe('edit substituted entry', () => {
 
     const after = { ...entry, ...body } as MealPlanEntry;
     expect(resolvedRecipeId(after)).toBeNull();
+  });
+
+  test('a no-change save writes the current substitute and does not clobber recipeId', async () => {
+    const entry = makeEntry();
+    fetchMock.mockImplementation(buildRouter([entry]));
+    const root = mountRoot();
+    await planScreen().mount(root, makeCtx());
+
+    await openEdit(root, 'substituted');
+    const body = await saveAndPatch(fetchMock);
+
+    expect(body['substituteRecipeId']).toBe('r-sub');
+    expect(body['recipeId']).toBeUndefined();
+    expect(body['freeformNote']).toBeNull();
+    expect(body['servings']).toBe(2);
+
+    const after = { ...entry, ...body } as MealPlanEntry;
+    expect(after.recipeId).toBe('r-orig');
+    expect(resolvedRecipeId(after)).toBe('r-sub');
+  });
+});
+
+describe('edit skipped entry', () => {
+  test('picking a new recipe writes recipeId, servings, and status, and clears substituteRecipeId', async () => {
+    const entry = makeEntry({
+      id: 'e-skip',
+      status: 'skipped',
+      recipeId: 'r-orig',
+      // leftover substitute must be cleared — omitting it leaves cook resolving r-sub
+      substituteRecipeId: 'r-sub',
+    });
+    fetchMock.mockImplementation(buildRouter([entry]));
+    const root = mountRoot();
+    await planScreen().mount(root, makeCtx());
+
+    await openEdit(root, 'skipped');
+    document.querySelector<HTMLButtonElement>('.add-entry-recipe-row[data-id="r-new"]')!.click();
+    document.querySelector<HTMLInputElement>('.plan-edit-form input[type="number"]')!.value = '5';
+    const statusSelect = document.querySelector<HTMLSelectElement>('.plan-edit-status')!;
+    statusSelect.value = 'planned';
+    const body = await saveAndPatch(fetchMock);
+
+    expect(body['recipeId']).toBe('r-new');
+    expect(body['substituteRecipeId']).toBeNull();
+    expect(body['freeformNote']).toBeNull();
+    expect(body['servings']).toBe(5);
+    expect(body['status']).toBe('planned');
+
+    const after = { ...entry, ...body } as MealPlanEntry;
+    expect(resolvedRecipeId(after)).toBe('r-new');
   });
 });
