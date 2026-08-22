@@ -12,9 +12,11 @@ import {
   shoppingLists,
   shoppingListItems,
   pantryItems,
+  ingredients,
 } from '@diet-app/db';
 import { eq, inArray } from 'drizzle-orm';
 import { createApp } from '../app.js';
+import { matchIngredientNames } from '../ingredient-match.js';
 // Asserted through the production predicate rather than a literal error shape:
 // Drizzle wraps driver errors, and what matters is that the routes' own
 // mapping recognizes the violation — not which wrapper this version uses.
@@ -44,7 +46,7 @@ const hasDb = Boolean(TEST_DB_URL);
 const db = hasDb ? createDb(TEST_DB_URL!) : null;
 const app = db ? createApp(db) : null;
 
-// LOUD GATE: `describe.skipIf` alone reports 19 quiet skips, which is how this
+// LOUD GATE: `describe.skipIf` alone reports 20 quiet skips, which is how this
 // suite went 4 commits without ever executing — the SQL it is the only cover
 // for (tags @>, unnest, ON CONFLICT, relational with:, numeric FEFO math) was
 // unverified the whole time. An unset TEST_DATABASE_URL now fails the run.
@@ -210,6 +212,46 @@ describe.skipIf(!hasDb)('POST /api/recipes/import', () => {
     });
     expect(res.status).toBe(503);
     expect(await res.json()).toEqual({ error: 'AI not configured' });
+  });
+});
+
+describe.skipIf(!hasDb)('matchIngredientNames SQL', () => {
+  // Import injects a matcher in unit tests and 503s here without AI, so this is
+  // the only place the production unnest(coalesce(aliases)) / lower(name) IN
+  // query actually runs against Postgres.
+  test('exact name, seeded alias, and none against dietapp_test', async () => {
+    const [chicken, peruna, unicorn] = await matchIngredientNames(db!, [
+      'chicken',
+      'peruna',
+      'unicorn',
+    ]);
+
+    const [chickenRow] = await db!
+      .select({ id: ingredients.id })
+      .from(ingredients)
+      .where(eq(ingredients.name, 'chicken'));
+    const [potatoRow] = await db!
+      .select({ id: ingredients.id })
+      .from(ingredients)
+      .where(eq(ingredients.name, 'potato'));
+    expect(chickenRow, 'seed should contain chicken').toBeDefined();
+    expect(potatoRow, 'seed should contain potato (alias peruna)').toBeDefined();
+
+    expect(chicken).toEqual({
+      rawName: 'chicken',
+      ingredientId: chickenRow!.id,
+      match: 'exact',
+    });
+    expect(peruna).toEqual({
+      rawName: 'peruna',
+      ingredientId: potatoRow!.id,
+      match: 'alias',
+    });
+    expect(unicorn).toEqual({
+      rawName: 'unicorn',
+      ingredientId: null,
+      match: 'none',
+    });
   });
 });
 

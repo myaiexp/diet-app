@@ -240,6 +240,10 @@ describe('pantry screen', () => {
     await flush(50);
 
     expect(document.querySelector('.helper-error')?.textContent).toContain('Invalid reference');
+    // A generic 400 is not the no-shelf-life signal — the date field stays hidden
+    // so a retry still omits expiresDate (the dedicated fallback lives in pantry-form.test.ts).
+    const expires = document.querySelector<HTMLInputElement>('.pantry-form input[type="date"]');
+    expect(expires?.closest('.pantry-field')?.classList.contains('hidden')).toBe(true);
   });
 
   test('loads the next page when the list hits the default 50-item limit', async () => {

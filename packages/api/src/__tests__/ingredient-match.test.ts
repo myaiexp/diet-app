@@ -1,7 +1,12 @@
-// Unit tests for pure matchIngredientName
+// Unit tests for matchIngredientName and the SQL WHERE matchIngredientNames builds
 
 import { describe, test, expect } from 'vitest';
-import { matchIngredientName, type IngredientCandidate } from '../ingredient-match.js';
+import { PgDialect } from 'drizzle-orm/pg-core';
+import {
+  matchIngredientName,
+  matchIngredientNames,
+  type IngredientCandidate,
+} from '../ingredient-match.js';
 
 const CANDIDATES: IngredientCandidate[] = [
   { id: 'id-salt', name: 'Salt', aliases: ['sea salt', 'table salt'] },
@@ -53,5 +58,68 @@ describe('matchIngredientName', () => {
     // Both id-salt and id-salt-b have name Salt; name ASC ties, id ASC → id-salt
     expect(m.match).toBe('exact');
     expect(m.ingredientId).toBe('id-salt');
+  });
+});
+
+describe('matchIngredientNames SQL', () => {
+  const dialect = new PgDialect();
+
+  function capturingDb(rows: IngredientCandidate[]) {
+    let where: unknown;
+    const db = {
+      select: () => ({
+        from: () => ({
+          where: (w: unknown) => {
+            where = w;
+            return Promise.resolve(rows);
+          },
+        }),
+      }),
+    };
+    return {
+      db: db as never,
+      rendered: () => dialect.sqlToQuery(where as never),
+    };
+  }
+
+  test('WHERE is unnest + bound IN, never string-concat SQL', async () => {
+    const injection = "x'; DROP TABLE ingredients;--";
+    const { db, rendered } = capturingDb([
+      { id: 'id-chicken', name: 'chicken', aliases: ['kana'] },
+      { id: 'id-potato', name: 'potato', aliases: ['peruna'] },
+    ]);
+
+    const result = await matchIngredientNames(db, ['Chicken', 'peruna', 'unicorn', injection]);
+    expect(result).toEqual([
+      { rawName: 'Chicken', ingredientId: 'id-chicken', match: 'exact' },
+      { rawName: 'peruna', ingredientId: 'id-potato', match: 'alias' },
+      { rawName: 'unicorn', ingredientId: null, match: 'none' },
+      { rawName: injection, ingredientId: null, match: 'none' },
+    ]);
+
+    const q = rendered();
+    expect(q.sql).toContain('unnest(coalesce(');
+    expect(q.sql).toContain('array[]::text[]');
+    expect(q.sql).toMatch(/lower\([^)]*name[^)]*\) IN \(/i);
+    expect(q.sql).toMatch(/lower\(a\.alias\) IN \(/i);
+    // Needles are bound params (twice: name IN and alias IN), never interpolated.
+    expect(q.sql).not.toContain('chicken');
+    expect(q.sql).not.toContain('peruna');
+    expect(q.sql).not.toContain('DROP TABLE');
+    const needles = ['chicken', 'peruna', 'unicorn', injection.toLowerCase()];
+    expect(q.params).toEqual([...needles, ...needles]);
+  });
+
+  test('empty / whitespace-only names skip the query', async () => {
+    const db = {
+      select: () => {
+        throw new Error('matchIngredientNames must not query when every name is blank');
+      },
+    };
+    await expect(matchIngredientNames(db as never, [])).resolves.toEqual([]);
+    await expect(matchIngredientNames(db as never, ['  ', ''])).resolves.toEqual([
+      { rawName: '  ', ingredientId: null, match: 'none' },
+      { rawName: '', ingredientId: null, match: 'none' },
+    ]);
   });
 });

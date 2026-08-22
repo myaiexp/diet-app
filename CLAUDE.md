@@ -48,7 +48,7 @@ paragraph of "why", the why belongs in the linked subdoc.
 
 api/db emit and exclude tests from `dist` (`tsconfig.typecheck.json` covers
 them); web type-checks tests via its main no-emit `tsconfig.json`. One vitest
-entry at the repo root. Real-SQL suites (19 cases in `routes.test.ts`, 4 in
+entry at the repo root. Real-SQL suites (20 cases in `routes.test.ts`, 4 in
 `import-products-sql.test.ts`) share the loud `TEST_DATABASE_URL` /
 `DIET_APP_SKIP_DB_TESTS` gate. Mocks, fixture-by-table (never call-order),
 demo seed, drizzle-kit override, schema-migration workflow:
