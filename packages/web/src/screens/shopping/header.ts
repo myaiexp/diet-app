@@ -8,15 +8,15 @@ import type {
   ShoppingListStatus,
   SkippedGenerateLine,
   SkippedCompleteItem,
-} from '../api/types.js';
-import { generateShoppingList, completeShoppingList } from '../api/shopping.js';
-import { userMessage } from '../api/errors.js';
-import { toNumber } from '../format/quantity.js';
-import { isoWeekNumber } from '../format/date.js';
-import { el, button } from '../ui/dom.js';
-import { openModal, closeModal } from '../ui/modal.js';
-import { say } from '../ui/toast.js';
-import { openAddShoppingItemModal } from './shopping-add.js';
+} from '../../api/types.js';
+import { generateShoppingList, completeShoppingList } from '../../api/shopping.js';
+import { userMessage } from '../../api/errors.js';
+import { toNumber } from '../../format/quantity.js';
+import { isoWeekNumber } from '../../format/date.js';
+import { el, button } from '../../ui/dom.js';
+import { openModal, closeModal } from '../../ui/modal.js';
+import { say } from '../../ui/toast.js';
+import { openAddShoppingItemModal } from './add.js';
 
 export interface HeaderHandlers {
   onGenerated: (list: ShoppingList, skipped: SkippedGenerateLine[]) => void;

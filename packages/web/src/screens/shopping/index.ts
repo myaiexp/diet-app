@@ -1,32 +1,32 @@
 // Shopping list screen: current-week list, aisle-grouped rows, bought toggle,
 // regenerate / complete, and the ad-hoc add.
 //
-// See shopping-groups.ts for the pure aisle bucketing (must never re-sort
+// See groups.ts for the pure aisle bucketing (must never re-sort
 // within a group — the server already put staples last) and
-// shopping-row.ts / shopping-header.ts for the split-out DOM builders.
+// row.ts / header.ts for the split-out DOM builders.
 
-import '../css/shopping.css';
-import type { Screen, ScreenContext } from '../router.js';
+import '../../css/shopping.css';
+import type { Screen, ScreenContext } from '../../router.js';
 import type {
   ShoppingList,
   ShoppingItem,
   SkippedGenerateLine,
   SkippedCompleteItem,
-} from '../api/types.js';
-import { getCurrentShoppingList, patchShoppingItem, deleteShoppingItem } from '../api/shopping.js';
-import { userMessage, isApiError } from '../api/errors.js';
-import { el, button, errorPanel, loadingRow } from '../ui/dom.js';
-import { say } from '../ui/toast.js';
-import { isoToday, isoWeekNumber } from '../format/date.js';
-import { groupByAisle, categoryColor } from './shopping-groups.js';
-import { buildShoppingRow } from './shopping-row.js';
+} from '../../api/types.js';
+import { getCurrentShoppingList, patchShoppingItem, deleteShoppingItem } from '../../api/shopping.js';
+import { userMessage, isApiError } from '../../api/errors.js';
+import { el, button, errorPanel, loadingRow } from '../../ui/dom.js';
+import { say } from '../../ui/toast.js';
+import { isoToday, isoWeekNumber } from '../../format/date.js';
+import { groupByAisle, categoryColor } from './groups.js';
+import { buildShoppingRow } from './row.js';
 import {
   buildShoppingHeader,
   runGenerate,
   type HeaderHandlers,
   type HeaderState,
-} from './shopping-header.js';
-import { describeSkippedGenerate, describeSkippedComplete } from './shopping-notices.js';
+} from './header.js';
+import { describeSkippedGenerate, describeSkippedComplete } from './notices.js';
 
 export function shoppingScreen(): Screen {
   let list: ShoppingList | null = null;

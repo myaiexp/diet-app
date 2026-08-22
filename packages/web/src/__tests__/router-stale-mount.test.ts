@@ -18,7 +18,7 @@ const { gate } = vi.hoisted(() => {
   return { gate };
 });
 
-vi.mock('../screens/today.js', () => ({
+vi.mock('../screens/today/index.js', () => ({
   todayScreen: () => ({
     title: 'Today',
     async mount(root: HTMLElement) {

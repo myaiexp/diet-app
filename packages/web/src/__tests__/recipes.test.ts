@@ -9,7 +9,7 @@
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 import { configureClient, resetClient } from '../api/client.js';
 import { closeModal } from '../ui/modal.js';
-import { recipesScreen } from '../screens/recipes.js';
+import { recipesScreen } from '../screens/recipes/index.js';
 import type { ScreenContext } from '../router.js';
 import type { PantryItem, RecipeLineInput, RecipeWithIngredients } from '../api/types.js';
 

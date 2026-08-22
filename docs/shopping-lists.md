@@ -71,7 +71,7 @@ whose ingredient has no shelf life for its resolved location is reported in
 
 ## Aisle order is grouped client-side
 
-Grouping must never re-sort inside a group (`screens/shopping-groups.ts`). The
+Grouping must never re-sort inside a group (`screens/shopping/groups.ts`). The
 server sorts items non-staples-first, then category *alphabetically*, then name,
 then id — alphabetical is not aisle order, so the screen buckets that array by
 category (preserving arrival order within each bucket) and emits buckets as

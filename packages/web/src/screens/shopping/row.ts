@@ -1,13 +1,12 @@
-// Shopping list row rendering — split out of shopping.ts to stay under the
-// file-length limit. The toggle surface (everything but the trailing delete
-// control) is a real <button> so the whole row stays keyboard-accessible
-// without nesting a button inside a button — recipes.ts's whole-row click
-// uses the same shape.
+// Shopping list row rendering. The toggle surface (everything but the
+// trailing delete control) is a real <button> so the whole row stays
+// keyboard-accessible without nesting a button inside a button —
+// the recipes list's whole-row click uses the same shape.
 
-import type { ShoppingItem } from '../api/types.js';
-import { el, button } from '../ui/dom.js';
-import { formatQuantity, toNumber } from '../format/quantity.js';
-import { pantryLine } from './shopping-groups.js';
+import type { ShoppingItem } from '../../api/types.js';
+import { el, button } from '../../ui/dom.js';
+import { formatQuantity, toNumber } from '../../format/quantity.js';
+import { pantryLine } from './groups.js';
 
 export interface RowHandlers {
   onToggle: (item: ShoppingItem) => void;

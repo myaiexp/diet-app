@@ -1,6 +1,5 @@
 // Recipe detail pane: header, stat strip, servings scaler, ingredients/steps,
-// footer actions, the edit modal and the fork action. Split out of recipes.ts
-// to stay under the file-length limit.
+// footer actions, the edit modal and the fork action.
 //
 // Scaling is server-side only (getRecipe(id, servings)): reimplementing
 // qty * target / base here would create a second rounding path that disagrees
@@ -8,16 +7,16 @@
 // unscaled recipe first, so a save while scaled can never persist scaled
 // quantities as the new base.
 
-import { getRecipe, patchRecipe, forkRecipe } from '../api/recipes.js';
+import { getRecipe, patchRecipe, forkRecipe } from '../../api/recipes.js';
 import type {
   Recipe, RecipeWithIngredients, RecipeIngredientLine, RecipeLineInput, RecipePatch, PantryItem, SourceType,
-} from '../api/types.js';
-import { el, button, errorPanel, loadingRow } from '../ui/dom.js';
-import { field, textInput } from '../ui/form.js';
-import { userMessage, fieldErrors } from '../api/errors.js';
-import { say } from '../ui/toast.js';
-import { openModal, closeModal } from '../ui/modal.js';
-import { formatQuantity, toNumber } from '../format/quantity.js';
+} from '../../api/types.js';
+import { el, button, errorPanel, loadingRow } from '../../ui/dom.js';
+import { field, textInput } from '../../ui/form.js';
+import { userMessage, fieldErrors } from '../../api/errors.js';
+import { say } from '../../ui/toast.js';
+import { openModal, closeModal } from '../../ui/modal.js';
+import { formatQuantity, toNumber } from '../../format/quantity.js';
 
 const MIN_SERVINGS = 1;
 const MAX_SERVINGS = 12;

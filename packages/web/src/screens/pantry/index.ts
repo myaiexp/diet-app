@@ -2,20 +2,20 @@
 //
 // Rows never re-sort what the API returns (spoilage order, id tie-break) and
 // always render the API's `status` — days-remaining is display-only maths on
-// top of it, never a substitute for it. See pantry-form.ts for the add/edit
-// modals, kept separate to stay under the file-length limit.
+// top of it, never a substitute for it. See form.ts for the add/edit
+// modals.
 
-import '../css/pantry.css';
-import type { Screen, ScreenContext } from '../router.js';
-import type { Ingredient, PantryItem, PantryLocation } from '../api/types.js';
-import { LOCATIONS } from '../api/types.js';
-import { listPantry } from '../api/pantry.js';
-import { userMessage } from '../api/errors.js';
-import { el, button, errorPanel, loadingRow } from '../ui/dom.js';
-import { say } from '../ui/toast.js';
-import { attachIngredientSearch, INGREDIENT_SEARCH_PLACEHOLDER } from '../ui/ingredient-picker.js';
-import { openAddItemModal, openEditItemModal } from './pantry-form.js';
-import { buildPantryRow } from './pantry-row.js';
+import '../../css/pantry.css';
+import type { Screen, ScreenContext } from '../../router.js';
+import type { Ingredient, PantryItem, PantryLocation } from '../../api/types.js';
+import { LOCATIONS } from '../../api/types.js';
+import { listPantry } from '../../api/pantry.js';
+import { userMessage } from '../../api/errors.js';
+import { el, button, errorPanel, loadingRow } from '../../ui/dom.js';
+import { say } from '../../ui/toast.js';
+import { attachIngredientSearch, INGREDIENT_SEARCH_PLACEHOLDER } from '../../ui/ingredient-picker.js';
+import { openAddItemModal, openEditItemModal } from './form.js';
+import { buildPantryRow } from './row.js';
 
 const PAGE_SIZE = 50;
 const FILTERS: ReadonlyArray<PantryLocation | 'all'> = ['all', ...LOCATIONS];

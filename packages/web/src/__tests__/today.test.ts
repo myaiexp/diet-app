@@ -8,7 +8,7 @@
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 import { configureClient, resetClient } from '../api/client.js';
 import { closeModal, isModalOpen } from '../ui/modal.js';
-import { todayScreen } from '../screens/today.js';
+import { todayScreen } from '../screens/today/index.js';
 import { mondayOf, isoToday } from '../format/date.js';
 import type { MealPlanEntry, PantryItem, Ingredient, CookFeedback, Recipe } from '../api/types.js';
 

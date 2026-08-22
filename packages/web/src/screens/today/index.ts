@@ -2,31 +2,30 @@
 //
 // Three bounded data requests back every stat tile and every row: getWeek for
 // this ISO week, listAllPantry() for the whole pantry, and listAllRecipes()
-// once (the same helper plan.ts uses) so recipe-backed entries render their
-// real title instead of a generic placeholder. None of the three scales with
-// row/tile count — that's the rule this screen actually protects, not "two
-// requests" as a magic number. A collection past the API page ceiling of 200
-// costs extra pages, not extra rows. Per-entry feedback lookups for today's
+// once (the same helper the plan screen uses) so recipe-backed entries render
+// their real title instead of a generic placeholder. None of the three scales
+// with row/tile count — that's the rule this screen actually protects, not
+// "two requests" as a magic number. A collection past the API page ceiling of
+// 200 costs extra pages, not extra rows. Per-entry feedback lookups for today's
 // cooked slots are the only requests beyond those three, bounded by how many
 // entries are cooked today — and a 404 from getFeedback is the normal "not
 // yet rated" case, not an error (see loadRatedMap).
 //
-// Panel rendering lives in today-panels.ts / today-whatnow.ts, split out to
-// stay under the file-length limit.
+// Panel rendering lives in panels.ts / whatnow.ts.
 
-import '../css/today.css';
-import type { Screen, ScreenContext } from '../router.js';
-import type { MealPlanEntry, PantryItem, Recipe } from '../api/types.js';
-import { getWeek, getFeedback } from '../api/meal-plans.js';
-import { listAllPantry } from '../api/pantry.js';
-import { listAllRecipes } from '../api/recipes.js';
-import { userMessage } from '../api/errors.js';
-import { el, errorPanel, loadingRow } from '../ui/dom.js';
-import { openAddEntry } from './add-entry.js';
-import { openCookFlow, openFeedbackModal } from '../modals/cook-flow.js';
-import { mondayOf, isoToday, finnishWeekdayLong, finnishDate } from '../format/date.js';
-import { buildStatStrip, buildSlotsPanel, buildSpoilingPanel, type SlotHandlers } from './today-panels.js';
-import { buildWhatNowPanel, buildFirstRun } from './today-whatnow.js';
+import '../../css/today.css';
+import type { Screen, ScreenContext } from '../../router.js';
+import type { MealPlanEntry, PantryItem, Recipe } from '../../api/types.js';
+import { getWeek, getFeedback } from '../../api/meal-plans.js';
+import { listAllPantry } from '../../api/pantry.js';
+import { listAllRecipes } from '../../api/recipes.js';
+import { userMessage } from '../../api/errors.js';
+import { el, errorPanel, loadingRow } from '../../ui/dom.js';
+import { openAddEntry } from '../plan/add-entry.js';
+import { openCookFlow, openFeedbackModal } from '../../modals/cook-flow.js';
+import { mondayOf, isoToday, finnishWeekdayLong, finnishDate } from '../../format/date.js';
+import { buildStatStrip, buildSlotsPanel, buildSpoilingPanel, type SlotHandlers } from './panels.js';
+import { buildWhatNowPanel, buildFirstRun } from './whatnow.js';
 
 /** Which of today's cooked entries already have feedback — a 404 means no. */
 async function loadRatedMap(cookedToday: MealPlanEntry[]): Promise<Map<string, boolean>> {

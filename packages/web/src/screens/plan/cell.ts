@@ -1,22 +1,21 @@
 // Meal plan day column + slot cell rendering, plus the edit modal used to
-// reopen a skipped or substituted entry. Split out of plan.ts to stay under
-// the file-length limit.
+// reopen a skipped or substituted entry.
 //
-// A planned cell opens the shared cook flow (plan.ts wires that); a cooked
+// A planned cell opens the shared cook flow (the plan screen wires that); a cooked
 // cell never opens anything here — cooked is terminal, PATCH cannot set or
 // leave it, and it cannot change recipeId/substituteRecipeId/servings, so
 // there is nothing this file could let the user edit anyway.
 
-import type { MealPlanEntry, MealPlanPatch, Recipe, Slot, EntryStatus } from '../api/types.js';
-import { SLOTS } from '../api/types.js';
-import { patchEntry } from '../api/meal-plans.js';
-import { el, button } from '../ui/dom.js';
-import { field, errorBox, showError } from '../ui/form.js';
-import { openModal, closeModal } from '../ui/modal.js';
-import { say } from '../ui/toast.js';
-import { userMessage, fieldErrors } from '../api/errors.js';
-import { finnishWeekday, finnishDate } from '../format/date.js';
-import { toNumber } from '../format/quantity.js';
+import type { MealPlanEntry, MealPlanPatch, Recipe, Slot, EntryStatus } from '../../api/types.js';
+import { SLOTS } from '../../api/types.js';
+import { patchEntry } from '../../api/meal-plans.js';
+import { el, button } from '../../ui/dom.js';
+import { field, errorBox, showError } from '../../ui/form.js';
+import { openModal, closeModal } from '../../ui/modal.js';
+import { say } from '../../ui/toast.js';
+import { userMessage, fieldErrors } from '../../api/errors.js';
+import { finnishWeekday, finnishDate } from '../../format/date.js';
+import { toNumber } from '../../format/quantity.js';
 import { createRecipeOrNoteField, type RecipeOrNoteSelection } from './add-entry.js';
 
 type EditableStatus = Exclude<EntryStatus, 'cooked'>;

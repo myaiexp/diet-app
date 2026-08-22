@@ -3,13 +3,13 @@
 import { activeShell } from './ui/shell.js';
 import { closeModal } from './ui/modal.js';
 import { placeholderScreen } from './ui/placeholder.js';
-import { todayScreen } from './screens/today.js';
-import { pantryScreen } from './screens/pantry.js';
-import { recipesScreen } from './screens/recipes.js';
-import { importScreen } from './screens/import.js';
-import { planScreen } from './screens/plan.js';
+import { todayScreen } from './screens/today/index.js';
+import { pantryScreen } from './screens/pantry/index.js';
+import { recipesScreen } from './screens/recipes/index.js';
+import { importScreen } from './screens/import/index.js';
+import { planScreen } from './screens/plan/index.js';
 import { profileScreen } from './screens/profile.js';
-import { shoppingScreen } from './screens/shopping.js';
+import { shoppingScreen } from './screens/shopping/index.js';
 
 export const ROUTES = [
   '/today',

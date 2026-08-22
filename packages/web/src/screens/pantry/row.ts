@@ -1,12 +1,11 @@
-// Pantry row rendering — split out of pantry.ts to stay under the file-length
-// limit. The API's `status` drives the ramp; days-remaining is display-only
-// maths layered on top of it, never a substitute for it.
+// Pantry row rendering. The API's `status` drives the ramp; days-remaining
+// is display-only maths layered on top of it, never a substitute for it.
 
-import type { Ingredient, PantryItem, PantryStatus } from '../api/types.js';
-import { el, button } from '../ui/dom.js';
-import { formatQuantity, toNumber } from '../format/quantity.js';
-import { finnishDate, daysUntil, daysRemainingLabel } from '../format/date.js';
-import { rampColor, applyRamp, statusLabel } from '../format/expiry.js';
+import type { Ingredient, PantryItem, PantryStatus } from '../../api/types.js';
+import { el, button } from '../../ui/dom.js';
+import { formatQuantity, toNumber } from '../../format/quantity.js';
+import { finnishDate, daysUntil, daysRemainingLabel } from '../../format/date.js';
+import { rampColor, applyRamp, statusLabel } from '../../format/expiry.js';
 
 /** "use soon · 2 days" / "expired 1d ago" — the design's two joining styles. */
 function expiryStatusLine(status: PantryStatus, days: number): string {

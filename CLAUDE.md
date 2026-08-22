@@ -11,8 +11,9 @@ paragraph of "why", the why belongs in the linked subdoc.
 - **Central-hub conventions**: ESM, `.js` imports, UUID PKs, timezone timestamps.
 - **Workspaces**: `packages/db` (Drizzle schema + connection), `packages/api`
   (Hono, port 3300), `packages/web` (Vite + vanilla TS, no framework; screens
-  under `src/screens/`, one thin API module per resource under `src/api/`,
-  `base.css` from mase.fi).
+  grouped by feature under `src/screens/<feature>/`, with single-file screens
+  like profile at the top of `screens/`; one thin API module per resource
+  under `src/api/`, `base.css` from mase.fi).
 - **Public URL**: `https://diet.mase.fi` — the app at `/`, its API at `/api/`
   (same origin). Auth (two independent gates), CORS, deploy, secrets, and the
   DB pool: **`docs/auth-deploy.md`**. Password rotation: `docs/db-rotation.md`.

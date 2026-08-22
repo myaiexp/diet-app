@@ -1,13 +1,13 @@
 // Ad-hoc add modal: shared pick-then-quantity form plus an optional note.
 
-import type { ShoppingItem, ShoppingItemCreate } from '../api/types.js';
-import { addShoppingItem } from '../api/shopping.js';
-import { userMessage, fieldErrors } from '../api/errors.js';
-import { el, button } from '../ui/dom.js';
-import { field, showError } from '../ui/form.js';
-import { createIngredientQuantityForm } from '../ui/ingredient-picker.js';
-import { openModal, closeModal } from '../ui/modal.js';
-import { say } from '../ui/toast.js';
+import type { ShoppingItem, ShoppingItemCreate } from '../../api/types.js';
+import { addShoppingItem } from '../../api/shopping.js';
+import { userMessage, fieldErrors } from '../../api/errors.js';
+import { el, button } from '../../ui/dom.js';
+import { field, showError } from '../../ui/form.js';
+import { createIngredientQuantityForm } from '../../ui/ingredient-picker.js';
+import { openModal, closeModal } from '../../ui/modal.js';
+import { say } from '../../ui/toast.js';
 
 export interface AddShoppingItemHandlers {
   onCreated: (item: ShoppingItem) => void;

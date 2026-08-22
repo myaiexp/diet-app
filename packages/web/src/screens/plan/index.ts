@@ -1,26 +1,25 @@
 // Meal plan week screen: 7x4 grid, week navigation, and the cook / add-entry
-// wiring. Slot order and title/status rendering live in plan-cell.ts, and the
-// create affordance in add-entry.ts, both split out to stay under the
-// file-length limit and (add-entry.ts) to be reusable by the Today screen.
+// wiring. Slot order and title/status rendering live in cell.ts, and the
+// create affordance in add-entry.ts — reused by the Today screen.
 //
 // `slot` is text and the API deliberately never sorts it (sorted as text it
 // reads breakfast/dinner/lunch/snack) — SLOTS gives the order the client lays
 // out. Days run ma..su from `mondayOf`/`addDays`, never the order entries
 // happen to arrive in.
 
-import '../css/plan.css';
-import type { Screen, ScreenContext } from '../router.js';
-import type { MealPlanEntry, Recipe, Slot } from '../api/types.js';
-import { SLOTS } from '../api/types.js';
-import { getWeek } from '../api/meal-plans.js';
-import { listAllRecipes } from '../api/recipes.js';
-import { userMessage } from '../api/errors.js';
-import { el, button, errorPanel, loadingRow } from '../ui/dom.js';
-import { say } from '../ui/toast.js';
-import { openCookFlow } from '../modals/cook-flow.js';
-import { mondayOf, addDays, isoToday, isoWeekNumber } from '../format/date.js';
+import '../../css/plan.css';
+import type { Screen, ScreenContext } from '../../router.js';
+import type { MealPlanEntry, Recipe, Slot } from '../../api/types.js';
+import { SLOTS } from '../../api/types.js';
+import { getWeek } from '../../api/meal-plans.js';
+import { listAllRecipes } from '../../api/recipes.js';
+import { userMessage } from '../../api/errors.js';
+import { el, button, errorPanel, loadingRow } from '../../ui/dom.js';
+import { say } from '../../ui/toast.js';
+import { openCookFlow } from '../../modals/cook-flow.js';
+import { mondayOf, addDays, isoToday, isoWeekNumber } from '../../format/date.js';
 import { openAddEntry } from './add-entry.js';
-import { buildDayColumn, openEditEntry, type CellHandlers } from './plan-cell.js';
+import { buildDayColumn, openEditEntry, type CellHandlers } from './cell.js';
 
 const DAY_COUNT = 7;
 const TOTAL_SLOTS = DAY_COUNT * SLOTS.length;

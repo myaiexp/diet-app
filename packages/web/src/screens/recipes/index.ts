@@ -1,16 +1,15 @@
 // Recipes screen: tag-filtered list (270px) + detail pane (1fr). The detail
-// pane — servings scaler, ingredients/steps, edit/fork — lives in
-// recipe-detail.ts, split out to stay under the file-length limit.
+// pane — servings scaler, ingredients/steps, edit/fork — lives in detail.ts.
 
-import '../css/recipes.css';
-import type { Screen, ScreenContext } from '../router.js';
-import { listAllRecipes } from '../api/recipes.js';
-import { listAllPantry } from '../api/pantry.js';
-import type { Recipe, PantryItem } from '../api/types.js';
-import { el, button, errorPanel, loadingRow } from '../ui/dom.js';
-import { userMessage, fieldErrors } from '../api/errors.js';
-import { say } from '../ui/toast.js';
-import { createRecipeDetail, type DetailHandle } from './recipe-detail.js';
+import '../../css/recipes.css';
+import type { Screen, ScreenContext } from '../../router.js';
+import { listAllRecipes } from '../../api/recipes.js';
+import { listAllPantry } from '../../api/pantry.js';
+import type { Recipe, PantryItem } from '../../api/types.js';
+import { el, button, errorPanel, loadingRow } from '../../ui/dom.js';
+import { userMessage, fieldErrors } from '../../api/errors.js';
+import { say } from '../../ui/toast.js';
+import { createRecipeDetail, type DetailHandle } from './detail.js';
 
 const TAG_OPTIONS = ['quick', 'fish', 'vegetarian', 'oven', 'no-cook'];
 

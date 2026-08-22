@@ -1,8 +1,8 @@
 // Human-readable summaries for the two `skipped` arrays the API returns —
 // generate's per-recipe-line skips and complete's per-item pantry-file skips.
-// Neither is swallowed: both become a dismissible notice in shopping.ts.
+// Neither is swallowed: both become a dismissible notice on the shopping screen.
 
-import type { SkippedGenerateLine, SkippedCompleteItem } from '../api/types.js';
+import type { SkippedGenerateLine, SkippedCompleteItem } from '../../api/types.js';
 
 const REASON_LABEL: Record<SkippedGenerateLine['reason'], string> = {
   unknown_unit: 'unknown unit',

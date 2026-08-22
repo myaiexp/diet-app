@@ -16,8 +16,10 @@ tests — type-check with `pnpm --filter @diet-app/{api,db} typecheck`
 **web does not emit.** `packages/web/tsconfig.json` includes all of `src`
 (tests included), has `noEmit: true`, and has no `tsconfig.typecheck.json`.
 Type-check tests via the main config: `pnpm --filter @diet-app/web typecheck`.
-`vite.config.ts` still excludes `**/dist/**` from vitest for the same vitest-4
-reason — a stale Vite build must not run alongside `src`.
+`src/css.d.ts` declares `*.css` so tsgo (`build-lock tsc --noEmit`) accepts
+Vite's side-effect stylesheet imports; tsc is more lenient and didn't need
+it. `vite.config.ts` still excludes `**/dist/**` from vitest for the same
+vitest-4 reason — a stale Vite build must not run alongside `src`.
 
 ## One suite, three projects
 

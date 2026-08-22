@@ -7,7 +7,7 @@
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 import { configureClient, resetClient } from '../api/client.js';
 import { closeModal, isModalOpen } from '../ui/modal.js';
-import { planScreen } from '../screens/plan.js';
+import { planScreen } from '../screens/plan/index.js';
 import { mondayOf, isoToday } from '../format/date.js';
 import type { MealPlanEntry, Recipe } from '../api/types.js';
 

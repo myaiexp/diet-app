@@ -10,15 +10,15 @@
 // note are mutually exclusive in the UI for the same reason: there is no
 // ambiguity for the API to resolve.
 
-import type { MealPlanEntry, MealPlanCreate, Recipe, Slot } from '../api/types.js';
-import { createEntry } from '../api/meal-plans.js';
-import { listAllRecipes } from '../api/recipes.js';
-import { el, button } from '../ui/dom.js';
-import { field, errorBox, showError } from '../ui/form.js';
-import { openModal, closeModal } from '../ui/modal.js';
-import { say } from '../ui/toast.js';
-import { userMessage, fieldErrors } from '../api/errors.js';
-import { finnishWeekday, finnishDate } from '../format/date.js';
+import type { MealPlanEntry, MealPlanCreate, Recipe, Slot } from '../../api/types.js';
+import { createEntry } from '../../api/meal-plans.js';
+import { listAllRecipes } from '../../api/recipes.js';
+import { el, button } from '../../ui/dom.js';
+import { field, errorBox, showError } from '../../ui/form.js';
+import { openModal, closeModal } from '../../ui/modal.js';
+import { say } from '../../ui/toast.js';
+import { userMessage, fieldErrors } from '../../api/errors.js';
+import { finnishWeekday, finnishDate } from '../../format/date.js';
 
 const CONTENT_MSG = 'Pick a recipe, or type a note — one of the two is required.';
 
@@ -41,7 +41,7 @@ export interface RecipeOrNoteField {
 
 /**
  * Pick a recipe from the collection OR type a freeform note. Shared by the
- * add and edit forms (plan-cell.ts's `openEditEntry` reopens a skipped or
+ * add and edit forms (cell.ts's `openEditEntry` reopens a skipped or
  * substituted entry with the same widget) so the "one of the two" rule only
  * has one UI implementation.
  */

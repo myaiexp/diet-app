@@ -3,7 +3,7 @@
 
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 import { configureClient, resetClient } from '../api/client.js';
-import { importScreen } from '../screens/import.js';
+import { importScreen } from '../screens/import/index.js';
 import type { RecipeDraft, DraftIngredientLine, Ingredient } from '../api/types.js';
 
 interface PostedLine {

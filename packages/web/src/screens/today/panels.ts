@@ -1,18 +1,19 @@
-// Today screen panel builders — split out of today.ts to stay under the
-// file-length limit. Every function here is a pure render: it takes already-
-// loaded data (never fetches) and a handful of callbacks, and returns DOM.
+// Today screen panel builders — stats, slots, spoiling.
 //
-// Recipe titles come from today.ts's `recipesById`, built once from
-// listAllRecipes() — the same lookup plan-cell.ts's own entryTitle()
+// Every function here is a pure render: it takes already-loaded data (never
+// fetches) and a handful of callbacks, and returns DOM.
+//
+// Recipe titles come from the screen's `recipesById`, built once from
+// listAllRecipes() — the same lookup plan/cell.ts's own entryTitle()
 // uses, so a recipe-backed entry shows its real title here too, not an id.
 
-import type { Route } from '../router.js';
-import type { MealPlanEntry, PantryItem, Recipe, Slot } from '../api/types.js';
-import { SLOTS } from '../api/types.js';
-import { el, button } from '../ui/dom.js';
-import { formatQuantity, toNumber } from '../format/quantity.js';
-import { finnishWeekdayLong, finnishDate, daysUntil, daysRemainingLabel } from '../format/date.js';
-import { rampColor, statusLabel, applyRamp } from '../format/expiry.js';
+import type { Route } from '../../router.js';
+import type { MealPlanEntry, PantryItem, Recipe, Slot } from '../../api/types.js';
+import { SLOTS } from '../../api/types.js';
+import { el, button } from '../../ui/dom.js';
+import { formatQuantity, toNumber } from '../../format/quantity.js';
+import { finnishWeekdayLong, finnishDate, daysUntil, daysRemainingLabel } from '../../format/date.js';
+import { rampColor, statusLabel, applyRamp } from '../../format/expiry.js';
 
 const SPOIL_COUNT = 5;
 
@@ -73,7 +74,7 @@ export interface SlotHandlers {
  * The substitute wins when set — that's the recipe a cook would actually
  * deduct from — with a graceful `(recipe)` fallback for an id the loaded
  * collection doesn't have (e.g. deleted after the plan was made). Mirrors
- * plan-cell.ts's own entryTitle() so the two screens agree on one entry.
+ * plan/cell.ts's own entryTitle() so the two screens agree on one entry.
  */
 export function entryTitle(entry: MealPlanEntry, recipesById: Map<string, Recipe>): string {
   const recipeId = entry.substituteRecipeId ?? entry.recipeId;

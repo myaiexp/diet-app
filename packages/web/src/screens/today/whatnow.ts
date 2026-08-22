@@ -1,12 +1,11 @@
 // Today screen: the "what now" action list and the first-run empty state.
-// Split out of today-panels.ts to stay under the file-length limit.
 
-import type { Route } from '../router.js';
-import type { MealPlanEntry, PantryItem, Recipe } from '../api/types.js';
-import { SLOTS } from '../api/types.js';
-import { el, button } from '../ui/dom.js';
-import { finnishWeekdayLong, addDays, isoToday } from '../format/date.js';
-import { entryTitle } from './today-panels.js';
+import type { Route } from '../../router.js';
+import type { MealPlanEntry, PantryItem, Recipe } from '../../api/types.js';
+import { SLOTS } from '../../api/types.js';
+import { el, button } from '../../ui/dom.js';
+import { finnishWeekdayLong, addDays, isoToday } from '../../format/date.js';
+import { entryTitle } from './panels.js';
 
 function whatNowRow(glyph: string, color: string, text: string, onClick: () => void): HTMLElement {
   const row = button('today-whatnow-row', '', onClick);

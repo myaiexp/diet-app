@@ -1,13 +1,13 @@
 // Recipe import: paste → extracting → review. Three sequential stages of one
 // screen (not tabs) — the design's tab strip is a mockup affordance.
 
-import type { Screen, ScreenContext } from '../router.js';
-import { el, button, errorPanel } from '../ui/dom.js';
-import { extractDraft } from '../api/recipe-import.js';
-import { userMessage, fieldErrors } from '../api/errors.js';
-import type { RecipeDraft } from '../api/types.js';
-import { mountReview } from './import-review.js';
-import '../css/import.css';
+import type { Screen, ScreenContext } from '../../router.js';
+import { el, button, errorPanel } from '../../ui/dom.js';
+import { extractDraft } from '../../api/recipe-import.js';
+import { userMessage, fieldErrors } from '../../api/errors.js';
+import type { RecipeDraft } from '../../api/types.js';
+import { mountReview } from './review.js';
+import '../../css/import.css';
 
 type Stage = 'paste' | 'extracting' | 'review';
 

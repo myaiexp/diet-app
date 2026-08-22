@@ -4,7 +4,7 @@
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 import { configureClient, resetClient } from '../api/client.js';
 import { closeModal, isModalOpen } from '../ui/modal.js';
-import { shoppingScreen } from '../screens/shopping.js';
+import { shoppingScreen } from '../screens/shopping/index.js';
 import type { ShoppingItem, ShoppingList, Ingredient } from '../api/types.js';
 
 function jsonResponse(status: number, body: unknown): Response {

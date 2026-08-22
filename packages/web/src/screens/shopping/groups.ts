@@ -7,8 +7,8 @@
 // the server put last inside its category has to stay last: re-sorting would
 // throw that ordering away.
 
-import type { ShoppingItem } from '../api/types.js';
-import { formatQuantity, toNumber } from '../format/quantity.js';
+import type { ShoppingItem } from '../../api/types.js';
+import { formatQuantity, toNumber } from '../../format/quantity.js';
 
 export const AISLE_ORDER = [
   'produce',

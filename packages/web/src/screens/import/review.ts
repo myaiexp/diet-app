@@ -1,20 +1,19 @@
 // The reconciliation pane: draft fields + per-line ingredient binding.
-// Split out of import.ts to stay under the 300-line file limit.
 
-import type { ScreenContext } from '../router.js';
-import { el, button } from '../ui/dom.js';
-import { field, textInput, errorBox, showError, hideError } from '../ui/form.js';
-import { attachIngredientSearch } from '../ui/ingredient-picker.js';
-import { say } from '../ui/toast.js';
-import { confirmRecipe } from '../api/recipe-import.js';
-import { userMessage, fieldErrors } from '../api/errors.js';
+import type { ScreenContext } from '../../router.js';
+import { el, button } from '../../ui/dom.js';
+import { field, textInput, errorBox, showError, hideError } from '../../ui/form.js';
+import { attachIngredientSearch } from '../../ui/ingredient-picker.js';
+import { say } from '../../ui/toast.js';
+import { confirmRecipe } from '../../api/recipe-import.js';
+import { userMessage, fieldErrors } from '../../api/errors.js';
 import type {
   RecipeDraft,
   DraftIngredientLine,
   RecipeCreate,
   RecipeLineInput,
   MatchKind,
-} from '../api/types.js';
+} from '../../api/types.js';
 
 export type LineState = 'bound' | 'assumed' | 'unresolved';
 
