@@ -6,34 +6,18 @@
 // set or leave it, and it cannot change recipeId/substituteRecipeId/servings,
 // so there is nothing this file could let the user edit anyway.
 
-import type { MealPlanEntry, Recipe, Slot, EntryStatus } from '../../api/types.js';
+import type { MealPlanEntry, Recipe, Slot } from '../../api/types.js';
 import { SLOTS } from '../../api/types.js';
 import { el, button } from '../../ui/dom.js';
 import { finnishWeekday, finnishDate } from '../../format/date.js';
+import { entryTitle, STATUS_LABEL } from '../../format/entry.js';
 import { toNumber } from '../../format/quantity.js';
-
-const STATUS_LABEL: Record<EntryStatus, { text: string; cls: string }> = {
-  planned: { text: 'planned', cls: 'label' },
-  cooked: { text: 'cooked', cls: 'label label-green' },
-  skipped: { text: 'skipped', cls: 'label label-red' },
-  substituted: { text: 'substituted', cls: 'label label-orange' },
-};
 
 export interface CellHandlers {
   onEmpty(date: string, slot: Slot): void;
   onPlanned(entry: MealPlanEntry): void;
   onCooked(entry: MealPlanEntry): void;
   onReopen(entry: MealPlanEntry): void;
-}
-
-/** Recipe title (+ notes) for a recipe-backed entry, else the freeform note. */
-function entryTitle(entry: MealPlanEntry, recipesById: Map<string, Recipe>): string {
-  const recipeId = entry.substituteRecipeId ?? entry.recipeId;
-  if (recipeId) {
-    const title = recipesById.get(recipeId)?.title ?? '(recipe)';
-    return entry.notes ? `${title} · ${entry.notes}` : title;
-  }
-  return entry.freeformNote ?? '(untitled)';
 }
 
 function buildFilledCell(

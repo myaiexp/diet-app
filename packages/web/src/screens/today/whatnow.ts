@@ -5,7 +5,7 @@ import type { MealPlanEntry, PantryItem, Recipe } from '../../api/types.js';
 import { SLOTS } from '../../api/types.js';
 import { el, button } from '../../ui/dom.js';
 import { finnishWeekdayLong, addDays, isoToday } from '../../format/date.js';
-import { entryTitle } from './panels.js';
+import { entryTitle } from '../../format/entry.js';
 
 function whatNowRow(glyph: string, color: string, text: string, onClick: () => void): HTMLElement {
   const row = button('today-whatnow-row', '', onClick);

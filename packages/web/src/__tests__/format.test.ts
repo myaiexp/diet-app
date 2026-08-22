@@ -1,4 +1,4 @@
-// Display formatting: quantities, Finnish dates, the expiry ramp
+// Display formatting: quantities, Finnish dates, the expiry ramp, meal-plan entries
 
 import { describe, test, expect } from 'vitest';
 import { formatQuantity, formatNumber, toNumber } from '../format/quantity.js';
@@ -13,6 +13,8 @@ import {
   isoWeekNumber,
 } from '../format/date.js';
 import { rampColor, statusLabel } from '../format/expiry.js';
+import { entryTitle, STATUS_LABEL } from '../format/entry.js';
+import type { EntryStatus, MealPlanEntry, Recipe } from '../api/types.js';
 
 describe('formatQuantity', () => {
   test('formats above 100 to the nearest 5', () => {
@@ -93,5 +95,96 @@ describe('expiry ramp', () => {
   test('labels a status for the pill', () => {
     expect(statusLabel('use_today')).toBe('use today');
     expect(statusLabel('expired')).toBe('expired');
+  });
+});
+
+function makeRecipe(id: string, title: string): Recipe {
+  return {
+    id,
+    title,
+    sourceType: 'manual',
+    sourceUrl: null,
+    parentRecipeId: null,
+    steps: [],
+    prepTime: null,
+    totalTime: null,
+    servings: 2,
+    effortScore: null,
+    tags: null,
+    cuisineType: null,
+    userRating: null,
+    timesCooked: 0,
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+  };
+}
+
+function makeEntry(overrides: Partial<MealPlanEntry> = {}): MealPlanEntry {
+  return {
+    id: 'e1',
+    date: '2026-08-04',
+    slot: 'dinner',
+    recipeId: null,
+    freeformNote: null,
+    servings: '2',
+    status: 'planned',
+    substituteRecipeId: null,
+    notes: null,
+    createdAt: '2026-01-01T00:00:00.000Z',
+    updatedAt: '2026-01-01T00:00:00.000Z',
+    ...overrides,
+  };
+}
+
+describe('entryTitle', () => {
+  const recipes = new Map<string, Recipe>([
+    ['r-soup', makeRecipe('r-soup', 'Lohikeitto')],
+    ['r-sub', makeRecipe('r-sub', 'Substitute Dish')],
+  ]);
+
+  test('resolves a recipe-backed entry from the collection', () => {
+    expect(entryTitle(makeEntry({ recipeId: 'r-soup' }), recipes)).toBe('Lohikeitto');
+  });
+
+  test('substituteRecipeId wins over recipeId — that is the dish that gets cooked', () => {
+    expect(
+      entryTitle(makeEntry({ recipeId: 'r-soup', substituteRecipeId: 'r-sub' }), recipes),
+    ).toBe('Substitute Dish');
+  });
+
+  test('falls back to (recipe) when the id is missing from the loaded collection', () => {
+    expect(entryTitle(makeEntry({ recipeId: 'r-gone' }), recipes)).toBe('(recipe)');
+  });
+
+  test('appends notes to a recipe title, not to a freeform note', () => {
+    expect(entryTitle(makeEntry({ recipeId: 'r-soup', notes: 'extra dill' }), recipes)).toBe(
+      'Lohikeitto · extra dill',
+    );
+    expect(entryTitle(makeEntry({ freeformNote: 'Leftovers', notes: 'extra dill' }), recipes)).toBe(
+      'Leftovers',
+    );
+  });
+
+  test('uses the freeform note when there is no recipe, else (untitled)', () => {
+    expect(entryTitle(makeEntry({ freeformNote: 'Leftovers' }), recipes)).toBe('Leftovers');
+    expect(entryTitle(makeEntry(), recipes)).toBe('(untitled)');
+  });
+
+  test('a recipeId beats a freeform note on the same entry', () => {
+    expect(entryTitle(makeEntry({ recipeId: 'r-soup', freeformNote: 'Leftovers' }), recipes)).toBe(
+      'Lohikeitto',
+    );
+  });
+});
+
+describe('STATUS_LABEL', () => {
+  test('covers every EntryStatus with a visible label and the matching pill class', () => {
+    const expected: Record<EntryStatus, { text: string; cls: string }> = {
+      planned: { text: 'planned', cls: 'label' },
+      cooked: { text: 'cooked', cls: 'label label-green' },
+      skipped: { text: 'skipped', cls: 'label label-red' },
+      substituted: { text: 'substituted', cls: 'label label-orange' },
+    };
+    expect(STATUS_LABEL).toEqual(expected);
   });
 });

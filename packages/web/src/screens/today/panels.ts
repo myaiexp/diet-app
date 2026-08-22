@@ -4,8 +4,8 @@
 // fetches) and a handful of callbacks, and returns DOM.
 //
 // Recipe titles come from the screen's `recipesById`, built once from
-// listAllRecipes() — the same lookup plan/cell.ts's own entryTitle()
-// uses, so a recipe-backed entry shows its real title here too, not an id.
+// listAllRecipes() and formatted through entryTitle() so a recipe-backed
+// entry shows its real title here too, not an id.
 
 import type { Route } from '../../router.js';
 import type { MealPlanEntry, PantryItem, Recipe, Slot } from '../../api/types.js';
@@ -13,6 +13,7 @@ import { SLOTS } from '../../api/types.js';
 import { el, button } from '../../ui/dom.js';
 import { formatQuantity, toNumber } from '../../format/quantity.js';
 import { finnishWeekdayLong, finnishDate, daysUntil, daysRemainingLabel } from '../../format/date.js';
+import { entryTitle, STATUS_LABEL } from '../../format/entry.js';
 import { rampColor, statusLabel, applyRamp } from '../../format/expiry.js';
 
 const SPOIL_COUNT = 5;
@@ -70,31 +71,9 @@ export interface SlotHandlers {
   onRate(entry: MealPlanEntry): void;
 }
 
-/**
- * The substitute wins when set — that's the recipe a cook would actually
- * deduct from — with a graceful `(recipe)` fallback for an id the loaded
- * collection doesn't have (e.g. deleted after the plan was made). Mirrors
- * plan/cell.ts's own entryTitle() so the two screens agree on one entry.
- */
-export function entryTitle(entry: MealPlanEntry, recipesById: Map<string, Recipe>): string {
-  const recipeId = entry.substituteRecipeId ?? entry.recipeId;
-  if (recipeId) {
-    const title = recipesById.get(recipeId)?.title ?? '(recipe)';
-    return entry.notes ? `${title} · ${entry.notes}` : title;
-  }
-  return entry.freeformNote ?? '(untitled)';
-}
-
 function entryMeta(entry: MealPlanEntry): string {
   return `${toNumber(entry.servings)} serv`;
 }
-
-const STATUS_LABEL: Record<MealPlanEntry['status'], string> = {
-  planned: 'label',
-  cooked: 'label label-green',
-  skipped: 'label label-red',
-  substituted: 'label label-orange',
-};
 
 function buildFilledSlot(
   slot: Slot,
@@ -104,6 +83,7 @@ function buildFilledSlot(
   handlers: SlotHandlers,
 ): HTMLElement {
   const dimmed = entry.status === 'cooked' && rated;
+  const status = STATUS_LABEL[entry.status];
   const row = el(
     'div',
     { class: `row today-slot-row${dimmed ? ' is-dimmed' : ''}` },
@@ -114,7 +94,7 @@ function buildFilledSlot(
       el('div', { class: 'row-title text-pretty' }, entryTitle(entry, recipesById)),
       el('div', { class: 'row-meta' }, entryMeta(entry)),
     ),
-    el('span', { class: STATUS_LABEL[entry.status] }, entry.status),
+    el('span', { class: status.cls }, status.text),
   );
   if (entry.status === 'cooked' && !rated) {
     row.appendChild(button('btn btn-sm', 'rate', () => handlers.onRate(entry)));
