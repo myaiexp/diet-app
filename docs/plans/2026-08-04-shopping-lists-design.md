@@ -147,7 +147,7 @@ fire.
 > walked chronologically, consuming lots FEFO with an availability date of
 > `max(entryDate, today)`. The paragraph above describes the original behaviour
 > only. It also changed what `quantityInPantry` means (coverage of this week's
-> demand, capped at `quantityNeeded` — not raw stock); see CLAUDE.md.
+> demand, capped at `quantityNeeded` — not raw stock); see `docs/shopping-lists.md`.
 
 **Net.** `netToBuy = max(0, needed - inPantry)`, rounded to 6 decimals like
 `cook-deduct`. Rows where `netToBuy` is 0 are **kept**, not dropped —

@@ -44,11 +44,12 @@ const hasDb = Boolean(TEST_DB_URL);
 const db = hasDb ? createDb(TEST_DB_URL!) : null;
 const app = db ? createApp(db) : null;
 
-// LOUD GATE: `describe.skipIf` alone reports 16 quiet skips, which is how this
+// LOUD GATE: `describe.skipIf` alone reports 19 quiet skips, which is how this
 // suite went 4 commits without ever executing — the SQL it is the only cover
 // for (tags @>, unnest, ON CONFLICT, relational with:, numeric FEFO math) was
 // unverified the whole time. An unset TEST_DATABASE_URL now fails the run.
 // Opting out is possible but has to be deliberate: DIET_APP_SKIP_DB_TESTS=1.
+// The db package has the same gate over its 4 import-products-sql tests.
 const SKIP_DB_TESTS = process.env.DIET_APP_SKIP_DB_TESTS === '1';
 
 describe('integration DB gate', () => {

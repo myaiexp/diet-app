@@ -36,7 +36,7 @@ export function ingredientsRoutes(db: Db): Hono {
       .where(conditions.length ? and(...conditions) : undefined)
       // Alphabetical catalog browse. The id tie-break is what makes paging
       // safe: without a total order Postgres may return the same row on two
-      // pages and never return another (see the ordering rule in CLAUDE.md).
+      // pages and never return another (see the ordering rule in docs/api-conventions.md).
       .orderBy(asc(ingredients.name), asc(ingredients.id))
       .limit(limit)
       .offset(offset);

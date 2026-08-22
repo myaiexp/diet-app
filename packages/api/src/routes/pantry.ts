@@ -29,7 +29,7 @@ export function pantryRoutes(db: Db): Hono {
   // ingredientId, and every consumer needs the name, alias and category to
   // render it — without the join a 50-row page costs 50 follow-up requests,
   // one per row, growing with the pantry. This is the `with:` case the
-  // relational API exists for (see the Drizzle API rule in CLAUDE.md).
+  // relational API exists for (see the Drizzle API rule in docs/api-conventions.md).
   app.get('/', async (c) => {
     const { limit, offset } = getPagination(c);
     const rows = await db.query.pantryItems.findMany({
