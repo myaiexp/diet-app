@@ -1,6 +1,7 @@
 // Recipe reads/writes. Scaling is the API's job — never multiply client-side.
 
 import { apiGet, apiSend } from './client.js';
+import { fetchAllPages } from './pagination.js';
 import type {
   Recipe,
   RecipeWithIngredients,
@@ -18,6 +19,13 @@ export interface RecipeQuery {
 
 export function listRecipes(query: RecipeQuery = {}): Promise<Recipe[]> {
   return apiGet<Recipe[]>('/recipes', { ...query });
+}
+
+/** Every recipe matching `query`, drained page by page. */
+export function listAllRecipes(
+  query: Omit<RecipeQuery, 'limit' | 'offset'> = {},
+): Promise<Recipe[]> {
+  return fetchAllPages((page) => listRecipes({ ...query, ...page }));
 }
 
 /**

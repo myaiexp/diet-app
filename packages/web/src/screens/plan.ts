@@ -13,12 +13,13 @@ import type { Screen, ScreenContext } from '../router.js';
 import type { MealPlanEntry, Recipe, Slot } from '../api/types.js';
 import { SLOTS } from '../api/types.js';
 import { getWeek } from '../api/meal-plans.js';
+import { listAllRecipes } from '../api/recipes.js';
 import { userMessage } from '../api/errors.js';
 import { el, button, errorPanel, loadingRow } from '../ui/dom.js';
 import { say } from '../ui/toast.js';
 import { openCookFlow } from '../modals/cook-flow.js';
 import { mondayOf, addDays, isoToday, isoWeekNumber } from '../format/date.js';
-import { openAddEntry, fetchRecipeCollection } from './add-entry.js';
+import { openAddEntry } from './add-entry.js';
 import { buildDayColumn, openEditEntry, type CellHandlers } from './plan-cell.js';
 
 const DAY_COUNT = 7;
@@ -102,7 +103,7 @@ export function planScreen(): Screen {
   async function loadWeek(): Promise<void> {
     bodyEl.replaceChildren(loadingRow('loading week…'));
     try {
-      const [weekEntries, recipes] = await Promise.all([getWeek(monday), fetchRecipeCollection()]);
+      const [weekEntries, recipes] = await Promise.all([getWeek(monday), listAllRecipes()]);
       if (destroyed) return;
       entries = weekEntries;
       recipesById = new Map(recipes.map((r) => [r.id, r]));

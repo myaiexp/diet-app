@@ -3,7 +3,7 @@
 // The deduction table always comes from GET .../cook-preview (FEFO: soonest expiry,
 // then opened-before-unopened, then oldest createdAt — computed server-side, never
 // re-derived here). Ingredient names and lot dates aren't on the preview response, so
-// they're resolved once per modal open from getRecipe() and listPantry(), not per row.
+// they're resolved once per modal open from getRecipe() and listAllPantry(), not per row.
 
 import '../css/cook.css';
 import { openModal, closeModal } from '../ui/modal.js';
@@ -13,7 +13,7 @@ import { formatQuantity, toNumber } from '../format/quantity.js';
 import { finnishDate, finnishWeekday, daysUntil } from '../format/date.js';
 import { previewCook, cook, patchEntry } from '../api/meal-plans.js';
 import { getRecipe } from '../api/recipes.js';
-import { listPantry } from '../api/pantry.js';
+import { listAllPantry } from '../api/pantry.js';
 import { isApiError, userMessage } from '../api/errors.js';
 import type {
   MealPlanEntry,
@@ -196,7 +196,7 @@ export function openCookConfirm(opts: CookConfirmOptions): void {
 
   async function init(): Promise<void> {
     updateWarning();
-    const pantryLoad = listPantry({ limit: 200 })
+    const pantryLoad = listAllPantry()
       .then((rows) => {
         pantryById = new Map(rows.map((r) => [r.id, r]));
       })

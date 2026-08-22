@@ -12,7 +12,7 @@
 
 import type { MealPlanEntry, MealPlanCreate, Recipe, Slot } from '../api/types.js';
 import { createEntry } from '../api/meal-plans.js';
-import { listRecipes } from '../api/recipes.js';
+import { listAllRecipes } from '../api/recipes.js';
 import { el, button } from '../ui/dom.js';
 import { field, errorBox, showError } from '../ui/form.js';
 import { openModal, closeModal } from '../ui/modal.js';
@@ -20,27 +20,12 @@ import { say } from '../ui/toast.js';
 import { userMessage, fieldErrors } from '../api/errors.js';
 import { finnishWeekday, finnishDate } from '../format/date.js';
 
-// The API's own max page size (see pagination.ts) — one request covers any
-// collection this app will realistically have; a first-run install has zero.
-const RECIPE_PAGE_LIMIT = 200;
 const CONTENT_MSG = 'Pick a recipe, or type a note — one of the two is required.';
 
 export interface AddEntryOptions {
   date: string;
   slot: Slot;
   onCreated: (entry: MealPlanEntry) => void;
-}
-
-/** All recipes for the picker, one page loop like recipes.ts's own fetch-all. */
-export async function fetchRecipeCollection(): Promise<Recipe[]> {
-  const all: Recipe[] = [];
-  let offset = 0;
-  for (;;) {
-    const page = await listRecipes({ limit: RECIPE_PAGE_LIMIT, offset });
-    all.push(...page);
-    if (page.length < RECIPE_PAGE_LIMIT) return all;
-    offset += RECIPE_PAGE_LIMIT;
-  }
 }
 
 export interface RecipeOrNoteSelection {
@@ -192,7 +177,7 @@ export function openAddEntry(opts: AddEntryOptions): void {
     width: 420,
   });
 
-  void fetchRecipeCollection()
+  void listAllRecipes()
     .then((recipes) => picker.setRecipes(recipes))
     .catch((e: unknown) => showError(err, userMessage(e)));
 }

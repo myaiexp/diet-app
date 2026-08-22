@@ -1,6 +1,7 @@
 // Pantry CRUD — the list arrives spoilage-first; never re-sort it
 
 import { apiGet, apiSend } from './client.js';
+import { fetchAllPages } from './pagination.js';
 import type { PantryItem, PantryCreate, PantryPatch } from './types.js';
 
 export interface PageQuery {
@@ -14,6 +15,11 @@ export interface PageQuery {
  */
 export function listPantry(page: PageQuery = {}): Promise<PantryItem[]> {
   return apiGet<PantryItem[]>('/pantry', { ...page });
+}
+
+/** The whole pantry, drained page by page. Not a substitute for the pantry screen's load-more. */
+export function listAllPantry(): Promise<PantryItem[]> {
+  return fetchAllPages((page) => listPantry(page));
 }
 
 export function getPantryItem(id: string): Promise<PantryItem> {

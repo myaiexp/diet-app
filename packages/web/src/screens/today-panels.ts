@@ -3,7 +3,7 @@
 // loaded data (never fetches) and a handful of callbacks, and returns DOM.
 //
 // Recipe titles come from today.ts's `recipesById`, built once from
-// fetchRecipeCollection() — the same lookup plan-cell.ts's own entryTitle()
+// listAllRecipes() — the same lookup plan-cell.ts's own entryTitle()
 // uses, so a recipe-backed entry shows its real title here too, not an id.
 
 import type { Route } from '../router.js';

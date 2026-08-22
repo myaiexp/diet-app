@@ -4,8 +4,8 @@
 
 import '../css/recipes.css';
 import type { Screen, ScreenContext } from '../router.js';
-import { listRecipes } from '../api/recipes.js';
-import { listPantry } from '../api/pantry.js';
+import { listAllRecipes } from '../api/recipes.js';
+import { listAllPantry } from '../api/pantry.js';
 import type { Recipe, PantryItem } from '../api/types.js';
 import { el, button, errorPanel, loadingRow } from '../ui/dom.js';
 import { userMessage, fieldErrors } from '../api/errors.js';
@@ -13,31 +13,6 @@ import { say } from '../ui/toast.js';
 import { createRecipeDetail, type DetailHandle } from './recipe-detail.js';
 
 const TAG_OPTIONS = ['quick', 'fish', 'vegetarian', 'oven', 'no-cook'];
-// The API's own max page size — one request covers any collection this small
-// app will realistically have, and the loop below handles the boundary if not.
-const PAGE_LIMIT = 200;
-
-async function fetchAllRecipes(tags?: string): Promise<Recipe[]> {
-  const all: Recipe[] = [];
-  let offset = 0;
-  for (;;) {
-    const page = await listRecipes({ tags, limit: PAGE_LIMIT, offset });
-    all.push(...page);
-    if (page.length < PAGE_LIMIT) return all;
-    offset += PAGE_LIMIT;
-  }
-}
-
-async function fetchAllPantry(): Promise<PantryItem[]> {
-  const all: PantryItem[] = [];
-  let offset = 0;
-  for (;;) {
-    const page = await listPantry({ limit: PAGE_LIMIT, offset });
-    all.push(...page);
-    if (page.length < PAGE_LIMIT) return all;
-    offset += PAGE_LIMIT;
-  }
-}
 
 function recipeMeta(r: Recipe): string {
   const parts: string[] = [];
@@ -114,7 +89,7 @@ export function recipesScreen(): Screen {
       async function retag(listPanel: HTMLElement, onSelect: (id: string) => void): Promise<void> {
         const tags = selectedTags.size ? [...selectedTags].join(',') : undefined;
         try {
-          const recipes = await fetchAllRecipes(tags);
+          const recipes = await listAllRecipes(tags ? { tags } : {});
           renderList(listPanel, recipes, onSelect);
           if (recipes[0]) {
             onSelect(recipes[0].id);
@@ -164,7 +139,7 @@ export function recipesScreen(): Screen {
         async function refreshAfterFork(panel: HTMLElement, selectId: string): Promise<void> {
           const tags = selectedTags.size ? [...selectedTags].join(',') : undefined;
           try {
-            const refreshed = await fetchAllRecipes(tags);
+            const refreshed = await listAllRecipes(tags ? { tags } : {});
             renderList(panel, refreshed, onSelect);
             await detailHandle?.show(selectId);
             markSelected(panel, selectId);
@@ -177,7 +152,7 @@ export function recipesScreen(): Screen {
       async function loadInitial(): Promise<void> {
         root.replaceChildren(loadingRow('loading recipes…'));
         try {
-          const [recipes, pantry] = await Promise.all([fetchAllRecipes(), fetchAllPantry()]);
+          const [recipes, pantry] = await Promise.all([listAllRecipes(), listAllPantry()]);
           pantryById = new Map(pantry.map((p) => [p.ingredientId, p]));
           ctx.setSubtitle(`${recipes.length} in collection · filter by tag`);
           if (recipes.length === 0) {

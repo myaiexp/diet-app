@@ -255,6 +255,44 @@ describe('spoiling panel', () => {
     const names = [...root.querySelectorAll('.today-spoil-row .row-title')].map((n) => n.textContent);
     expect(names).toEqual(['Dill', 'Salmon', 'Quark', 'Milk', 'Spinach']);
   });
+
+  test('counts every pantry item, not just the API default page of 50', async () => {
+    // The real API defaults to 50 when `limit` is omitted. A mock that
+    // mimics that default is what would have caught today.ts calling
+    // listPantry() with no paging — the unbounded mock used elsewhere
+    // silently hid the truncation.
+    const pantry = Array.from({ length: 51 }, (_, i) =>
+      makeItem({
+        id: `p-${i}`,
+        ingredientId: `ing-${i}`,
+        status: 'expired',
+        ingredient: makeIngredient({ id: `ing-${i}`, name: `Item ${i}` }),
+      }),
+    );
+    fetchMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const u = new URL(typeof input === 'string' ? input : input.toString(), 'http://localhost');
+      const method = (init?.method ?? 'GET').toUpperCase();
+      if (method === 'GET' && u.pathname === `/api/meal-plans/week/${MONDAY}`) {
+        return jsonResponse(200, []);
+      }
+      if (method === 'GET' && u.pathname === '/api/pantry') {
+        const limit = Number(u.searchParams.get('limit') ?? 50);
+        const offset = Number(u.searchParams.get('offset') ?? 0);
+        return jsonResponse(200, pantry.slice(offset, offset + limit));
+      }
+      if (method === 'GET' && u.pathname === '/api/recipes') {
+        return jsonResponse(200, []);
+      }
+      throw new Error(`unhandled request: ${method} ${u.pathname}`);
+    });
+
+    const root = mountRoot();
+    await todayScreen().mount(root, makeCtx());
+
+    const cellFor = (key: string) =>
+      [...root.querySelectorAll('.stat-cell')].find((c) => c.querySelector('.stat-key')?.textContent === key);
+    expect(cellFor('expired')?.querySelector('.stat-value')?.textContent).toBe('51');
+  });
 });
 
 describe('request budget', () => {
