@@ -84,7 +84,7 @@
   padding: 8px 2px 0;
 }
 
-/* ===== Add-entry / edit-entry forms (shared: add-entry.ts, plan-cell.ts) ===== */
+/* ===== Add-entry / edit-entry forms (shared: modals/add-entry.ts, ui/recipe-or-note.ts) ===== */
 
 .add-entry-form, .plan-edit-form {
   display: flex;

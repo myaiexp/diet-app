@@ -2,8 +2,8 @@
 //
 // Rows never re-sort what the API returns (spoilage order, id tie-break) and
 // always render the API's `status` — days-remaining is display-only maths on
-// top of it, never a substitute for it. See form.ts for the add/edit
-// modals.
+// top of it, never a substitute for it. See modals/pantry-form.ts for the
+// add/edit modals.
 
 import '../../css/pantry.css';
 import type { Screen, ScreenContext } from '../../router.js';
@@ -14,7 +14,7 @@ import { userMessage } from '../../api/errors.js';
 import { el, button, errorPanel, loadingRow } from '../../ui/dom.js';
 import { say } from '../../ui/toast.js';
 import { attachIngredientSearch, INGREDIENT_SEARCH_PLACEHOLDER } from '../../ui/ingredient-picker.js';
-import { openAddItemModal, openEditItemModal } from './form.js';
+import { openAddItemModal, openEditItemModal } from '../../modals/pantry-form.js';
 import { buildPantryRow } from './row.js';
 
 const PAGE_SIZE = 50;
