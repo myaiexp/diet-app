@@ -13,8 +13,8 @@ import type { MealPlanEntry, Recipe, Slot } from '../../api/types.js';
 import { SLOTS } from '../../api/types.js';
 import { getWeek } from '../../api/meal-plans.js';
 import { listAllRecipes } from '../../api/recipes.js';
-import { userMessage } from '../../api/errors.js';
-import { el, button, errorPanel, loadingRow } from '../../ui/dom.js';
+import { el, button } from '../../ui/dom.js';
+import { loadInto } from '../../ui/async.js';
 import { say } from '../../ui/toast.js';
 import { openCookFlow } from '../../modals/cook-flow.js';
 import { mondayOf, addDays, isoToday, isoWeekNumber } from '../../format/date.js';
@@ -40,7 +40,6 @@ function weekRangeLabel(monday: string): string {
 }
 
 export function planScreen(): Screen {
-  let destroyed = false;
   let ctx: ScreenContext;
   let monday = mondayOf(isoToday());
   let entries: MealPlanEntry[] = [];
@@ -101,19 +100,19 @@ export function planScreen(): Screen {
   }
 
   async function loadWeek(): Promise<void> {
-    bodyEl.replaceChildren(loadingRow('loading week…'));
-    try {
-      const [weekEntries, recipes] = await Promise.all([getWeek(monday), listAllRecipes()]);
-      if (destroyed) return;
-      entries = weekEntries;
-      recipesById = new Map(recipes.map((r) => [r.id, r]));
-      updateSubtitle();
-      updateToolbar();
-      renderGrid();
-    } catch (err) {
-      if (destroyed) return;
-      bodyEl.replaceChildren(errorPanel(userMessage(err), () => void loadWeek()));
-    }
+    await loadInto({
+      container: bodyEl,
+      label: 'loading week…',
+      isStale: () => ctx.isStale(),
+      load: () => Promise.all([getWeek(monday), listAllRecipes()]),
+      render: ([weekEntries, recipes]) => {
+        entries = weekEntries;
+        recipesById = new Map(recipes.map((r) => [r.id, r]));
+        updateSubtitle();
+        updateToolbar();
+        renderGrid();
+      },
+    });
   }
 
   function changeWeek(deltaDays: number): void {
@@ -125,7 +124,6 @@ export function planScreen(): Screen {
     title: 'Meal plan',
     async mount(root, screenCtx) {
       ctx = screenCtx;
-      destroyed = false;
       monday = mondayOf(isoToday());
       entries = [];
 
@@ -150,9 +148,6 @@ export function planScreen(): Screen {
       root.append(toolbar, bodyEl);
 
       await loadWeek();
-    },
-    unmount() {
-      destroyed = true;
     },
   };
 }

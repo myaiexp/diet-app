@@ -1,27 +1,28 @@
 // Router must ignore a stale async mount: a slow screen that writes after
 // navigation must not paint over the screen the user is now looking at.
 //
-// The fixture deliberately has no unmount/destroyed guard — that is the
-// screen discipline the router is not allowed to rely on. Recipes today is
-// the production example (it `root.replaceChildren` after await with no
-// check); Today/pantry/profile already no-op on unmount, so they would not
-// pin this.
+// The fixture deliberately has no unmount/isStale guard — that is the
+// screen discipline the router is not allowed to rely on. Screens share
+// loadInto + ctx.isStale(); this test pins the router's own pane swap,
+// which still has to hold even if a screen paints after await.
 
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 import { closeModal } from '../ui/modal.js';
 
-const { gate } = vi.hoisted(() => {
+const { gate, captured } = vi.hoisted(() => {
   const gate: { promise: Promise<void>; release: () => void } = {
     promise: Promise.resolve(),
     release: () => {},
   };
-  return { gate };
+  const captured: { isStale: (() => boolean) | null } = { isStale: null };
+  return { gate, captured };
 });
 
 vi.mock('../screens/today/index.js', () => ({
   todayScreen: () => ({
     title: 'Today',
-    async mount(root: HTMLElement) {
+    async mount(root: HTMLElement, ctx: { isStale: () => boolean }) {
+      captured.isStale = ctx.isStale;
       await gate.promise;
       const marker = document.createElement('div');
       marker.className = 'stale-today';
@@ -50,6 +51,7 @@ function flush(ms = 0): Promise<void> {
 beforeEach(() => {
   document.body.replaceChildren();
   closeModal();
+  captured.isStale = null;
   gate.promise = new Promise<void>((resolve) => {
     gate.release = resolve;
   });
@@ -71,5 +73,18 @@ describe('router stale mount', () => {
     expect(shell.content.textContent).toContain('#385');
     expect(shell.content.querySelector('.stale-today')).toBeNull();
     expect(shell.content.textContent).not.toContain('STALE-TODAY');
+  });
+
+  test('ctx.isStale is false during the active mount and true after navigation', async () => {
+    boot('/today');
+    await flush(0);
+    expect(captured.isStale).not.toBeNull();
+    expect(captured.isStale!()).toBe(false);
+
+    navigate('/nutrition');
+    expect(captured.isStale!()).toBe(true);
+
+    gate.release();
+    await flush(20);
   });
 });

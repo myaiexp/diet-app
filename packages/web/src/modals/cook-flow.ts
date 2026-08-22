@@ -7,7 +7,11 @@ import type { MealPlanEntry, CookResult } from '../api/types.js';
 
 export interface CookFlowOptions {
   entry: MealPlanEntry;
-  /** Called after a successful cook (and again after feedback), with the fresh entry. */
+  /**
+   * After a cook (and again after feedback), a skip, or an already-cooked
+   * 409 — with the fresh entry, so the plan grid can refresh. Skip does not
+   * open the feedback modal.
+   */
   onCooked?: (result: CookResult) => void;
 }
 
@@ -39,6 +43,10 @@ export function openCookFlow(opts: CookFlowOptions): void {
         deductions: [],
         shortfalls: [],
       });
+    },
+    onSkipped: (skipped) => {
+      // Same refresh path as a cook so the grid cannot stay on `planned`.
+      onCooked?.({ entry: skipped, deductions: [], shortfalls: [] });
     },
   });
 }

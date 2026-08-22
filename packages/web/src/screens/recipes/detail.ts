@@ -11,7 +11,8 @@ import { getRecipe, patchRecipe, forkRecipe } from '../../api/recipes.js';
 import type {
   Recipe, RecipeWithIngredients, RecipeIngredientLine, RecipeLineInput, RecipePatch, PantryItem, SourceType,
 } from '../../api/types.js';
-import { el, button, errorPanel, loadingRow } from '../../ui/dom.js';
+import { el, button, errorPanel } from '../../ui/dom.js';
+import { loadInto } from '../../ui/async.js';
 import { field, textInput } from '../../ui/form.js';
 import { userMessage, fieldErrors } from '../../api/errors.js';
 import { say } from '../../ui/toast.js';
@@ -102,17 +103,17 @@ export function createRecipeDetail(container: HTMLElement, deps: DetailDeps): De
     clearTimer();
     currentId = id;
     const myToken = ++token;
-    container.replaceChildren(loadingRow('loading recipe…'));
-    try {
-      const data = await getRecipe(id);
-      if (myToken !== token) return;
-      detail = data;
-      servings = data.servings;
-      render();
-    } catch (err) {
-      if (myToken !== token) return;
-      container.replaceChildren(errorPanel(userMessage(err), () => void show(id)));
-    }
+    await loadInto({
+      container,
+      label: 'loading recipe…',
+      isStale: () => myToken !== token,
+      load: () => getRecipe(id),
+      render: (data) => {
+        detail = data;
+        servings = data.servings;
+        render();
+      },
+    });
   }
 
   function showEmpty(message: string): void {

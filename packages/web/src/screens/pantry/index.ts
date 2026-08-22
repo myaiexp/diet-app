@@ -11,7 +11,8 @@ import type { Ingredient, PantryItem, PantryLocation } from '../../api/types.js'
 import { LOCATIONS } from '../../api/types.js';
 import { listPantry } from '../../api/pantry.js';
 import { userMessage } from '../../api/errors.js';
-import { el, button, errorPanel, loadingRow } from '../../ui/dom.js';
+import { el, button } from '../../ui/dom.js';
+import { loadInto } from '../../ui/async.js';
 import { say } from '../../ui/toast.js';
 import { attachIngredientSearch, INGREDIENT_SEARCH_PLACEHOLDER } from '../../ui/ingredient-picker.js';
 import { openAddItemModal, openEditItemModal } from '../../modals/pantry-form.js';
@@ -25,7 +26,6 @@ export function pantryScreen(): Screen {
   let activeLocation: PantryLocation | 'all' = 'all';
   let hasMore = false;
   let loadingMore = false;
-  let destroyed = false;
   let ctx: ScreenContext;
 
   let listEl: HTMLElement;
@@ -130,14 +130,14 @@ export function pantryScreen(): Screen {
     renderList();
     try {
       const rows = await loadPage(items.length, PAGE_SIZE);
-      if (destroyed) return;
+      if (ctx.isStale()) return;
       items = [...items, ...rows];
       hasMore = rows.length === PAGE_SIZE;
     } catch (e) {
       say(userMessage(e), 'error');
     } finally {
       loadingMore = false;
-      if (!destroyed) {
+      if (!ctx.isStale()) {
         renderChips();
         renderList();
         updateSubtitle();
@@ -150,7 +150,7 @@ export function pantryScreen(): Screen {
     const limit = Math.max(PAGE_SIZE, items.length);
     try {
       const rows = await loadPage(0, limit);
-      if (destroyed) return;
+      if (ctx.isStale()) return;
       items = rows;
       hasMore = rows.length === limit;
       renderChips();
@@ -162,19 +162,19 @@ export function pantryScreen(): Screen {
   }
 
   async function loadInitial(): Promise<void> {
-    listEl.replaceChildren(loadingRow('loading pantry…'));
-    try {
-      const rows = await loadPage(0, PAGE_SIZE);
-      if (destroyed) return;
-      items = rows;
-      hasMore = rows.length === PAGE_SIZE;
-      renderChips();
-      renderList();
-      updateSubtitle();
-    } catch (e) {
-      if (destroyed) return;
-      listEl.replaceChildren(errorPanel(userMessage(e), () => void loadInitial()));
-    }
+    await loadInto({
+      container: listEl,
+      label: 'loading pantry…',
+      isStale: () => ctx.isStale(),
+      load: () => loadPage(0, PAGE_SIZE),
+      render: (rows) => {
+        items = rows;
+        hasMore = rows.length === PAGE_SIZE;
+        renderChips();
+        renderList();
+        updateSubtitle();
+      },
+    });
   }
 
   return {
@@ -182,7 +182,6 @@ export function pantryScreen(): Screen {
     subtitle: 'spoilage order',
     async mount(root, screenCtx) {
       ctx = screenCtx;
-      destroyed = false;
       items = [];
       activeLocation = 'all';
 
@@ -219,9 +218,6 @@ export function pantryScreen(): Screen {
       root.append(bar, el('div', { class: 'section-header' }, 'sorted by expiry · soonest first'), listEl, tailEl);
 
       await loadInitial();
-    },
-    unmount() {
-      destroyed = true;
     },
   };
 }

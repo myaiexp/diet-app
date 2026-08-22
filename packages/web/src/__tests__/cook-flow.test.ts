@@ -151,9 +151,15 @@ function buildRouter(opts: RouteOpts = {}) {
       return jsonResponse(200, { ...deductionPlan(servings), servings });
     }
     if (method === 'PATCH' && u.pathname === '/api/meal-plans/e1') {
-      const body = init?.body ? (JSON.parse(String(init.body)) as { servings?: number }) : {};
+      const body = init?.body
+        ? (JSON.parse(String(init.body)) as { servings?: number; status?: MealPlanEntry['status'] })
+        : {};
       if (typeof body.servings === 'number') state.servings = body.servings;
-      return jsonResponse(200, { ...ENTRY, servings: String(state.servings) });
+      return jsonResponse(200, {
+        ...ENTRY,
+        servings: String(state.servings),
+        ...(body.status ? { status: body.status } : {}),
+      });
     }
     if (method === 'POST' && u.pathname === '/api/meal-plans/e1/cook') {
       if (opts.cookStatus === 409) return jsonResponse(409, { error: 'Meal plan entry already cooked' });
@@ -313,6 +319,49 @@ describe('cook confirm', () => {
     expect(document.querySelector('.modal-title')!.textContent).toMatch(/^Cooked\. \d+ items deducted\.$/);
     expect(onCooked).toHaveBeenCalledOnce();
     expect(onCooked.mock.calls[0]![0]).toMatchObject({ entry: { status: 'cooked' } });
+  });
+
+  test('mark skipped PATCHes status and refreshes the caller with the skipped entry', async () => {
+    fetchMock.mockImplementation(buildRouter());
+    const onCooked = vi.fn();
+    openCookFlow({ entry: ENTRY, onCooked });
+
+    await vi.waitFor(() => expect(document.querySelector('.cook-skip')).not.toBeNull());
+    click('.cook-skip');
+
+    await vi.waitFor(() => expect(isModalOpen()).toBe(false));
+    expect(calledWith('/api/meal-plans/e1', 'PATCH')).toBe(true);
+    expect(lastBody('/api/meal-plans/e1', 'PATCH')).toEqual({ status: 'skipped' });
+    expect(calledWith('/api/meal-plans/e1/cook', 'POST')).toBe(false);
+    expect(document.querySelector('.cook-chip-row')).toBeNull();
+    expect(document.querySelector('.toast')?.textContent).toMatch(/skipped/i);
+    expect(onCooked).toHaveBeenCalledOnce();
+    expect(onCooked.mock.calls[0]![0]).toMatchObject({
+      entry: { id: 'e1', status: 'skipped' },
+      deductions: [],
+      shortfalls: [],
+    });
+  });
+
+  test('a failed skip leaves the modal up and does not fire onCooked', async () => {
+    fetchMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+      const u = new URL(typeof input === 'string' ? input : input.toString(), 'http://localhost');
+      const method = (init?.method ?? 'GET').toUpperCase();
+      if (method === 'PATCH' && u.pathname === '/api/meal-plans/e1') {
+        return jsonResponse(500, { error: 'could not skip' });
+      }
+      return buildRouter()(input, init);
+    });
+    const onCooked = vi.fn();
+    openCookFlow({ entry: ENTRY, onCooked });
+
+    await vi.waitFor(() => expect(document.querySelector('.cook-skip')).not.toBeNull());
+    click('.cook-skip');
+
+    await vi.waitFor(() => expect(document.querySelector('.toast')?.textContent).toMatch(/could not skip|unexpected error/i));
+    expect(isModalOpen()).toBe(true);
+    expect(onCooked).not.toHaveBeenCalled();
+    expect(calledWith('/api/meal-plans/e1/cook', 'POST')).toBe(false);
   });
 
   test('surfaces a 409 from cook as "already cooked" and refreshes the entry', async () => {

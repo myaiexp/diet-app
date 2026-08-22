@@ -8,7 +8,8 @@
 import '../css/cook.css';
 import { openModal, closeModal } from '../ui/modal.js';
 import { say } from '../ui/toast.js';
-import { el, button, errorPanel, loadingRow } from '../ui/dom.js';
+import { el, button, loadingRow } from '../ui/dom.js';
+import { loadInto } from '../ui/async.js';
 import { formatQuantity, toNumber } from '../format/quantity.js';
 import { finnishDate, finnishWeekday, daysUntil } from '../format/date.js';
 import { previewCook, cook, patchEntry } from '../api/meal-plans.js';
@@ -27,10 +28,12 @@ import type {
 
 export interface CookConfirmOptions {
   entry: MealPlanEntry;
-  /** A cook (or "mark skipped") committed successfully. */
+  /** A cook committed successfully. */
   onCooked: (result: CookResult) => void;
   /** cook() 409'd — someone else cooked this entry first. */
   onAlreadyCooked: () => void;
+  /** mark skipped PATCHed successfully — not a cook, no feedback. */
+  onSkipped: (entry: MealPlanEntry) => void;
 }
 
 const DEBOUNCE_MS = 150;
@@ -94,6 +97,7 @@ export function openCookConfirm(opts: CookConfirmOptions): void {
   let pantryById = new Map<string, PantryItem>();
   let debounceTimer: ReturnType<typeof setTimeout> | null = null;
   let busy = false;
+  let previewGen = 0;
 
   const tableEl = el('div', { class: 'cook-table' }, loadingRow('loading preview…'));
   const warningEl = el('div', { class: 'cook-warning' });
@@ -185,13 +189,14 @@ export function openCookConfirm(opts: CookConfirmOptions): void {
   }
 
   async function loadPreview(): Promise<void> {
-    tableEl.replaceChildren(loadingRow('loading preview…'));
-    try {
-      const preview = await previewCook(entry.id, servings);
-      renderPreview(preview);
-    } catch (err) {
-      tableEl.replaceChildren(errorPanel(userMessage(err), () => void loadPreview()));
-    }
+    const gen = ++previewGen;
+    await loadInto({
+      container: tableEl,
+      label: 'loading preview…',
+      isStale: () => gen !== previewGen,
+      load: () => previewCook(entry.id, servings),
+      render: renderPreview,
+    });
   }
 
   async function init(): Promise<void> {
@@ -223,12 +228,12 @@ export function openCookConfirm(opts: CookConfirmOptions): void {
   async function handleSkip(): Promise<void> {
     if (busy) return;
     setBusy(true);
+    previewGen++;
     try {
-      // The caller's own refresh path picks this up; skipping isn't a cook, so
-      // there's no CookResult to hand back through opts.onCooked.
-      await patchEntry(entry.id, { status: 'skipped' });
+      const updated = await patchEntry(entry.id, { status: 'skipped' });
       closeModal();
       say('Marked skipped.');
+      opts.onSkipped(updated);
     } catch (err) {
       say(userMessage(err), 'error');
       setBusy(false);
@@ -238,6 +243,7 @@ export function openCookConfirm(opts: CookConfirmOptions): void {
   async function handleCommit(): Promise<void> {
     if (busy) return;
     setBusy(true);
+    previewGen++;
     try {
       if (servings !== initialServings) {
         await patchEntry(entry.id, { servings });

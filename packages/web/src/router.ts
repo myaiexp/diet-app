@@ -32,6 +32,8 @@ export interface ScreenContext {
   /** Update the header bar's subtitle once data has loaded. */
   setSubtitle(text: string): void;
   navigate(to: Route): void;
+  /** True once this mount has been superseded by another route. */
+  isStale(): boolean;
 }
 
 export interface Screen {
@@ -124,6 +126,7 @@ async function render(route: Route): Promise<void> {
       if (token === renderToken) activeShell()?.setTitle(screen.title, text);
     },
     navigate,
+    isStale: () => token !== renderToken,
   };
 
   await screen.mount(pane, ctx);

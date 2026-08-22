@@ -15,7 +15,8 @@ import type {
 } from '../../api/types.js';
 import { getCurrentShoppingList, patchShoppingItem, deleteShoppingItem } from '../../api/shopping.js';
 import { userMessage, isApiError } from '../../api/errors.js';
-import { el, button, errorPanel, loadingRow } from '../../ui/dom.js';
+import { el, button } from '../../ui/dom.js';
+import { loadInto } from '../../ui/async.js';
 import { say } from '../../ui/toast.js';
 import { isoToday, isoWeekNumber } from '../../format/date.js';
 import { groupByAisle, categoryColor } from './groups.js';
@@ -34,7 +35,6 @@ export function shoppingScreen(): Screen {
   // Per-shop, never persisted — the API takes includeOptional on the generate
   // body rather than storing it on the list, so it resets with the screen.
   let includeOptional = false;
-  let destroyed = false;
   let ctx: ScreenContext;
   let bodyEl: HTMLElement;
 
@@ -64,11 +64,11 @@ export function shoppingScreen(): Screen {
     render();
     try {
       const updated = await patchShoppingItem(item.id, { bought: !wasBought });
-      if (destroyed) return;
+      if (ctx.isStale()) return;
       replaceItem(item.id, updated);
       render();
     } catch (e) {
-      if (destroyed) return;
+      if (ctx.isStale()) return;
       replaceItem(item.id, { bought: wasBought });
       render();
       say(userMessage(e), 'error');
@@ -79,7 +79,7 @@ export function shoppingScreen(): Screen {
     if (!list || list.status === 'done') return;
     try {
       await deleteShoppingItem(item.id);
-      if (destroyed) return;
+      if (ctx.isStale()) return;
       removeItemLocal(item.id);
       render();
       updateSubtitle();
@@ -95,7 +95,7 @@ export function shoppingScreen(): Screen {
   }
 
   function handleGenerated(newList: ShoppingList, skipped: SkippedGenerateLine[]): void {
-    if (destroyed) return;
+    if (ctx.isStale()) return;
     list = newList;
     notices = skipped.length > 0 ? [describeSkippedGenerate(skipped)] : [];
     render();
@@ -103,7 +103,7 @@ export function shoppingScreen(): Screen {
   }
 
   function handleCompleted(newList: ShoppingList, skipped: SkippedCompleteItem[]): void {
-    if (destroyed) return;
+    if (ctx.isStale()) return;
     list = newList;
     if (skipped.length > 0) notices = [...notices, describeSkippedComplete(skipped)];
     render();
@@ -111,7 +111,7 @@ export function shoppingScreen(): Screen {
   }
 
   function handleItemCreated(item: ShoppingItem): void {
-    if (destroyed || !list) return;
+    if (ctx.isStale() || !list) return;
     list = { ...list, items: [...list.items, item] };
     render();
     updateSubtitle();
@@ -205,7 +205,7 @@ export function shoppingScreen(): Screen {
   }
 
   function render(): void {
-    if (destroyed) return;
+    if (ctx.isStale()) return;
     if (!list) {
       renderFirstRun();
       return;
@@ -234,24 +234,26 @@ export function shoppingScreen(): Screen {
   }
 
   async function loadCurrent(): Promise<void> {
-    bodyEl.replaceChildren(loadingRow('loading shopping list…'));
-    try {
-      const row = await getCurrentShoppingList();
-      if (destroyed) return;
-      list = row;
-      notices = [];
-      render();
-      updateSubtitle();
-    } catch (e) {
-      if (destroyed) return;
-      if (isApiError(e) && e.status === 404) {
-        list = null;
+    await loadInto({
+      container: bodyEl,
+      label: 'loading shopping list…',
+      isStale: () => ctx.isStale(),
+      load: getCurrentShoppingList,
+      render: (row) => {
+        list = row;
+        notices = [];
         render();
         updateSubtitle();
-        return;
-      }
-      bodyEl.replaceChildren(errorPanel(userMessage(e), () => void loadCurrent()));
-    }
+      },
+      onError: (e) => {
+        if (isApiError(e) && e.status === 404) {
+          list = null;
+          render();
+          updateSubtitle();
+          return true;
+        }
+      },
+    });
   }
 
   return {
@@ -259,15 +261,11 @@ export function shoppingScreen(): Screen {
     subtitle: 'aisle order · needed minus pantry',
     async mount(root, screenCtx) {
       ctx = screenCtx;
-      destroyed = false;
       list = null;
       notices = [];
       bodyEl = el('div', { class: 'shopping-body' });
       root.append(bodyEl);
       await loadCurrent();
-    },
-    unmount() {
-      destroyed = true;
     },
   };
 }

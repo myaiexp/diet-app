@@ -19,8 +19,8 @@ import type { MealPlanEntry, PantryItem, Recipe } from '../../api/types.js';
 import { getWeek, getFeedback } from '../../api/meal-plans.js';
 import { listAllPantry } from '../../api/pantry.js';
 import { listAllRecipes } from '../../api/recipes.js';
-import { userMessage } from '../../api/errors.js';
-import { el, errorPanel, loadingRow } from '../../ui/dom.js';
+import { el } from '../../ui/dom.js';
+import { loadInto } from '../../ui/async.js';
 import { openAddEntry } from '../../modals/add-entry.js';
 import { openCookFlow, openFeedbackModal } from '../../modals/cook-flow.js';
 import { mondayOf, isoToday, finnishWeekdayLong, finnishDate } from '../../format/date.js';
@@ -47,7 +47,6 @@ async function loadRatedMap(cookedToday: MealPlanEntry[]): Promise<Map<string, b
 }
 
 export function todayScreen(): Screen {
-  let destroyed = false;
   let ctx: ScreenContext;
   let rootEl: HTMLElement;
   let monday = mondayOf(isoToday());
@@ -108,46 +107,43 @@ export function todayScreen(): Screen {
   }
 
   async function loadAll(): Promise<void> {
-    rootEl.replaceChildren(loadingRow('loading today…'));
-    try {
-      monday = mondayOf(isoToday());
-      const [weekEntries, pantry, recipes] = await Promise.all([
-        getWeek(monday),
-        listAllPantry(),
-        listAllRecipes(),
-      ]);
-      if (destroyed) return;
-      entries = weekEntries;
-      pantryItems = pantry;
-      recipesById = new Map(recipes.map((r) => [r.id, r]));
-
-      const todayIso = isoToday();
-      const cookedToday = entries.filter((e) => e.date === todayIso && e.status === 'cooked');
-      ratedByEntryId = await loadRatedMap(cookedToday);
-      if (destroyed) return;
-
-      updateSubtitle();
-      render();
-    } catch (err) {
-      if (destroyed) return;
-      rootEl.replaceChildren(errorPanel(userMessage(err), () => void loadAll()));
-    }
+    await loadInto({
+      container: rootEl,
+      label: 'loading today…',
+      isStale: () => ctx.isStale(),
+      load: async () => {
+        monday = mondayOf(isoToday());
+        const [weekEntries, pantry, recipes] = await Promise.all([
+          getWeek(monday),
+          listAllPantry(),
+          listAllRecipes(),
+        ]);
+        const todayIso = isoToday();
+        const cookedToday = weekEntries.filter((e) => e.date === todayIso && e.status === 'cooked');
+        const rated = await loadRatedMap(cookedToday);
+        return { weekEntries, pantry, recipes, rated };
+      },
+      render: ({ weekEntries, pantry, recipes, rated }) => {
+        entries = weekEntries;
+        pantryItems = pantry;
+        recipesById = new Map(recipes.map((r) => [r.id, r]));
+        ratedByEntryId = rated;
+        updateSubtitle();
+        render();
+      },
+    });
   }
 
   return {
     title: 'Today',
     async mount(root, screenCtx) {
       ctx = screenCtx;
-      destroyed = false;
       rootEl = root;
       entries = [];
       pantryItems = [];
       recipesById = new Map();
       ratedByEntryId = new Map();
       await loadAll();
-    },
-    unmount() {
-      destroyed = true;
     },
   };
 }

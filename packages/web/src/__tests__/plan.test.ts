@@ -29,7 +29,7 @@ function mountRoot(): HTMLElement {
 }
 
 function makeCtx() {
-  return { setSubtitle: vi.fn(), navigate: vi.fn() };
+  return { setSubtitle: vi.fn(), navigate: vi.fn(), isStale: () => false };
 }
 
 function makeRecipe(overrides: Partial<Recipe> = {}): Recipe {
@@ -278,6 +278,27 @@ describe('add-entry affordance', () => {
 });
 
 describe('planned and cooked cell clicks', () => {
+  test('mark skipped from a planned cell refreshes the grid to skipped', async () => {
+    const entry = makeEntry({ id: 'e-planned', slot: 'dinner', status: 'planned', freeformNote: 'Lohikeitto' });
+    fetchMock.mockImplementation(buildRouter({ entries: [entry] }));
+    const root = mountRoot();
+    await planScreen().mount(root, makeCtx());
+
+    root.querySelector<HTMLButtonElement>('.plan-cell[data-status="planned"]')!.click();
+    await vi.waitFor(() => expect(document.querySelector('.cook-skip')).not.toBeNull());
+    document.querySelector<HTMLButtonElement>('.cook-skip')!.click();
+
+    await vi.waitFor(() => expect(isModalOpen()).toBe(false));
+    const patch = fetchMock.mock.calls.find(
+      ([url, init]) =>
+        pathOf(String(url)) === '/api/meal-plans/e-planned' && (init as RequestInit | undefined)?.method === 'PATCH',
+    );
+    expect(patch).toBeTruthy();
+    expect(JSON.parse(String((patch![1] as RequestInit).body))).toEqual({ status: 'skipped' });
+    expect(root.querySelector('.plan-cell[data-status="skipped"]')).not.toBeNull();
+    expect(root.querySelector('.plan-cell[data-status="planned"]')).toBeNull();
+  });
+
   test('opens the cook modal from a planned cell', async () => {
     const entry = makeEntry({ id: 'e-planned', slot: 'dinner', status: 'planned', freeformNote: 'Lohikeitto' });
     fetchMock.mockImplementation(buildRouter({ entries: [entry] }));

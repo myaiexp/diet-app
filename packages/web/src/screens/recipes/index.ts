@@ -6,7 +6,8 @@ import type { Screen, ScreenContext } from '../../router.js';
 import { listAllRecipes } from '../../api/recipes.js';
 import { listAllPantry } from '../../api/pantry.js';
 import type { Recipe, PantryItem } from '../../api/types.js';
-import { el, button, errorPanel, loadingRow } from '../../ui/dom.js';
+import { el, button } from '../../ui/dom.js';
+import { loadInto } from '../../ui/async.js';
 import { userMessage, fieldErrors } from '../../api/errors.js';
 import { say } from '../../ui/toast.js';
 import { createRecipeDetail, type DetailHandle } from './detail.js';
@@ -149,20 +150,22 @@ export function recipesScreen(): Screen {
       }
 
       async function loadInitial(): Promise<void> {
-        root.replaceChildren(loadingRow('loading recipes…'));
-        try {
-          const [recipes, pantry] = await Promise.all([listAllRecipes(), listAllPantry()]);
-          pantryById = new Map(pantry.map((p) => [p.ingredientId, p]));
-          ctx.setSubtitle(`${recipes.length} in collection · filter by tag`);
-          if (recipes.length === 0) {
-            renderCollectionEmpty();
-            return;
-          }
-          await buildLayout(recipes);
-        } catch (err) {
-          const message = [userMessage(err), ...fieldErrors(err)].join(' ');
-          root.replaceChildren(errorPanel(message, () => void loadInitial()));
-        }
+        await loadInto({
+          container: root,
+          label: 'loading recipes…',
+          isStale: () => ctx.isStale(),
+          load: () => Promise.all([listAllRecipes(), listAllPantry()]),
+          render: async ([recipes, pantry]) => {
+            pantryById = new Map(pantry.map((p) => [p.ingredientId, p]));
+            ctx.setSubtitle(`${recipes.length} in collection · filter by tag`);
+            if (recipes.length === 0) {
+              renderCollectionEmpty();
+              return;
+            }
+            await buildLayout(recipes);
+          },
+          formatError: (err) => [userMessage(err), ...fieldErrors(err)].join(' '),
+        });
       }
 
       await loadInitial();

@@ -38,7 +38,7 @@ function mountRoot(): HTMLElement {
 }
 
 function makeCtx() {
-  return { setSubtitle: vi.fn(), navigate: vi.fn() };
+  return { setSubtitle: vi.fn(), navigate: vi.fn(), isStale: () => false };
 }
 
 /** Fills the url field and clicks `extract draft`. */

@@ -3,6 +3,13 @@
 > Terminal `cooked`, FEFO deduction, and the feedback invariant. Design:
 > `docs/plans/2026-07-20-cook-flow-design.md`. `CLAUDE.md` keeps the map.
 
+## Skip is not a cook
+
+`mark skipped` PATCHes `{ status: 'skipped' }` and hands the updated entry
+back through the same `onCooked` callback the plan/today grids use to
+refresh. It must not open the feedback modal, and it must not leave the
+cell showing `planned`. `cooked` stays terminal via POST `/cook` only.
+
 ## `cooked` is terminal
 
 `cooked` is reachable only via `POST /meal-plans/:id/cook` (PATCH cannot set or

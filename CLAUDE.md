@@ -14,7 +14,9 @@ paragraph of "why", the why belongs in the linked subdoc.
   grouped by feature under `src/screens/<feature>/` (index.ts is the Screen
   factory; profile stays a single file at the top of `screens/`); modals in
   `src/modals/` next to the cook flow; one thin API module per resource
-  under `src/api/`, `base.css` from mase.fi).
+  under `src/api/`, `base.css` from mase.fi). Screen loads go through
+  `loadInto` (`packages/web/src/ui/async.ts`) and `ctx.isStale()` from the
+  router — never a module-local `destroyed` flag.
 - **Public URL**: `https://diet.mase.fi` — the app at `/`, its API at `/api/`
   (same origin). Auth (two independent gates), CORS, deploy, secrets, and the
   DB pool: **`docs/auth-deploy.md`**. Password rotation: `docs/db-rotation.md`.

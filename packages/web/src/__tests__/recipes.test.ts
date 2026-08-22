@@ -227,12 +227,12 @@ async function router(url: string, init: RequestInit = {}): Promise<Response> {
   throw new Error(`unhandled request: ${method} ${url}`);
 }
 
-async function mountScreen(): Promise<{ root: HTMLElement; ctx: { setSubtitle: ReturnType<typeof vi.fn>; navigate: ReturnType<typeof vi.fn> } }> {
+async function mountScreen(): Promise<{ root: HTMLElement; ctx: ScreenContext }> {
   const root = document.createElement('div');
   document.body.appendChild(root);
-  const ctx = { setSubtitle: vi.fn(), navigate: vi.fn() };
+  const ctx: ScreenContext = { setSubtitle: vi.fn(), navigate: vi.fn(), isStale: () => false };
   const screen = recipesScreen();
-  await screen.mount(root, ctx as unknown as ScreenContext);
+  await screen.mount(root, ctx);
   return { root, ctx };
 }
 

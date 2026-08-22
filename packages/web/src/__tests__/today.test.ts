@@ -33,7 +33,7 @@ function mountRoot(): HTMLElement {
 }
 
 function makeCtx() {
-  return { setSubtitle: vi.fn(), navigate: vi.fn() };
+  return { setSubtitle: vi.fn(), navigate: vi.fn(), isStale: () => false };
 }
 
 function makeIngredient(overrides: Partial<Ingredient> = {}): Ingredient {

@@ -11,7 +11,8 @@ import type { UserProfile, ProfilePatch, CookingSkill } from '../api/types.js';
 import { getProfile, patchProfile } from '../api/profile.js';
 import { getIngredient } from '../api/ingredients.js';
 import { userMessage, fieldErrors, isApiError } from '../api/errors.js';
-import { el, button, errorPanel, loadingRow } from '../ui/dom.js';
+import { el, button } from '../ui/dom.js';
+import { loadInto } from '../ui/async.js';
 import { field, errorBox, showError, hideError } from '../ui/form.js';
 import { attachIngredientSearch } from '../ui/ingredient-picker.js';
 import { say } from '../ui/toast.js';
@@ -230,16 +231,13 @@ function emptyProfileState(): HTMLElement {
 }
 
 export function profileScreen(): Screen {
-  let destroyed = false;
-
   return {
     title: 'Profile',
     subtitle: 'targets, restrictions, kit',
-    async mount(root: HTMLElement, _ctx: ScreenContext): Promise<void> {
-      destroyed = false;
+    async mount(root: HTMLElement, ctx: ScreenContext): Promise<void> {
       let dislikedNames = new Map<string, string>();
       function paint(profile: UserProfile): void {
-        if (destroyed) return;
+        if (ctx.isStale()) return;
         root.replaceChildren(el(
           'div', { class: 'profile-grid' },
           buildTargetsPanel(profile, paint),
@@ -255,21 +253,25 @@ export function profileScreen(): Screen {
         ));
       }
       async function load(): Promise<void> {
-        root.replaceChildren(loadingRow('loading profile…'));
-        try {
-          const profile = await getProfile();
-          if (destroyed) return;
-          dislikedNames = await resolveDislikedNames(profile.dislikedIngredientIds);
-          if (destroyed) return;
-          paint(profile);
-        } catch (e) {
-          if (destroyed) return;
-          if (isApiError(e) && e.status === 404) { root.replaceChildren(emptyProfileState()); return; }
-          root.replaceChildren(errorPanel(userMessage(e), () => void load()));
-        }
+        await loadInto({
+          container: root,
+          label: 'loading profile…',
+          isStale: () => ctx.isStale(),
+          load: async () => {
+            const profile = await getProfile();
+            dislikedNames = await resolveDislikedNames(profile.dislikedIngredientIds);
+            return profile;
+          },
+          render: paint,
+          onError: (e) => {
+            if (isApiError(e) && e.status === 404) {
+              root.replaceChildren(emptyProfileState());
+              return true;
+            }
+          },
+        });
       }
       await load();
     },
-    unmount(): void { destroyed = true; },
   };
 }
