@@ -4,6 +4,12 @@ import { apiSend } from './client.js';
 import { createRecipe } from './recipes.js';
 import type { RecipeImportResponse, RecipeCreate, RecipeWithIngredients } from './types.js';
 
+/**
+ * fetch-url caps at 10s and the AI client at 30s; a default 25s browser bound
+ * would abort a draft that's still going to land. Slack covers matching after.
+ */
+export const IMPORT_TIMEOUT_MS = 45_000;
+
 export interface ImportInput {
   /** Exactly one of url / text — sending both is a 400. */
   url?: string;
@@ -15,7 +21,9 @@ export interface ImportInput {
  * user confirms the reconciled draft through `confirmRecipe`.
  */
 export function extractDraft(input: ImportInput): Promise<RecipeImportResponse> {
-  return apiSend<RecipeImportResponse>('POST', '/recipes/import', input);
+  return apiSend<RecipeImportResponse>('POST', '/recipes/import', input, {
+    timeoutMs: IMPORT_TIMEOUT_MS,
+  });
 }
 
 /** Every line needs a real ingredientId, and at least one line must survive. */

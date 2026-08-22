@@ -24,6 +24,21 @@ export function isApiError(e: unknown): e is ApiError {
 const NETWORK =
   'The request never reached the server — check the connection and try again.';
 
+const TIMEOUT =
+  'The request timed out — check the connection and try again.';
+
+function isAbortLike(e: unknown): boolean {
+  // AbortSignal.timeout throws DOMException TimeoutError. Some engines still
+  // surface the abort as AbortError. Either way it's a bound firing, not a
+  // TypeError from a connection that never opened.
+  return (
+    typeof e === 'object' &&
+    e !== null &&
+    'name' in e &&
+    (e.name === 'TimeoutError' || e.name === 'AbortError')
+  );
+}
+
 /**
  * A sentence to show the user. Status wins over the body only where the body is
  * terser than the situation warrants (503 says "AI not configured", which means
@@ -31,6 +46,7 @@ const NETWORK =
  * string is the most specific thing anyone has.
  */
 export function userMessage(e: unknown): string {
+  if (isAbortLike(e)) return TIMEOUT;
   if (!isApiError(e)) {
     // fetch rejects (offline, DNS, TLS) with a TypeError carrying no useful text.
     return NETWORK;

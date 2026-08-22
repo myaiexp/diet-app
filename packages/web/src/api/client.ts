@@ -1,8 +1,16 @@
-// fetch wrapper: base URL, JSON bodies, one place status → ApiError happens
+// fetch wrapper: base URL, JSON bodies, request timeout, one place status → ApiError
 
 import { ApiError, type ApiErrorBody } from './errors.js';
 
 export type QueryParams = Record<string, string | number | boolean | undefined>;
+
+/**
+ * Default wall-clock bound for a browser request. Above the pool's
+ * `query_timeout` (20s) so a live query isn't racing the abort, well under
+ * "this screen is frozen." Recipe import overrides — fetch-url 10s + AI 30s
+ * would otherwise lose a request that is still going to succeed.
+ */
+export const REQUEST_TIMEOUT_MS = 25_000;
 
 interface ClientConfig {
   /** Same-origin: nginx serves the app and the API off one vhost. */
@@ -15,12 +23,15 @@ interface ClientConfig {
    * redirects to login. It is never a message we show.
    */
   onSessionExpired: () => void;
+  /** Default AbortSignal.timeout bound. Tests shorten this. */
+  timeoutMs: number;
 }
 
 const DEFAULTS: ClientConfig = {
   baseUrl: '/api',
   fetch: null,
   onSessionExpired: () => window.location.reload(),
+  timeoutMs: REQUEST_TIMEOUT_MS,
 };
 
 let config: ClientConfig = { ...DEFAULTS };
@@ -60,10 +71,14 @@ async function readBody(res: Response): Promise<unknown> {
 async function send<T>(
   method: string,
   path: string,
-  init: { params?: QueryParams; body?: unknown } = {},
+  init: { params?: QueryParams; body?: unknown; timeoutMs?: number } = {},
 ): Promise<T> {
   const doFetch = config.fetch ?? globalThis.fetch;
-  const options: RequestInit = { method, headers: {} };
+  const options: RequestInit = {
+    method,
+    headers: {},
+    signal: AbortSignal.timeout(init.timeoutMs ?? config.timeoutMs),
+  };
   if (init.body !== undefined) {
     options.headers = { 'content-type': 'application/json' };
     options.body = JSON.stringify(init.body);
@@ -92,6 +107,10 @@ export function apiSend<T>(
   method: 'POST' | 'PATCH' | 'DELETE',
   path: string,
   body?: unknown,
+  opts?: { timeoutMs?: number },
 ): Promise<T> {
-  return send<T>(method, path, body !== undefined ? { body } : {});
+  return send<T>(method, path, {
+    ...(body !== undefined ? { body } : {}),
+    ...(opts?.timeoutMs !== undefined ? { timeoutMs: opts.timeoutMs } : {}),
+  });
 }
