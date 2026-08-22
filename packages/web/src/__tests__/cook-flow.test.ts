@@ -240,6 +240,41 @@ describe('cook confirm', () => {
     expect(document.querySelector('.cook-item-shortfall')!.textContent).toBe('Dill — not in pantry — buy first');
   });
 
+  test('insufficient-stock count shortfalls use pieces, not pcs', async () => {
+    const recipe: RecipeWithIngredients = {
+      ...RECIPE,
+      recipeIngredients: [ingredientLine('eggs', 'Eggs', '4')],
+    };
+    fetchMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+      const u = new URL(typeof input === 'string' ? input : input.toString(), 'http://localhost');
+      const method = (init?.method ?? 'GET').toUpperCase();
+      if (method === 'GET' && u.pathname === '/api/recipes/r1') return jsonResponse(200, recipe);
+      if (method === 'GET' && u.pathname === '/api/pantry') return jsonResponse(200, []);
+      if (method === 'GET' && u.pathname === '/api/meal-plans/e1/cook-preview') {
+        return jsonResponse(200, {
+          deductions: [],
+          shortfalls: [
+            {
+              ingredientId: 'eggs',
+              dimension: 'count',
+              requested: 4,
+              available: 1,
+              reason: 'insufficient_stock',
+            },
+          ],
+          servings: 4,
+        });
+      }
+      throw new Error(`unhandled request: ${method} ${u.pathname}`);
+    });
+
+    openCookFlow({ entry: ENTRY });
+
+    await vi.waitFor(() => expect(document.querySelector('.cook-item-shortfall')).not.toBeNull());
+    expect(document.querySelector('.cook-item-shortfall')!.textContent).toBe('Eggs — short 3 pieces');
+    expect(document.querySelector('.cook-item-shortfall')!.textContent).not.toMatch(/\bpcs\b/);
+  });
+
   test('shows the irreversibility warning above the commit button', async () => {
     fetchMock.mockImplementation(buildRouter());
     openCookFlow({ entry: ENTRY });

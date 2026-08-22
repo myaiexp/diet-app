@@ -11,6 +11,7 @@ import { say } from '../ui/toast.js';
 import { el, button, loadingRow } from '../ui/dom.js';
 import { loadInto } from '../ui/async.js';
 import { formatQuantity, toNumber } from '../format/quantity.js';
+import { baseUnit } from '../format/units.js';
 import { finnishDate, finnishWeekday, daysUntil } from '../format/date.js';
 import { previewCook, cook, patchEntry } from '../api/meal-plans.js';
 import { getRecipe } from '../api/recipes.js';
@@ -23,7 +24,6 @@ import type {
   Deduction,
   Shortfall,
   PantryItem,
-  Dimension,
 } from '../api/types.js';
 
 export interface CookConfirmOptions {
@@ -37,7 +37,6 @@ export interface CookConfirmOptions {
 }
 
 const DEBOUNCE_MS = 150;
-const BASE_UNIT: Record<Dimension, string> = { mass: 'g', volume: 'ml', count: 'pcs' };
 
 /** How urgent the lot is — the second half of the provenance line. */
 function expiryLabel(expiresDate: string): string {
@@ -57,7 +56,7 @@ function shortfallText(s: Shortfall, name: string): string {
   if (s.reason === 'unit_mismatch') {
     return `${name} — units don't convert (mass/volume/count only)`;
   }
-  const unit = s.dimension ? BASE_UNIT[s.dimension] : '';
+  const unit = s.dimension ? baseUnit(s.dimension) : '';
   return `${name} — short ${formatQuantity(s.requested - s.available, unit)}`;
 }
 
