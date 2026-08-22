@@ -13,7 +13,7 @@ import type {
   Recipe, RecipeWithIngredients, RecipeIngredientLine, RecipeLineInput, RecipePatch, PantryItem, SourceType,
 } from '../api/types.js';
 import { el, button, errorPanel, loadingRow } from '../ui/dom.js';
-import { field } from '../ui/form.js';
+import { field, textInput } from '../ui/form.js';
 import { userMessage, fieldErrors } from '../api/errors.js';
 import { say } from '../ui/toast.js';
 import { openModal, closeModal } from '../ui/modal.js';
@@ -61,10 +61,6 @@ function pantryLabel(
   if (!item) return { text: 'to buy', cls: 'label label-tobuy' };
   if (item.status === 'expired') return { text: 'expired', cls: 'label label-red' };
   return { text: 'in pantry', cls: 'label label-green' };
-}
-
-function textInput(cls: string, value: string | number, extra: Record<string, string> = {}): HTMLInputElement {
-  return el('input', { class: cls ? `input ${cls}` : 'input', value, ...extra }) as HTMLInputElement;
 }
 
 function ingredientRow(line: RecipeIngredientLine, pantryById: Map<string, PantryItem>): HTMLElement {
@@ -185,14 +181,14 @@ export function createRecipeDetail(container: HTMLElement, deps: DetailDeps): De
       optional: line.optional ?? false,
       notes: line.notes,
       name: line.ingredient?.name ?? line.ingredientId,
-      qty: textInput('edit-qty-input', line.quantity, { type: 'number', step: 'any' }),
-      unit: textInput('edit-unit-input', line.unit),
+      qty: textInput(line.quantity, { class: 'edit-qty-input', type: 'number', step: 'any' }),
+      unit: textInput(line.unit, { class: 'edit-unit-input' }),
       removed: false,
     }));
-    const title = textInput('', base.title);
-    const servingsInput = textInput('', base.servings, { type: 'number', min: '1' });
-    const cuisine = textInput('', base.cuisineType ?? '');
-    const tags = textInput('', (base.tags ?? []).join(', '));
+    const title = textInput(base.title);
+    const servingsInput = textInput(base.servings, { type: 'number', min: '1' });
+    const cuisine = textInput(base.cuisineType ?? '');
+    const tags = textInput((base.tags ?? []).join(', '));
     const steps = el('textarea', { class: 'textarea' }) as HTMLTextAreaElement; // value is child text, not an attribute
     steps.value = base.steps.join('\n');
 

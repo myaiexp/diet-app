@@ -1,4 +1,4 @@
-// Debounced catalog search + pick-then-quantity form (pantry, shopping, profile)
+// Debounced catalog search + pick-then-quantity form (pantry, shopping, profile, import)
 
 import type { Ingredient } from '../api/types.js';
 import { searchIngredients } from '../api/ingredients.js';
@@ -7,7 +7,7 @@ import { el, button } from './dom.js';
 import { field, errorBox, showError, hideError } from './form.js';
 import { say } from './toast.js';
 
-const SEARCH_DEBOUNCE_MS = 200;
+export const SEARCH_DEBOUNCE_MS = 200;
 const SEARCH_LIMIT = 8;
 
 export const INGREDIENT_SEARCH_PLACEHOLDER = 'search ingredients — peruna, potato…';
@@ -18,6 +18,13 @@ const MSG_UNIT_REQUIRED = 'Unit is required.';
 export interface IngredientSearchOptions {
   /** Drop matches the caller already holds (e.g. disliked-ingredient chips). */
   filter?: (ing: Ingredient) => boolean;
+  renderResult?: (ing: Ingredient, pick: () => void) => HTMLElement;
+  emptyText?: string;
+  debounceMs?: number;
+  limit?: number;
+  /** Search `input.value` as soon as the helper attaches. */
+  immediate?: boolean;
+  searchingText?: string;
 }
 
 /** Debounced catalog search wired to an input + a results list under it. */
@@ -27,40 +34,63 @@ export function attachIngredientSearch(
   onPick: (ing: Ingredient) => void,
   opts: IngredientSearchOptions = {},
 ): void {
+  const debounceMs = opts.debounceMs ?? SEARCH_DEBOUNCE_MS;
+  const limit = opts.limit ?? SEARCH_LIMIT;
   let timer: ReturnType<typeof setTimeout> | null = null;
+  let seq = 0;
+
+  function emptyNode(text: string | undefined): HTMLElement {
+    // `.helper` is in base.css so import gets the muted empty copy even when
+    // the dropdown chrome is a wrap of small buttons, not pantry-search-*.
+    return el('p', { class: 'helper pantry-search-empty' }, text ?? 'no matches');
+  }
+
+  function defaultRow(ing: Ingredient): HTMLElement {
+    const row = button('pantry-search-result', '', () => onPick(ing));
+    const alias = ing.aliases?.[0];
+    row.append(el('span', {}, ing.name), alias ? el('span', { class: 'pantry-alias' }, alias) : '');
+    return row;
+  }
 
   async function runSearch(q: string): Promise<void> {
+    const my = ++seq;
     const needle = q.trim();
     if (!needle) {
       results.replaceChildren();
       return;
     }
+    if (opts.searchingText) {
+      results.replaceChildren(el('p', { class: 'helper' }, opts.searchingText));
+    }
     let matches: Ingredient[];
     try {
-      matches = await searchIngredients(needle, SEARCH_LIMIT);
+      matches = await searchIngredients(needle, limit);
     } catch (e) {
+      if (my !== seq) return;
       say(userMessage(e), 'error');
+      if (opts.searchingText) results.replaceChildren(emptyNode(opts.emptyText));
       return;
     }
+    if (my !== seq) return;
     if (opts.filter) matches = matches.filter(opts.filter);
     results.replaceChildren();
     if (matches.length === 0) {
-      results.appendChild(el('div', { class: 'pantry-search-empty' }, 'no matches'));
+      results.appendChild(emptyNode(opts.emptyText));
       return;
     }
     for (const ing of matches) {
-      const alias = ing.aliases?.[0];
-      const row = button('pantry-search-result', '', () => onPick(ing));
-      row.append(el('span', {}, ing.name), alias ? el('span', { class: 'pantry-alias' }, alias) : '');
-      results.appendChild(row);
+      const pick = (): void => onPick(ing);
+      results.appendChild(opts.renderResult ? opts.renderResult(ing, pick) : defaultRow(ing));
     }
   }
 
   input.addEventListener('input', () => {
     if (timer) clearTimeout(timer);
     const q = input.value;
-    timer = setTimeout(() => void runSearch(q), SEARCH_DEBOUNCE_MS);
+    timer = setTimeout(() => void runSearch(q), debounceMs);
   });
+
+  if (opts.immediate) void runSearch(input.value);
 }
 
 export function readQuantityUnit(

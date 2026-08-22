@@ -2,12 +2,13 @@
 
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 import { configureClient, resetClient } from '../api/client.js';
-import { el } from '../ui/dom.js';
+import { el, button } from '../ui/dom.js';
 import { errorBox } from '../ui/form.js';
 import {
   attachIngredientSearch,
   createIngredientQuantityForm,
   readQuantityUnit,
+  SEARCH_DEBOUNCE_MS,
 } from '../ui/ingredient-picker.js';
 import type { Ingredient } from '../api/types.js';
 
@@ -125,6 +126,58 @@ describe('attachIngredientSearch', () => {
 
     const names = [...results.querySelectorAll('.pantry-search-result')].map((n) => n.textContent);
     expect(names).toEqual(['Liver']);
+  });
+
+  test('renderResult replaces the default row', async () => {
+    fetchMock.mockResolvedValue(jsonResponse(200, [makeIngredient()]));
+    const input = el('input', { class: 'input', type: 'text' }) as HTMLInputElement;
+    const results = el('div');
+    attachIngredientSearch(input, results, vi.fn(), {
+      renderResult: (ing, pick) => button('btn btn-sm', ing.name, pick),
+    });
+    input.value = 'peruna';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    await flush(SEARCH_DEBOUNCE_MS + 50);
+    expect(results.querySelector('.pantry-search-result')).toBeNull();
+    expect(results.querySelector('.btn-sm')?.textContent).toBe('Potato');
+  });
+
+  test('immediate searches the current value without waiting for input', async () => {
+    fetchMock.mockResolvedValue(jsonResponse(200, [makeIngredient()]));
+    const input = el('input', { class: 'input', type: 'text', value: 'peruna' }) as HTMLInputElement;
+    const results = el('div');
+    document.body.append(input, results);
+    attachIngredientSearch(input, results, vi.fn(), { immediate: true });
+    await flush(20);
+    expect(fetchMock).toHaveBeenCalled();
+    expect(results.querySelector('.pantry-search-result')?.textContent).toContain('Potato');
+  });
+
+  test('ignores a stale response that arrives after a newer query', async () => {
+    const leek = makeIngredient({ id: 'ing-2', name: 'Leek', aliases: ['purjo'] });
+    let finishSlow: (value: Response) => void = () => {};
+    const slow = new Promise<Response>((resolve) => {
+      finishSlow = resolve;
+    });
+    fetchMock.mockImplementation(async (url: string) => {
+      const q = new URL(url, 'http://x').searchParams.get('q');
+      if (q === 'aa') return slow;
+      return jsonResponse(200, [leek]);
+    });
+    const input = el('input', { class: 'input', type: 'text' }) as HTMLInputElement;
+    const results = el('div');
+    attachIngredientSearch(input, results, vi.fn());
+    input.value = 'aa';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    await flush(SEARCH_DEBOUNCE_MS + 50);
+    input.value = 'leek';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    await flush(SEARCH_DEBOUNCE_MS + 50);
+    expect(results.querySelector('.pantry-search-result')?.textContent).toContain('Leek');
+    finishSlow(jsonResponse(200, [makeIngredient()]));
+    await flush(20);
+    expect(results.querySelector('.pantry-search-result')?.textContent).toContain('Leek');
+    expect(results.textContent).not.toContain('Potato');
   });
 });
 

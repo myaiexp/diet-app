@@ -1,7 +1,7 @@
 // Labeled field + helper-error box — shared form chrome next to el/button
 
 import '../css/form.css';
-import { el } from './dom.js';
+import { el, type Attrs } from './dom.js';
 
 export interface FieldOptions {
   /** Default `'div'` is the pantry-field stack (label span above the control). `'label'` wraps the control as a form-label. */
@@ -37,4 +37,26 @@ export function showError(box: HTMLElement, message: string, details: string[] =
 
 export function hideError(box: HTMLElement): void {
   box.classList.add('hidden');
+}
+
+/**
+ * `class` is extra classes on top of `.input`. `onChange` is opt-in — omit it
+ * for an uncontrolled field (recipe edit); pass it to self-wire `change`.
+ */
+export function textInput(
+  value: string | number,
+  attrs: Attrs = {},
+  onChange?: (value: string) => void,
+): HTMLInputElement {
+  const extraClass = typeof attrs.class === 'string' ? attrs.class : '';
+  const rest = { ...attrs };
+  delete rest.class;
+  const input = el('input', {
+    class: extraClass ? `input ${extraClass}` : 'input',
+    type: 'text',
+    value,
+    ...rest,
+  }) as HTMLInputElement;
+  if (onChange) input.addEventListener('change', () => onChange(input.value));
+  return input;
 }

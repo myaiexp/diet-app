@@ -2,7 +2,7 @@
 
 import { describe, test, expect } from 'vitest';
 import { el } from '../ui/dom.js';
-import { field, errorBox, showError, hideError } from '../ui/form.js';
+import { field, errorBox, showError, hideError, textInput } from '../ui/form.js';
 
 describe('field', () => {
   test('wraps a control in pantry-field chrome with a form-label', () => {
@@ -57,5 +57,35 @@ describe('errorBox / showError', () => {
     expect(box.classList.contains('helper-error')).toBe(true);
     expect(box.classList.contains('hidden')).toBe(true);
     expect(box.classList.contains('helper')).toBe(true);
+  });
+});
+
+describe('textInput', () => {
+  test('returns an uncontrolled .input with the given value', () => {
+    const input = textInput('Leek');
+    expect(input).toBeInstanceOf(HTMLInputElement);
+    expect(input.className).toBe('input');
+    expect(input.value).toBe('Leek');
+    expect(input.type).toBe('text');
+  });
+
+  test('composes an extra class and passes through attrs', () => {
+    const input = textInput(1.5, { class: 'edit-qty-input', type: 'number', step: 'any' });
+    expect(input.className).toBe('input edit-qty-input');
+    expect(input.type).toBe('number');
+    expect(input.getAttribute('step')).toBe('any');
+    expect(input.value).toBe('1.5');
+  });
+
+  test('wires onChange only when a handler is passed', () => {
+    const seen: string[] = [];
+    const wired = textInput('a', { class: 'import-qty' }, (v) => seen.push(v));
+    wired.value = 'b';
+    wired.dispatchEvent(new Event('change'));
+    expect(seen).toEqual(['b']);
+
+    const plain = textInput('a');
+    plain.value = 'c';
+    expect(() => plain.dispatchEvent(new Event('change'))).not.toThrow();
   });
 });

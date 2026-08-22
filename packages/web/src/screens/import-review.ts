@@ -3,9 +3,9 @@
 
 import type { ScreenContext } from '../router.js';
 import { el, button } from '../ui/dom.js';
-import { field, errorBox, showError, hideError } from '../ui/form.js';
+import { field, textInput, errorBox, showError, hideError } from '../ui/form.js';
+import { attachIngredientSearch } from '../ui/ingredient-picker.js';
 import { say } from '../ui/toast.js';
-import { searchIngredients } from '../api/ingredients.js';
 import { confirmRecipe } from '../api/recipe-import.js';
 import { userMessage, fieldErrors } from '../api/errors.js';
 import type {
@@ -13,7 +13,6 @@ import type {
   DraftIngredientLine,
   RecipeCreate,
   RecipeLineInput,
-  Ingredient,
   MatchKind,
 } from '../api/types.js';
 
@@ -29,9 +28,6 @@ export interface EditableLine {
   match: MatchKind;
   quantityInferred: boolean;
   query: string;
-  candidates: Ingredient[];
-  searched: boolean;
-  searching: boolean;
 }
 
 interface DraftMeta {
@@ -61,7 +57,7 @@ function toEditable(l: DraftIngredientLine): EditableLine {
   return {
     raw: l.rawName, ingredientId: l.ingredientId, quantity: l.quantity, unit: l.unit,
     optional: l.optional, notes: l.notes, match: l.match, quantityInferred: l.quantityInferred,
-    query: l.rawName, candidates: [], searched: false, searching: false,
+    query: l.rawName,
   };
 }
 
@@ -78,15 +74,10 @@ function importField(labelText: string, control: HTMLElement): HTMLElement {
 }
 
 function numberField(labelText: string, value: number | null, onChange: (v: number | null) => void) {
-  const input = el('input', { class: 'input', type: 'number', value: value ?? '' });
-  input.addEventListener('change', () => onChange(input.value.trim() === '' ? null : Number(input.value)));
-  return importField(labelText, input);
-}
-
-function textInput(cls: string, value: string, ariaLabel: string, onChange: (v: string) => void) {
-  const input = el('input', { class: `input ${cls}`, type: 'text', value, 'aria-label': ariaLabel });
-  input.addEventListener('change', () => onChange(input.value));
-  return input;
+  return importField(
+    labelText,
+    textInput(value ?? '', { type: 'number' }, (v) => onChange(v.trim() === '' ? null : Number(v))),
+  );
 }
 
 function buildFields(meta: DraftMeta, notify: () => void): HTMLElement {
@@ -118,7 +109,6 @@ function buildFields(meta: DraftMeta, notify: () => void): HTMLElement {
 export function mountReview(root: HTMLElement, ctx: ScreenContext, draft: RecipeDraft): void {
   const meta = toMeta(draft);
   const lines: EditableLine[] = draft.ingredients.map(toEditable);
-  const timers = new Map<number, ReturnType<typeof setTimeout>>();
   let saving = false;
 
   const head = el('div', { class: 'import-lines-head' });
@@ -169,7 +159,8 @@ export function mountReview(root: HTMLElement, ctx: ScreenContext, draft: Recipe
     const tint = state === 'bound' ? 'green' : state === 'assumed' ? 'orange' : 'red';
 
     const qty = textInput(
-      'import-qty', line.quantity === null ? '' : String(line.quantity), `quantity for ${line.raw}`,
+      line.quantity === null ? '' : String(line.quantity),
+      { class: 'import-qty', 'aria-label': `quantity for ${line.raw}` },
       (v) => {
         const n = v.trim() === '' ? NaN : Number(v);
         line.quantity = v.trim() === '' || Number.isNaN(n) ? null : n;
@@ -177,7 +168,11 @@ export function mountReview(root: HTMLElement, ctx: ScreenContext, draft: Recipe
         renderAll();
       },
     );
-    const unit = textInput('import-unit', line.unit, `unit for ${line.raw}`, (v) => { line.unit = v.trim(); });
+    const unit = textInput(
+      line.unit,
+      { class: 'import-unit', 'aria-label': `unit for ${line.raw}` },
+      (v) => { line.unit = v.trim(); },
+    );
 
     const row = el(
       'div', { class: `import-line import-line--${state}` },
@@ -190,7 +185,7 @@ export function mountReview(root: HTMLElement, ctx: ScreenContext, draft: Recipe
         qty, unit),
     );
 
-    if (state === 'unresolved' && !line.ingredientId) row.appendChild(buildCandidates(line, index));
+    if (state === 'unresolved' && !line.ingredientId) row.appendChild(buildCandidates(line));
     else if (state === 'unresolved') {
       row.appendChild(el('p', { class: 'helper-error' }, 'enter a quantity to resolve this line'));
     } else if (state === 'assumed') {
@@ -199,42 +194,20 @@ export function mountReview(root: HTMLElement, ctx: ScreenContext, draft: Recipe
     return row;
   }
 
-  function buildCandidates(line: EditableLine, index: number): HTMLElement {
+  function buildCandidates(line: EditableLine): HTMLElement {
     const results = el('div', { class: 'import-candidate-results' });
     const query = el('input', { class: 'input', value: line.query });
-
-    function paint(): void {
-      if (line.searching || !line.searched) {
-        results.replaceChildren(el('p', { class: 'helper' }, 'searching…'));
-      } else if (line.candidates.length === 0) {
-        results.replaceChildren(el('p', { class: 'helper' }, 'no catalog matches'));
-      } else {
-        results.replaceChildren(
-          ...line.candidates.map((ing) =>
-            button('btn btn-sm', ing.name, () => { line.ingredientId = ing.id; renderAll(); })),
-        );
-      }
-    }
-
-    function search(q: string): void {
-      line.searching = true;
-      searchIngredients(q)
-        .then((hits) => { line.candidates = hits; })
-        .catch(() => { line.candidates = []; })
-        .finally(() => { line.searching = false; line.searched = true; paint(); });
-    }
-
-    query.addEventListener('input', () => {
-      line.query = query.value;
-      line.searched = false;
-      paint();
-      const existing = timers.get(index);
-      if (existing) clearTimeout(existing);
-      timers.set(index, setTimeout(() => search(query.value.trim()), 200));
+    query.addEventListener('input', () => { line.query = query.value; });
+    attachIngredientSearch(query, results, (ing) => {
+      line.ingredientId = ing.id;
+      renderAll();
+    }, {
+      immediate: true,
+      limit: 20,
+      searchingText: 'searching…',
+      emptyText: 'no catalog matches',
+      renderResult: (ing, pick) => button('btn btn-sm', ing.name, pick),
     });
-
-    paint();
-    if (!line.searched && !line.searching) search(line.query.trim());
 
     return el(
       'div', { class: 'import-candidates' },
