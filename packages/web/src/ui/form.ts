@@ -3,13 +3,30 @@
 import '../css/form.css';
 import { el } from './dom.js';
 
-/** A label stacked above a control. `.pantry-field` is the shared class. */
-export function field(labelText: string, control: HTMLElement): HTMLElement {
-  return el('div', { class: 'pantry-field' }, el('span', { class: 'form-label' }, labelText), control);
+export interface FieldOptions {
+  /** Default `'div'` is the pantry-field stack (label span above the control). `'label'` wraps the control as a form-label. */
+  as?: 'div' | 'label';
+  /** Extra classes on the wrapper (e.g. `'import-field'`, `'profile-field'`). */
+  class?: string;
 }
 
-export function errorBox(): HTMLElement {
-  return el('div', { class: 'helper-error hidden' });
+/** Label + control. The two wrappers screens had been copy-pasting independently. */
+export function field(label: string, control: HTMLElement, opts: FieldOptions = {}): HTMLElement {
+  const extra = opts.class;
+  if (opts.as === 'label') {
+    return el('label', { class: extra ? `form-label ${extra}` : 'form-label' }, label, control);
+  }
+  return el(
+    'div',
+    { class: extra ? `pantry-field ${extra}` : 'pantry-field' },
+    el('span', { class: 'form-label' }, label),
+    control,
+  );
+}
+
+export function errorBox(opts: { class?: string } = {}): HTMLElement {
+  const extra = opts.class;
+  return el('div', { class: extra ? `helper-error hidden ${extra}` : 'helper-error hidden' });
 }
 
 /** Fill `box` with a message + optional detail lines and unhide it. */

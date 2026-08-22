@@ -12,14 +12,14 @@ import { getProfile, patchProfile } from '../api/profile.js';
 import { getIngredient } from '../api/ingredients.js';
 import { userMessage, fieldErrors, isApiError } from '../api/errors.js';
 import { el, button, errorPanel, loadingRow } from '../ui/dom.js';
-import { errorBox, showError, hideError } from '../ui/form.js';
+import { field, errorBox, showError, hideError } from '../ui/form.js';
 import { attachIngredientSearch } from '../ui/ingredient-picker.js';
 import { say } from '../ui/toast.js';
 
 const SKILLS: readonly CookingSkill[] = ['beginner', 'competent', 'advanced'];
 
-const field = (label: string, node: HTMLElement): HTMLElement =>
-  el('label', { class: 'form-label profile-field' }, label, node);
+const profileField = (label: string, node: HTMLElement): HTMLElement =>
+  field(label, node, { as: 'label', class: 'profile-field' });
 const numField = (v: number | string | null): HTMLInputElement =>
   el('input', { class: 'input', type: 'number', value: v ?? '' }) as HTMLInputElement;
 const chipEl = (label: string, onRemove: () => void): HTMLElement =>
@@ -116,11 +116,11 @@ function buildTargetsPanel(profile: UserProfile, onUpdated: (p: UserProfile) => 
   return el(
     'div', { class: 'panel panel-pad profile-targets' },
     el('div', { class: 'section-header' }, 'targets'),
-    field('name', name),
-    el('div', { class: 'flex gap-2' }, field('kcal min', calorieMin), field('kcal max', calorieMax)),
-    el('div', { class: 'flex gap-2' }, field('protein g', protein), field('carbs g', carbs), field('fat g', fat)),
-    el('div', { class: 'flex gap-2' }, field('household', householdSize), field('skill', cookingSkill)),
-    field('schedule profile', schedule),
+    profileField('name', name),
+    el('div', { class: 'flex gap-2' }, profileField('kcal min', calorieMin), profileField('kcal max', calorieMax)),
+    el('div', { class: 'flex gap-2' }, profileField('protein g', protein), profileField('carbs g', carbs), profileField('fat g', fat)),
+    el('div', { class: 'flex gap-2' }, profileField('household', householdSize), profileField('skill', cookingSkill)),
+    profileField('schedule profile', schedule),
     el('p', { class: 'helper' }, 'low-effort on late-shift days, effort ≤ 2 on weeknights'),
     errBox,
     button('btn btn-primary', 'save', () => void save()),

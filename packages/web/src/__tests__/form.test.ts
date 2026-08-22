@@ -1,4 +1,4 @@
-// Labeled-field + helper-error chrome shared by pantry, shopping, plan.
+// Labeled-field + helper-error chrome: pantry-field stack and wrapping form-label.
 
 import { describe, test, expect } from 'vitest';
 import { el } from '../ui/dom.js';
@@ -11,6 +11,22 @@ describe('field', () => {
     expect(wrap.className).toBe('pantry-field');
     expect(wrap.querySelector('.form-label')?.textContent).toBe('quantity');
     expect(wrap.querySelector('input')).toBe(input);
+  });
+
+  test('as: label wraps the control in a form-label', () => {
+    const control = el('input', { class: 'input' });
+    const node = field('title', control, { as: 'label' });
+    expect(node.tagName).toBe('LABEL');
+    expect(node.className).toBe('form-label');
+    expect(node.contains(control)).toBe(true);
+  });
+
+  test('extra class lands on the wrapper of either variant', () => {
+    const input = el('input', {});
+    expect(field('kcal min', input, { as: 'label', class: 'profile-field' }).className).toBe(
+      'form-label profile-field',
+    );
+    expect(field('unit', el('input', {}), { class: 'extra' }).className).toBe('pantry-field extra');
   });
 });
 
@@ -34,5 +50,12 @@ describe('errorBox / showError', () => {
     showError(box, 'first', ['old']);
     showError(box, 'second');
     expect(box.textContent).toBe('second');
+  });
+
+  test('keeps an extra class alongside the defaults', () => {
+    const box = errorBox({ class: 'helper' });
+    expect(box.classList.contains('helper-error')).toBe(true);
+    expect(box.classList.contains('hidden')).toBe(true);
+    expect(box.classList.contains('helper')).toBe(true);
   });
 });

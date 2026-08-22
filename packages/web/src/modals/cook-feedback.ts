@@ -7,6 +7,7 @@
 import { openModal, closeModal } from '../ui/modal.js';
 import { say } from '../ui/toast.js';
 import { el, button } from '../ui/dom.js';
+import { errorBox, showError, hideError } from '../ui/form.js';
 import { saveFeedback } from '../api/meal-plans.js';
 import { isApiError, userMessage } from '../api/errors.js';
 import type {
@@ -94,11 +95,7 @@ export function openFeedback(opts: FeedbackModalOptions): void {
     class: 'textarea cook-changes-note',
     placeholder: 'halved the cream, added dill at the end',
   });
-  const noteError = el(
-    'div',
-    { class: 'helper helper-error hidden' },
-    "changesNote is required when you didn't cook it as written",
-  );
+  const noteError = errorBox({ class: 'helper' });
   const changesWrap = el(
     'div',
     { class: 'cook-changes hidden' },
@@ -128,7 +125,8 @@ export function openFeedback(opts: FeedbackModalOptions): void {
   function refresh(): void {
     const invalidNote = state.usedAsIs === false && changesNote.trim().length === 0;
     noteInput.setAttribute('aria-invalid', invalidNote ? 'true' : 'false');
-    noteError.classList.toggle('hidden', !invalidNote);
+    if (invalidNote) showError(noteError, "changesNote is required when you didn't cook it as written");
+    else hideError(noteError);
 
     const complete =
       state.rating !== undefined &&

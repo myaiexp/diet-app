@@ -3,6 +3,7 @@
 
 import type { ScreenContext } from '../router.js';
 import { el, button } from '../ui/dom.js';
+import { field, errorBox, showError, hideError } from '../ui/form.js';
 import { say } from '../ui/toast.js';
 import { searchIngredients } from '../api/ingredients.js';
 import { confirmRecipe } from '../api/recipe-import.js';
@@ -72,14 +73,14 @@ function toMeta(d: RecipeDraft): DraftMeta {
   };
 }
 
-function field(labelText: string, control: HTMLElement): HTMLElement {
-  return el('label', { class: 'form-label import-field' }, labelText, control);
+function importField(labelText: string, control: HTMLElement): HTMLElement {
+  return field(labelText, control, { as: 'label', class: 'import-field' });
 }
 
 function numberField(labelText: string, value: number | null, onChange: (v: number | null) => void) {
   const input = el('input', { class: 'input', type: 'number', value: value ?? '' });
   input.addEventListener('change', () => onChange(input.value.trim() === '' ? null : Number(input.value)));
-  return field(labelText, input);
+  return importField(labelText, input);
 }
 
 function textInput(cls: string, value: string, ariaLabel: string, onChange: (v: string) => void) {
@@ -101,15 +102,15 @@ function buildFields(meta: DraftMeta, notify: () => void): HTMLElement {
     'div',
     { class: 'panel panel-pad import-fields' },
     el('div', { class: 'section-header' }, 'draft'),
-    field('title', title),
+    importField('title', title),
     el('div', { class: 'flex gap-2 import-fields-row' },
       numberField('prep min', meta.prepTime, (v) => (meta.prepTime = v)),
       numberField('total min', meta.totalTime, (v) => (meta.totalTime = v)),
       numberField('servings', meta.servings, (v) => (meta.servings = v ?? meta.servings))),
     el('div', { class: 'flex gap-2 import-fields-row' },
-      field('cuisine', cuisine),
+      importField('cuisine', cuisine),
       numberField('effort 1-5', meta.effortScore, (v) => (meta.effortScore = v))),
-    field(`steps (${stepCount} extracted)`, steps),
+    importField(`steps (${stepCount} extracted)`, steps),
   );
 }
 
@@ -123,7 +124,7 @@ export function mountReview(root: HTMLElement, ctx: ScreenContext, draft: Recipe
   const head = el('div', { class: 'import-lines-head' });
   const list = el('div', { class: 'import-line-list' });
   const saveBtn = button('btn btn-primary', 'save recipe', () => void doSave());
-  const saveHelp = el('p', { class: 'helper-error hidden' });
+  const saveHelp = errorBox();
 
   root.appendChild(
     el('div', { class: 'import-review' },
@@ -154,8 +155,8 @@ export function mountReview(root: HTMLElement, ctx: ScreenContext, draft: Recipe
     );
     const msgs = saving ? [] : problems();
     saveBtn.disabled = saving || msgs.length > 0;
-    saveHelp.classList.toggle('hidden', msgs.length === 0);
-    if (msgs.length) saveHelp.textContent = msgs[0]!;
+    if (msgs.length) showError(saveHelp, msgs[0]!);
+    else hideError(saveHelp);
   }
 
   function renderAll(): void {
@@ -269,8 +270,7 @@ export function mountReview(root: HTMLElement, ctx: ScreenContext, draft: Recipe
       ctx.navigate('/recipes');
     } catch (err) {
       saving = false;
-      saveHelp.textContent = [userMessage(err), ...fieldErrors(err)].join(' ');
-      saveHelp.classList.remove('hidden');
+      showError(saveHelp, userMessage(err), fieldErrors(err));
       saveBtn.disabled = false;
     }
   }

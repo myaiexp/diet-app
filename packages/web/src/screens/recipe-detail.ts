@@ -13,6 +13,7 @@ import type {
   Recipe, RecipeWithIngredients, RecipeIngredientLine, RecipeLineInput, RecipePatch, PantryItem, SourceType,
 } from '../api/types.js';
 import { el, button, errorPanel, loadingRow } from '../ui/dom.js';
+import { field } from '../ui/form.js';
 import { userMessage, fieldErrors } from '../api/errors.js';
 import { say } from '../ui/toast.js';
 import { openModal, closeModal } from '../ui/modal.js';
@@ -64,10 +65,6 @@ function pantryLabel(
 
 function textInput(cls: string, value: string | number, extra: Record<string, string> = {}): HTMLInputElement {
   return el('input', { class: cls ? `input ${cls}` : 'input', value, ...extra }) as HTMLInputElement;
-}
-
-function field(label: string, node: HTMLElement): HTMLElement {
-  return el('label', { class: 'form-label' }, label, node);
 }
 
 function ingredientRow(line: RecipeIngredientLine, pantryById: Map<string, PantryItem>): HTMLElement {
@@ -205,14 +202,14 @@ export function createRecipeDetail(container: HTMLElement, deps: DetailDeps): De
         button('btn btn-ghost btn-sm', 'remove', () => { line.removed = true; row.remove(); }));
       linesBox.appendChild(row);
     }
-    const errorBox = el('div', {});
+    const saveErr = el('div', {});
     const body = el('div', { class: 'flex flex-col gap-3' },
-      field('title', title),
-      el('div', { class: 'flex gap-3' }, field('servings', servingsInput), field('cuisine', cuisine)),
-      field('tags (comma-separated)', tags),
-      field('steps (one per line)', steps),
+      field('title', title, { as: 'label' }),
+      el('div', { class: 'flex gap-3' }, field('servings', servingsInput, { as: 'label' }), field('cuisine', cuisine, { as: 'label' })),
+      field('tags (comma-separated)', tags, { as: 'label' }),
+      field('steps (one per line)', steps, { as: 'label' }),
       el('div', { class: 'section-header' }, 'ingredients'),
-      linesBox, errorBox);
+      linesBox, saveErr);
 
     async function submit(): Promise<void> {
       // Wholesale replace: every remaining line goes, not just edited ones.
@@ -235,7 +232,7 @@ export function createRecipeDetail(container: HTMLElement, deps: DetailDeps): De
         servings = updated.servings;
         render();
       } catch (err) {
-        errorBox.replaceChildren(errorPanel([userMessage(err), ...fieldErrors(err)].join(' ')));
+        saveErr.replaceChildren(errorPanel([userMessage(err), ...fieldErrors(err)].join(' ')));
       }
     }
 
