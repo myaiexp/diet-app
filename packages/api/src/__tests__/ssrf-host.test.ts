@@ -37,6 +37,13 @@ describe('isBlockedAddress', () => {
     ['::127.0.0.1'],
     ['64:ff9b::7f00:1'],
     ['64:ff9b::127.0.0.1'],
+    // 6to4 2002::/16 embeds IPv4 in the next 32 bits (2002:7f00:1:: → 127.0.0.1).
+    ['2002:7f00:1::'],
+    ['2002:7f00:1:0:0:0:0:0'],
+    ['2002:c0a8:1::'], // 192.168.0.1 via 6to4 — prefix is blocked wholesale
+    // Teredo 2001:0000::/32. Wikipedia's example client, and the prefix itself.
+    ['2001:0::'],
+    ['2001:0000:4136:e378:8000:63bf:3fff:fdd2'],
     ['not-an-ip'],
     [''],
   ])('blocks %s', (addr) => {

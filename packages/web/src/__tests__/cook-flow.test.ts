@@ -221,7 +221,7 @@ describe('cook confirm', () => {
     expect(document.querySelector('.cook-item-name')!.textContent).toBe('Salmon');
     const lotInfo = document.querySelector('.cook-lot-info')!;
     expect(lotInfo.textContent).toContain('lot ');
-    expect(lotInfo.textContent).toMatch(/expires today|EXPIRED/);
+    expect(lotInfo.textContent).toContain('expires today');
     expect(document.querySelector('.cook-lot-amount')!.textContent).toBe('−400 g');
     expect(document.querySelector('.cook-lot-left')!.textContent).toBe('100 g left');
   });

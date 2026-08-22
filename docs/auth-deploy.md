@@ -22,6 +22,12 @@ logic auth-free. Non-browser clients (cron, a future scanner #394) use the
 bearer directly — cookie SSO isn't available to them.
 
 Vhost reference copy (token redacted): `docs/nginx-diet.mase.fi.conf`.
+HTML locations send a strict CSP (`script-src 'self'`, so only the
+content-hashed `/assets/` bundle runs; `style-src`/`font-src` allow
+`https://mase.fi` for `base.css` and JetBrains Mono). The shell pins
+`base.css` with SRI; a `base.css` change needs a matching integrity hash
+in `packages/web/index.html` (see the comment there) and CORS on the apex
+`location = /base.css`.
 
 ## Unauthenticated responses differ by surface, on purpose
 
@@ -57,8 +63,10 @@ in the prod allowlist.
 ## Secrets and env
 
 All secrets live in a gitignored `.env` (`chmod 600`, owned by the run user) —
-never committed; `.env.example` holds placeholders only. Each Helm worktree
-keeps its own gitignored `.env` copy for dev. The nginx vhost also carries
+never committed; `.gitignore` also ignores `.env.*` so editor swaps and
+backups (`.env.local`, `.env.save`) stay out of git. `.env.example` holds
+placeholders only and is tracked (`!.env.example`). Each Helm worktree keeps
+its own gitignored `.env` copy for dev. The nginx vhost also carries
 `API_TOKEN` (root-owned, mode 640); rotating the token means updating both.
 
 DB password rotation (superuser `ALTER ROLE` → update `DATABASE_URL` in every

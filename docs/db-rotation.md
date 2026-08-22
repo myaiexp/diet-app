@@ -5,7 +5,7 @@ Runbook for rotating the `dietapp` Postgres role password.
 ## Where `.env` lives
 
 All secrets live in a gitignored `.env` (`chmod 600`, owned by the run user) —
-never committed; `.env.example` holds placeholders only. Prod is the main
+never committed (`.gitignore` also covers `.env.*`; `.env.example` is tracked). Prod is the main
 checkout on the VPS: `diet-app-api.service` runs as `User=mase`,
 `WorkingDirectory=/home/mase/Projects/diet-app`, with
 `EnvironmentFile=/home/mase/Projects/diet-app/.env`. Each Helm worktree keeps

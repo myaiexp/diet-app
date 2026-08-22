@@ -20,6 +20,12 @@ BLOCKED_NETS.addAddress('::1', 'ipv6');
 BLOCKED_NETS.addSubnet('fc00::', 7, 'ipv6');
 BLOCKED_NETS.addSubnet('fe80::', 10, 'ipv6');
 BLOCKED_NETS.addSubnet('ff00::', 8, 'ipv6');
+// 6to4 (2002::/16) and Teredo (2001:0000::/32) embed an IPv4 in the rest of
+// the address. Recipe import has no need for either tunnel, so the prefixes
+// are blocked wholesale rather than unwrapped — a public IPv4 via 6to4 is
+// still a tunnel, and Teredo's client IPv4 is XOR'd.
+BLOCKED_NETS.addSubnet('2002::', 16, 'ipv6');
+BLOCKED_NETS.addSubnet('2001:0::', 32, 'ipv6');
 
 const BLOCKED_HOSTNAMES = new Set([
   'localhost',

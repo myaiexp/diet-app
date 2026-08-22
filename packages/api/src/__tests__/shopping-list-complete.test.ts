@@ -1,6 +1,6 @@
 // Mock-based tests for POST /shopping-lists/:id/complete (file bought items to pantry)
 
-import { describe, test, expect } from 'vitest';
+import { describe, test, expect, vi } from 'vitest';
 import { shoppingLists, shoppingListItems, ingredients, pantryItems } from '@diet-app/db';
 import { shoppingListCompleteRoutes } from '../routes/shopping-list-complete.js';
 import { makeDbMock } from './db-mock.js';
@@ -227,17 +227,23 @@ describe('shoppingListCompleteRoutes', () => {
   });
 
   test('derives expiresDate from the ingredient shelf life for that location', async () => {
-    const { db } = makeCompleteMock();
-    const res = await shoppingListCompleteRoutes(db).request(
-      `/${LIST_ID}/complete`,
-      jsonReq({}),
-    );
-    const body = await res.json();
-    const today = new Date().toISOString().slice(0, 10);
-    const base = new Date(`${today}T00:00:00.000Z`);
-    base.setUTCDate(base.getUTCDate() + 5); // fridge_days: 5
-    expect(body.added[0].expiresDate).toBe(base.toISOString().slice(0, 10));
-    expect(body.added[0].addedDate).toBe(today);
+    // Pin the clock: the handler stamps addedDate/expiresDate from new Date()
+    // inside the request. Recomputing "today" after await can straddle UTC
+    // midnight; fake Date is enough (don't stub timers — Hono's request is
+    // promise-based).
+    vi.useFakeTimers({ now: Date.UTC(2026, 7, 4), toFake: ['Date'] });
+    try {
+      const { db } = makeCompleteMock();
+      const res = await shoppingListCompleteRoutes(db).request(
+        `/${LIST_ID}/complete`,
+        jsonReq({}),
+      );
+      const body = await res.json();
+      expect(body.added[0].addedDate).toBe('2026-08-04');
+      expect(body.added[0].expiresDate).toBe('2026-08-09'); // fridge_days: 5
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   test('skips items whose shelf life has no entry for the location, reported not fatal', async () => {
