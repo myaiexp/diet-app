@@ -22,8 +22,15 @@ import { mealPlanFeedbackRoutes } from './meal-plan-feedback.js';
 function hasContent(
   recipeId: string | null | undefined,
   freeformNote: string | null | undefined,
+  substituteRecipeId?: string | null,
 ): boolean {
-  return recipeId != null || (freeformNote != null && freeformNote !== '');
+  // Cook/shopping resolve substituteRecipeId ?? recipeId, so a substitute-only
+  // row (demo Friday dinner) is content even with recipeId and the note null.
+  return (
+    recipeId != null ||
+    substituteRecipeId != null ||
+    (freeformNote != null && freeformNote !== '')
+  );
 }
 
 export function mealPlansRoutes(db: Db): Hono {
@@ -139,7 +146,11 @@ export function mealPlansRoutes(db: Db): Hono {
           data.recipeId !== undefined ? data.recipeId : existing.recipeId;
         const mergedNote =
           data.freeformNote !== undefined ? data.freeformNote : existing.freeformNote;
-        if (!hasContent(mergedRecipeId, mergedNote)) {
+        const mergedSubstitute =
+          data.substituteRecipeId !== undefined
+            ? data.substituteRecipeId
+            : existing.substituteRecipeId;
+        if (!hasContent(mergedRecipeId, mergedNote, mergedSubstitute)) {
           return { kind: 'no_content' as const };
         }
 

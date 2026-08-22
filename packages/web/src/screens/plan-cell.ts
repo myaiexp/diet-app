@@ -16,7 +16,7 @@ import { say } from '../ui/toast.js';
 import { userMessage, fieldErrors } from '../api/errors.js';
 import { finnishWeekday, finnishDate } from '../format/date.js';
 import { toNumber } from '../format/quantity.js';
-import { createRecipeOrNoteField } from './add-entry.js';
+import { createRecipeOrNoteField, type RecipeOrNoteSelection } from './add-entry.js';
 
 type EditableStatus = Exclude<EntryStatus, 'cooked'>;
 const EDITABLE_STATUSES: readonly EditableStatus[] = ['planned', 'skipped', 'substituted'];
@@ -113,10 +113,32 @@ export function buildDayColumn(
 }
 
 /**
+ * Map the picker onto the column cook/title/shopping resolve
+ * (`substituteRecipeId ?? recipeId`). The picker is seeded from that pair, so
+ * a leftover substitute must be written or cleared — omitting it makes the
+ * edit a no-op. Leave `recipeId` off a substituted save so we don't clobber
+ * the original with the substitute's id.
+ */
+function recipeFieldsForPatch(
+  status: EditableStatus,
+  sel: RecipeOrNoteSelection,
+): Pick<MealPlanPatch, 'recipeId' | 'freeformNote' | 'substituteRecipeId'> {
+  if (!sel.recipeId) {
+    return { recipeId: null, substituteRecipeId: null, freeformNote: sel.freeformNote };
+  }
+  if (status === 'substituted') {
+    return { substituteRecipeId: sel.recipeId, freeformNote: null };
+  }
+  return { recipeId: sel.recipeId, substituteRecipeId: null, freeformNote: null };
+}
+
+/**
  * Reopen a skipped or substituted entry: date/slot/notes/status/servings and
  * the recipe-or-note pick are all still editable (only a *cooked* entry locks
  * recipeId/substituteRecipeId/servings). Reuses the same recipe-or-note
  * widget as the add form so the "one of the two" rule has one implementation.
+ * The pick is written through `recipeFieldsForPatch` so substituteRecipeId
+ * cannot outlive a planned/skipped/freeform save.
  */
 export function openEditEntry(
   entry: MealPlanEntry,
@@ -127,7 +149,7 @@ export function openEditEntry(
   const slotSelect = el('select', { class: 'select' }) as HTMLSelectElement;
   for (const s of SLOTS) slotSelect.appendChild(el('option', { value: s, selected: s === entry.slot }, s));
 
-  const statusSelect = el('select', { class: 'select' }) as HTMLSelectElement;
+  const statusSelect = el('select', { class: 'select plan-edit-status' }) as HTMLSelectElement;
   for (const s of EDITABLE_STATUSES) {
     statusSelect.appendChild(el('option', { value: s, selected: s === entry.status }, s));
   }
@@ -172,13 +194,13 @@ export function openEditEntry(
       showError('Pick a recipe, or type a note — one of the two is required.');
       return;
     }
+    const status = statusSelect.value as EditableStatus;
     const patch: MealPlanPatch = {
       date: dateInput.value,
       slot: slotSelect.value as Slot,
-      status: statusSelect.value as EditableStatus,
+      status,
       notes: notesInput.value.trim() ? notesInput.value.trim() : null,
-      recipeId: sel.recipeId,
-      freeformNote: sel.freeformNote,
+      ...recipeFieldsForPatch(status, sel),
     };
     const servings = Number(servingsInput.value);
     if (Number.isFinite(servings) && servings > 0) patch.servings = servings;

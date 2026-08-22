@@ -15,6 +15,14 @@ Unit conversion lives in `units.ts` and never crosses dimensions. FEFO deduction
 is pure in `cook-deduct.ts` (`planDeduction`); the cook route loads rows, plans,
 and applies inside one `FOR UPDATE` transaction.
 
+PATCH re-checks content against the merged row, not the patch alone. Content is
+a `recipeId`, a `substituteRecipeId`, or a non-empty `freeformNote` — cook
+already resolves `substituteRecipeId ?? recipeId`, so a substitute-only row
+(demo Friday dinner) is not empty. The edit form writes the picker onto
+`substituteRecipeId` when status is `substituted` and otherwise onto `recipeId`
+with `substituteRecipeId: null`, so that resolution follows what the user
+picked. Clearing all three is a 400 with the same message as POST.
+
 ## Cook feedback invariant
 
 A `cook_feedback` row carries a `changesNote` iff `usedAsIs` is false. The patch
