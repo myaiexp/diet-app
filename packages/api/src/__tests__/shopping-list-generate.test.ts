@@ -240,6 +240,10 @@ describe('shoppingListGenerateRoutes', () => {
     const setKeys = Object.keys(itemInsert.conflict?.set as object);
     expect(setKeys.sort()).toEqual(['category', 'netToBuy', 'quantityInPantry', 'quantityNeeded'].sort());
     expect(setKeys).not.toContain('bought');
+    // Without this, a colliding manual row (same list/ingredient/unit) is
+    // rewritten by the plan's numbers — the documented "never revisit manual
+    // rows" contract. The prune is already source-scoped; the upsert must be too.
+    expect(itemInsert.conflict?.setWhere).toEqual(eq(shoppingListItems.source, 'generated'));
   });
 
   test('preserves customNote on regeneration', async () => {
