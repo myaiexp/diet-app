@@ -50,9 +50,8 @@ a catalog cache refreshed by re-import, not a price oracle.
 
 ### Migration
 
-Schema changes go through `drizzle-kit generate` then `migrate` — never `push`, which
-prompts and so hangs without a TTY (see CLAUDE.md). Applied as
-`0002_keen_supreme_intelligence.sql`. The test database needs it too:
+Applied as `0003_glorious_serpent_society.sql`. Schema-change workflow (generate
+then migrate, never push): CLAUDE.md. The test database needs it too:
 `pnpm --filter @diet-app/db setup:test-db`.
 
 ## Nutrient parsing

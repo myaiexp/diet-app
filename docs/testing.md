@@ -54,6 +54,15 @@ the run** instead; set `DIET_APP_SKIP_DB_TESTS=1` to opt out deliberately.
 Silence has to be chosen — a silent skip is how the api suite went 4 commits
 without executing once.
 
+## Schema migrations
+
+Schema changes go through `pnpm --filter @diet-app/db generate` (writes SQL
+under `packages/db/drizzle/`) then `pnpm --filter @diet-app/db migrate`
+(applies it, non-interactive). Never `drizzle-kit push` — it prompts for
+confirmation and hangs in a Helm session, which has no TTY. After migrating
+prod (`DATABASE_URL` → `dietapp`), re-provision the test DB with
+`setup:test-db` above.
+
 ## Demo data
 
 `pnpm --filter @diet-app/db seed:demo` writes the design prototype's fixtures

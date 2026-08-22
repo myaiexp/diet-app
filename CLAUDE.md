@@ -17,7 +17,10 @@ paragraph of "why", the why belongs in the linked subdoc.
   (same origin). Auth (two independent gates), CORS, deploy, secrets, and the
   DB pool: **`docs/auth-deploy.md`**. Password rotation: `docs/db-rotation.md`.
   Vhost reference (token redacted): `docs/nginx-diet.mase.fi.conf`.
-- **Database**: PostgreSQL `dietapp`.
+- **Database**: PostgreSQL `dietapp`. Schema changes: `pnpm --filter
+  @diet-app/db generate` then `migrate` — never `push` (it prompts and hangs
+  without a TTY). Test DB: `pnpm --filter @diet-app/db setup:test-db`.
+  Details: **`docs/testing.md`**.
 - Core concepts: spoilage-first pantry, AI meal planning, constraint
   satisfaction, auto-deduct cooking.
 
@@ -48,7 +51,8 @@ them); web type-checks tests via its main no-emit `tsconfig.json`. One vitest
 entry at the repo root. Real-SQL suites (19 cases in `routes.test.ts`, 4 in
 `import-products-sql.test.ts`) share the loud `TEST_DATABASE_URL` /
 `DIET_APP_SKIP_DB_TESTS` gate. Mocks, fixture-by-table (never call-order),
-demo seed, drizzle-kit override: **`docs/testing.md`**.
+demo seed, drizzle-kit override, schema-migration workflow:
+**`docs/testing.md`**.
 
 ## Plans
 
@@ -90,3 +94,7 @@ which are the intended seed fixtures.
 **Archived**: `docs/plans/archived/` — pre-implementation synthesized
 brainstorming. Historical only; some assumes a stack that was never adopted
 (Next.js/Vercel/Supabase). See its `README.md`.
+
+**Review-pattern memory**: `docs/review-patterns.json` is grok execute-loop
+skill memory (`{pattern, count, lastSeen}`), not a living subdoc. The skill
+injects only `count ≥ 2` patterns.
