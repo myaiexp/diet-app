@@ -189,12 +189,18 @@ async function resolveDislikedNames(ids: string[]): Promise<Map<string, string>>
   return new Map(pairs);
 }
 
-function buildDislikedPanel(profile: UserProfile, names: Map<string, string>, onUpdated: (p: UserProfile) => void): HTMLElement {
+function buildDislikedPanel(profile: UserProfile, names: Map<string, string>, onUpdated: (p: UserProfile) => void): { panel: HTMLElement; detach: () => void } {
   const ids = profile.dislikedIngredientIds;
   const list = el('div', { class: 'flex gap-2 bar-wrap' },
     ...ids.map((id) => chipEl(names.get(id) ?? id, () => void commit(ids.filter((x) => x !== id)))));
   const addSlot = el('div', {});
   const addButton = button('btn btn-ghost btn-sm', '+ add', () => showAddForm());
+  let detachSearch: (() => void) | null = null;
+
+  function stopSearch(): void {
+    detachSearch?.();
+    detachSearch = null;
+  }
 
   async function commit(next: string[]): Promise<void> {
     try { onUpdated(await patchProfile({ dislikedIngredientIds: next })); }
@@ -202,12 +208,14 @@ function buildDislikedPanel(profile: UserProfile, names: Map<string, string>, on
   }
 
   function showAddForm(): void {
+    stopSearch();
     const input = el('input', { class: 'input', type: 'text', placeholder: 'search ingredients…' }) as HTMLInputElement;
     const results = el('div', { class: 'pantry-search-results' });
-    attachIngredientSearch(
+    detachSearch = attachIngredientSearch(
       input,
       results,
       (ing) => {
+        stopSearch();
         names.set(ing.id, ing.name);
         void commit([...ids, ing.id]);
         addSlot.replaceChildren(addButton);
@@ -219,7 +227,10 @@ function buildDislikedPanel(profile: UserProfile, names: Map<string, string>, on
   }
 
   addSlot.appendChild(addButton);
-  return chipPanelShell('disliked ingredients', 'soft — down-weighted, never blocked', list, addSlot);
+  return {
+    panel: chipPanelShell('disliked ingredients', 'soft — down-weighted, never blocked', list, addSlot),
+    detach: stopSearch,
+  };
 }
 
 function emptyProfileState(): HTMLElement {
@@ -231,13 +242,21 @@ function emptyProfileState(): HTMLElement {
 }
 
 export function profileScreen(): Screen {
+  let detachDisliked: (() => void) | null = null;
   return {
     title: 'Profile',
     subtitle: 'targets, restrictions, kit',
+    unmount() {
+      detachDisliked?.();
+      detachDisliked = null;
+    },
     async mount(root: HTMLElement, ctx: ScreenContext): Promise<void> {
       let dislikedNames = new Map<string, string>();
       function paint(profile: UserProfile): void {
         if (ctx.isStale()) return;
+        detachDisliked?.();
+        const disliked = buildDislikedPanel(profile, dislikedNames, paint);
+        detachDisliked = disliked.detach;
         root.replaceChildren(el(
           'div', { class: 'profile-grid' },
           buildTargetsPanel(profile, paint),
@@ -245,7 +264,7 @@ export function profileScreen(): Screen {
             header: 'dietary restrictions', note: 'hard filter', placeholder: 'e.g. no shellfish',
             values: profile.dietaryRestrictions ?? [], field: 'dietaryRestrictions', onUpdated: paint,
           }),
-          buildDislikedPanel(profile, dislikedNames, paint),
+          disliked.panel,
           buildTextChipPanel({
             header: 'kitchen equipment', note: 'gates suggestions', placeholder: 'e.g. oven',
             values: profile.kitchenEquipment ?? [], field: 'kitchenEquipment', onUpdated: paint,

@@ -179,6 +179,53 @@ describe('attachIngredientSearch', () => {
     expect(results.querySelector('.pantry-search-result')?.textContent).toContain('Leek');
     expect(results.textContent).not.toContain('Potato');
   });
+
+  test('a failed search toasts and does not look like a catalog miss', async () => {
+    fetchMock.mockResolvedValue(jsonResponse(500, { error: 'boom' }));
+    const input = el('input', { class: 'input', type: 'text' }) as HTMLInputElement;
+    const results = el('div');
+    document.body.append(input, results);
+    attachIngredientSearch(input, results, vi.fn(), {
+      searchingText: 'searching…',
+      emptyText: 'no catalog matches',
+    });
+    input.value = 'peruna';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    await flush(SEARCH_DEBOUNCE_MS + 50);
+
+    expect(document.querySelector('.toast-error')?.textContent).toMatch(/unexpected error/i);
+    expect(results.textContent).not.toMatch(/no catalog matches/i);
+    expect(results.querySelector('.helper-error')?.textContent).toMatch(/unexpected error/i);
+  });
+
+  test('detach cancels a pending debounce so it never searches', async () => {
+    fetchMock.mockResolvedValue(jsonResponse(200, [makeIngredient()]));
+    const input = el('input', { class: 'input', type: 'text' }) as HTMLInputElement;
+    const results = el('div');
+    const detach = attachIngredientSearch(input, results, vi.fn());
+    input.value = 'peruna';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    detach();
+    await flush(SEARCH_DEBOUNCE_MS + 50);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  test('detach ignores an in-flight response', async () => {
+    let finish: (value: Response) => void = () => {};
+    const pending = new Promise<Response>((resolve) => {
+      finish = resolve;
+    });
+    fetchMock.mockReturnValue(pending);
+    const input = el('input', { class: 'input', type: 'text', value: 'peruna' }) as HTMLInputElement;
+    const results = el('div');
+    const detach = attachIngredientSearch(input, results, vi.fn(), { immediate: true });
+    await flush(0);
+    detach();
+    finish(jsonResponse(200, [makeIngredient()]));
+    await flush(20);
+    expect(results.querySelector('.pantry-search-result')).toBeNull();
+    expect(results.textContent).not.toContain('Potato');
+  });
 });
 
 describe('readQuantityUnit', () => {
@@ -246,5 +293,17 @@ describe('createIngredientQuantityForm', () => {
 
     form.unitInput.value = 'kg';
     expect(form.read()).toEqual({ ingredient: ing, quantity: 1.5, unit: 'kg' });
+  });
+
+  test('detach cancels a pending catalog search', async () => {
+    fetchMock.mockResolvedValue(jsonResponse(200, [makeIngredient()]));
+    const form = createIngredientQuantityForm();
+    document.body.append(form.body);
+    const input = form.body.querySelector<HTMLInputElement>('input[type="text"]')!;
+    input.value = 'peruna';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    form.detach();
+    await flush(SEARCH_DEBOUNCE_MS + 50);
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });

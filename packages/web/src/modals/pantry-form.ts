@@ -77,7 +77,7 @@ export function openAddItemModal(handlers: AddItemHandlers, preset?: Ingredient)
     button('btn btn-primary', 'save', () => void submit()),
   );
 
-  openModal({ title: 'Add pantry item', body: form.body, footer, width: 420 });
+  openModal({ title: 'Add pantry item', body: form.body, footer, width: 420, onClose: form.detach });
 }
 
 export interface EditItemHandlers {

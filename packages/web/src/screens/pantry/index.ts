@@ -27,6 +27,7 @@ export function pantryScreen(): Screen {
   let hasMore = false;
   let loadingMore = false;
   let ctx: ScreenContext;
+  let detachSearch: (() => void) | null = null;
 
   let listEl: HTMLElement;
   let chipsEl: HTMLElement;
@@ -180,6 +181,10 @@ export function pantryScreen(): Screen {
   return {
     title: 'Pantry',
     subtitle: 'spoilage order',
+    unmount() {
+      detachSearch?.();
+      detachSearch = null;
+    },
     async mount(root, screenCtx) {
       ctx = screenCtx;
       items = [];
@@ -191,7 +196,7 @@ export function pantryScreen(): Screen {
         placeholder: INGREDIENT_SEARCH_PLACEHOLDER,
       }) as HTMLInputElement;
       const searchResults = el('div', { class: 'pantry-search-results' });
-      attachIngredientSearch(searchInput, searchResults, (ing) => {
+      detachSearch = attachIngredientSearch(searchInput, searchResults, (ing) => {
         searchInput.value = '';
         searchResults.replaceChildren();
         openAdd(ing);

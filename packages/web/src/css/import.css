@@ -38,7 +38,7 @@
 .import-steps { min-height: 96px; }
 
 .import-lines { display: flex; flex-direction: column; gap: 6px; }
-.import-lines-head { display: flex; align-items: center; gap: 8px; }
+.import-lines-head { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
 
 .import-line {
   padding: 6px 8px;

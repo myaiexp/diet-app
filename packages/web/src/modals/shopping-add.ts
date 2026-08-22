@@ -53,5 +53,5 @@ export function openAddShoppingItemModal(listId: string, handlers: AddShoppingIt
     button('btn btn-primary', 'save', () => void submit()),
   );
 
-  openModal({ title: 'Add to shopping list', body: form.body, footer, width: 380 });
+  openModal({ title: 'Add to shopping list', body: form.body, footer, width: 380, onClose: form.detach });
 }

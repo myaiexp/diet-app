@@ -24,12 +24,15 @@ export function importScreen(): Screen {
   let errorDetails: string[] = [];
   /** Bumped on cancel so a stale extract response can't override the stage. */
   let token = 0;
+  let teardownReview: (() => void) | null = null;
 
   function render(): void {
+    teardownReview?.();
+    teardownReview = null;
     rootEl.replaceChildren();
     if (stage === 'paste') rootEl.appendChild(renderPaste());
     else if (stage === 'extracting') rootEl.appendChild(renderExtracting());
-    else if (draft) mountReview(rootEl, ctx, draft);
+    else if (draft) teardownReview = mountReview(rootEl, ctx, draft);
   }
 
   function renderPaste(): HTMLElement {
@@ -125,6 +128,11 @@ export function importScreen(): Screen {
       rootEl = root;
       ctx = context;
       render();
+    },
+    unmount() {
+      token += 1;
+      teardownReview?.();
+      teardownReview = null;
     },
   };
 }

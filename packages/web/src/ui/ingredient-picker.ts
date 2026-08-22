@@ -27,13 +27,17 @@ export interface IngredientSearchOptions {
   searchingText?: string;
 }
 
-/** Debounced catalog search wired to an input + a results list under it. */
+/**
+ * Debounced catalog search wired to an input + a results list under it.
+ * Returns a detach that clears the timer, drops the listener, and ignores
+ * any in-flight response — call it on unmount / rebuild / modal close.
+ */
 export function attachIngredientSearch(
   input: HTMLInputElement,
   results: HTMLElement,
   onPick: (ing: Ingredient) => void,
   opts: IngredientSearchOptions = {},
-): void {
+): () => void {
   const debounceMs = opts.debounceMs ?? SEARCH_DEBOUNCE_MS;
   const limit = opts.limit ?? SEARCH_LIMIT;
   let timer: ReturnType<typeof setTimeout> | null = null;
@@ -67,8 +71,11 @@ export function attachIngredientSearch(
       matches = await searchIngredients(needle, limit);
     } catch (e) {
       if (my !== seq) return;
-      say(userMessage(e), 'error');
-      if (opts.searchingText) results.replaceChildren(emptyNode(opts.emptyText));
+      const msg = userMessage(e);
+      say(msg, 'error');
+      // Clear "searching…" without claiming a catalog miss — pantry (no
+      // searchingText) keeps whatever was already painted.
+      if (opts.searchingText) results.replaceChildren(el('p', { class: 'helper-error' }, msg));
       return;
     }
     if (my !== seq) return;
@@ -84,13 +91,21 @@ export function attachIngredientSearch(
     }
   }
 
-  input.addEventListener('input', () => {
+  function onInput(): void {
     if (timer) clearTimeout(timer);
     const q = input.value;
     timer = setTimeout(() => void runSearch(q), debounceMs);
-  });
+  }
 
+  input.addEventListener('input', onInput);
   if (opts.immediate) void runSearch(input.value);
+
+  return () => {
+    if (timer) clearTimeout(timer);
+    timer = null;
+    seq += 1;
+    input.removeEventListener('input', onInput);
+  };
 }
 
 export function readQuantityUnit(
@@ -120,6 +135,7 @@ export interface IngredientQuantityForm {
   err: HTMLElement;
   selectIngredient(ing: Ingredient): void;
   read(): { ingredient: Ingredient; quantity: number; unit: string } | null;
+  detach(): void;
 }
 
 export function createIngredientQuantityForm(opts: {
@@ -166,7 +182,7 @@ export function createIngredientQuantityForm(opts: {
     hideError(err);
   }
 
-  attachIngredientSearch(searchInput, searchResults, selectIngredient);
+  const detach = attachIngredientSearch(searchInput, searchResults, selectIngredient);
 
   const body = el('div', { class: 'pantry-form' }, pickStep, detailStep);
 
@@ -180,5 +196,5 @@ export function createIngredientQuantityForm(opts: {
     return { ingredient: chosen, ...parsed };
   }
 
-  return { body, pickStep, detailStep, qtyInput, unitInput, err, selectIngredient, read };
+  return { body, pickStep, detailStep, qtyInput, unitInput, err, selectIngredient, read, detach };
 }

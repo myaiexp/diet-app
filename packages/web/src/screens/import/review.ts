@@ -52,6 +52,12 @@ export function classify(line: EditableLine): LineState {
   return line.quantityInferred ? 'assumed' : 'bound';
 }
 
+function tally(lines: EditableLine[]): Record<LineState, number> {
+  const counts: Record<LineState, number> = { bound: 0, assumed: 0, unresolved: 0 };
+  for (const line of lines) counts[classify(line)] += 1;
+  return counts;
+}
+
 function toEditable(l: DraftIngredientLine): EditableLine {
   return {
     raw: l.rawName, ingredientId: l.ingredientId, quantity: l.quantity, unit: l.unit,
@@ -105,9 +111,10 @@ function buildFields(meta: DraftMeta, notify: () => void): HTMLElement {
 }
 
 /** Mounts the full review pane (fields + reconciliation) into `root`. */
-export function mountReview(root: HTMLElement, ctx: ScreenContext, draft: RecipeDraft): void {
+export function mountReview(root: HTMLElement, ctx: ScreenContext, draft: RecipeDraft): () => void {
   const meta = toMeta(draft);
   const lines: EditableLine[] = draft.ingredients.map(toEditable);
+  const candidateUi = new Map<EditableLine, { node: HTMLElement; detach: () => void }>();
   let saving = false;
 
   const head = el('div', { class: 'import-lines-head' });
@@ -134,13 +141,14 @@ export function mountReview(root: HTMLElement, ctx: ScreenContext, draft: Recipe
     return [];
   }
 
-  /** Recomputes both the bound/need-you tally and the save gate — one pass. */
+  /** Recomputes the three-state tally and the save gate — one pass. */
   function renderFooter(): void {
-    const bound = savable().length;
+    const counts = tally(lines);
     head.replaceChildren(
       el('span', { class: 'section-header' }, 'ingredient reconciliation'),
-      el('span', { class: 'label label-green' }, `${bound} bound`),
-      el('span', { class: 'label label-red' }, `${lines.length - bound} need you`),
+      el('span', { class: 'label label-green' }, `${counts.bound} bound`),
+      el('span', { class: 'label label-orange' }, `${counts.assumed} assumed`),
+      el('span', { class: 'label label-red' }, `${counts.unresolved} need you`),
     );
     const msgs = saving ? [] : problems();
     saveBtn.disabled = saving || msgs.length > 0;
@@ -148,7 +156,27 @@ export function mountReview(root: HTMLElement, ctx: ScreenContext, draft: Recipe
     else hideError(saveHelp);
   }
 
+  function discardCandidates(line: EditableLine): void {
+    const ui = candidateUi.get(line);
+    if (!ui) return;
+    ui.detach();
+    candidateUi.delete(line);
+  }
+
+  function candidatesFor(line: EditableLine): HTMLElement {
+    const existing = candidateUi.get(line);
+    if (existing) return existing.node;
+    const ui = buildCandidates(line);
+    candidateUi.set(line, ui);
+    return ui.node;
+  }
+
   function renderAll(): void {
+    const live = new Set(lines);
+    for (const line of [...candidateUi.keys()]) {
+      const needs = live.has(line) && classify(line) === 'unresolved' && !line.ingredientId;
+      if (!needs) discardCandidates(line);
+    }
     list.replaceChildren(...lines.map((line, i) => buildRow(line, i)));
     renderFooter();
   }
@@ -184,7 +212,7 @@ export function mountReview(root: HTMLElement, ctx: ScreenContext, draft: Recipe
         qty, unit),
     );
 
-    if (state === 'unresolved' && !line.ingredientId) row.appendChild(buildCandidates(line));
+    if (state === 'unresolved' && !line.ingredientId) row.appendChild(candidatesFor(line));
     else if (state === 'unresolved') {
       row.appendChild(el('p', { class: 'helper-error' }, 'enter a quantity to resolve this line'));
     } else if (state === 'assumed') {
@@ -193,12 +221,13 @@ export function mountReview(root: HTMLElement, ctx: ScreenContext, draft: Recipe
     return row;
   }
 
-  function buildCandidates(line: EditableLine): HTMLElement {
+  function buildCandidates(line: EditableLine): { node: HTMLElement; detach: () => void } {
     const results = el('div', { class: 'import-candidate-results' });
     const query = el('input', { class: 'input', value: line.query });
     query.addEventListener('input', () => { line.query = query.value; });
-    attachIngredientSearch(query, results, (ing) => {
+    const detach = attachIngredientSearch(query, results, (ing) => {
       line.ingredientId = ing.id;
+      line.match = 'exact';
       renderAll();
     }, {
       immediate: true,
@@ -208,7 +237,7 @@ export function mountReview(root: HTMLElement, ctx: ScreenContext, draft: Recipe
       renderResult: (ing, pick) => button('btn btn-sm', ing.name, pick),
     });
 
-    return el(
+    const node = el(
       'div', { class: 'import-candidates' },
       el('p', { class: 'helper' }, 'closest catalog matches — pick one, or add it'),
       query, results,
@@ -220,6 +249,7 @@ export function mountReview(root: HTMLElement, ctx: ScreenContext, draft: Recipe
         renderAll();
       }),
     );
+    return { node, detach };
   }
 
   async function doSave(): Promise<void> {
@@ -248,4 +278,8 @@ export function mountReview(root: HTMLElement, ctx: ScreenContext, draft: Recipe
   }
 
   renderAll();
+
+  return () => {
+    for (const line of [...candidateUi.keys()]) discardCandidates(line);
+  };
 }
