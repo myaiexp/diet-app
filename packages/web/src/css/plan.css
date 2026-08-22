@@ -1,6 +1,6 @@
 /* Meal plan week grid + the shared add/edit entry forms. Shared surfaces
    (.bar, .hairline-grid, .label*, .helper, .helper-error, .pantry-field) live
-   in base.css / app.css / pantry.css — only genuinely plan-specific rules
+   in base.css / app.css / form.css — only genuinely plan-specific rules
    below. */
 
 .plan-toolbar { flex-wrap: wrap; }

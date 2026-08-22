@@ -13,7 +13,8 @@ import { listPantry } from '../api/pantry.js';
 import { userMessage } from '../api/errors.js';
 import { el, button, errorPanel, loadingRow } from '../ui/dom.js';
 import { say } from '../ui/toast.js';
-import { openAddItemModal, openEditItemModal, attachIngredientSearch } from './pantry-form.js';
+import { attachIngredientSearch, INGREDIENT_SEARCH_PLACEHOLDER } from '../ui/ingredient-picker.js';
+import { openAddItemModal, openEditItemModal } from './pantry-form.js';
 import { buildPantryRow } from './pantry-row.js';
 
 const PAGE_SIZE = 50;
@@ -188,7 +189,7 @@ export function pantryScreen(): Screen {
       const searchInput = el('input', {
         class: 'input',
         type: 'text',
-        placeholder: 'search ingredients — peruna, potato…',
+        placeholder: INGREDIENT_SEARCH_PLACEHOLDER,
       }) as HTMLInputElement;
       const searchResults = el('div', { class: 'pantry-search-results' });
       attachIngredientSearch(searchInput, searchResults, (ing) => {

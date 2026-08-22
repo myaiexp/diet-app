@@ -1,32 +1,19 @@
-// Add / edit pantry item modals: debounced catalog search, quantity form,
-// and the shelf-life fallback (API 400 -> reveal an expiresDate field).
+// Add / edit pantry item modals: shared pick-then-quantity form plus
+// location / opened / expires, and the shelf-life fallback (API 400 → reveal
+// an expiresDate field).
 
 import type { Ingredient, PantryItem, PantryLocation, PantryCreate } from '../api/types.js';
 import { LOCATIONS } from '../api/types.js';
-import { searchIngredients } from '../api/ingredients.js';
 import { createPantryItem, patchPantryItem, deletePantryItem } from '../api/pantry.js';
 import { userMessage, fieldErrors, isApiError } from '../api/errors.js';
 import { el, button } from '../ui/dom.js';
+import { field, errorBox, showError } from '../ui/form.js';
+import { createIngredientQuantityForm, readQuantityUnit } from '../ui/ingredient-picker.js';
 import { openModal, closeModal } from '../ui/modal.js';
 import { say } from '../ui/toast.js';
 
-const SEARCH_DEBOUNCE_MS = 200;
-const SEARCH_LIMIT = 8;
 const NO_SHELF_LIFE =
   'expiresDate is required when ingredient has no shelf life for this location';
-
-function field(labelText: string, control: HTMLElement): HTMLElement {
-  return el('div', { class: 'pantry-field' }, el('span', { class: 'form-label' }, labelText), control);
-}
-
-function errorBox(): HTMLElement {
-  return el('div', { class: 'helper-error hidden' });
-}
-
-function showError(box: HTMLElement, message: string, details: string[] = []): void {
-  box.replaceChildren(message, ...details.map((d) => el('div', {}, d)));
-  box.classList.remove('hidden');
-}
 
 function locationSelect(initial: PantryLocation): HTMLSelectElement {
   const sel = el('select', { class: 'select' });
@@ -36,124 +23,34 @@ function locationSelect(initial: PantryLocation): HTMLSelectElement {
   return sel as HTMLSelectElement;
 }
 
-/** Debounced catalog search wired to an input + a results list under it. */
-export function attachIngredientSearch(
-  input: HTMLInputElement,
-  results: HTMLElement,
-  onPick: (ing: Ingredient) => void,
-): void {
-  let timer: ReturnType<typeof setTimeout> | null = null;
-
-  async function runSearch(q: string): Promise<void> {
-    const needle = q.trim();
-    if (!needle) {
-      results.replaceChildren();
-      return;
-    }
-    let matches: Ingredient[];
-    try {
-      matches = await searchIngredients(needle, SEARCH_LIMIT);
-    } catch (e) {
-      say(userMessage(e), 'error');
-      return;
-    }
-    results.replaceChildren();
-    if (matches.length === 0) {
-      results.appendChild(el('div', { class: 'pantry-search-empty' }, 'no matches'));
-      return;
-    }
-    for (const ing of matches) {
-      const alias = ing.aliases?.[0];
-      const row = button('pantry-search-result', '', () => onPick(ing));
-      row.append(el('span', {}, ing.name), alias ? el('span', { class: 'pantry-alias' }, alias) : '');
-      results.appendChild(row);
-    }
-  }
-
-  input.addEventListener('input', () => {
-    if (timer) clearTimeout(timer);
-    const q = input.value;
-    timer = setTimeout(() => void runSearch(q), SEARCH_DEBOUNCE_MS);
-  });
-}
-
 export interface AddItemHandlers {
   onCreated: (row: PantryItem, ingredient: Ingredient) => void;
 }
 
 /** `preset` skips the search step — used when the sticky-bar picker already chose one. */
 export function openAddItemModal(handlers: AddItemHandlers, preset?: Ingredient): void {
-  let chosen: Ingredient | null = preset ?? null;
-
-  const searchInput = el('input', {
-    class: 'input',
-    type: 'text',
-    placeholder: 'search ingredients — peruna, potato…',
-  }) as HTMLInputElement;
-  const searchResults = el('div', { class: 'pantry-search-results' });
-  const pickStep = el('div', { class: 'pantry-field' }, field('ingredient', searchInput), searchResults);
-
-  const chosenLabel = el('div', { class: 'pantry-chosen' }, '');
-  const qtyInput = el('input', {
-    class: 'input',
-    type: 'number',
-    min: '0',
-    step: 'any',
-    value: '1',
-  }) as HTMLInputElement;
-  const unitInput = el('input', { class: 'input', type: 'text' }) as HTMLInputElement;
   const locSelect = locationSelect('fridge');
   const openedInput = el('input', { class: 'checkbox', type: 'checkbox' }) as HTMLInputElement;
   const expiresInput = el('input', { class: 'input', type: 'date' }) as HTMLInputElement;
   const expiresField = field('expires (no shelf life on file for this location)', expiresInput);
   expiresField.classList.add('hidden');
-  const err = errorBox();
 
-  const detailStep = el(
-    'div',
-    { class: 'pantry-form-detail hidden' },
-    chosenLabel,
-    field('quantity', qtyInput),
-    field('unit', unitInput),
-    field('location', locSelect),
-    el('label', { class: 'flex items-center gap-2' }, openedInput, 'opened'),
-    expiresField,
-    err,
-  );
-
-  function selectIngredient(ing: Ingredient): void {
-    chosen = ing;
-    unitInput.value = ing.defaultUnit;
-    const alias = ing.aliases?.[0];
-    chosenLabel.textContent = alias ? `${ing.name} · ${alias}` : ing.name;
-    pickStep.classList.add('hidden');
-    detailStep.classList.remove('hidden');
-    err.classList.add('hidden');
-  }
-
-  attachIngredientSearch(searchInput, searchResults, selectIngredient);
-
-  const body = el('div', { class: 'pantry-form' }, pickStep, detailStep);
+  const form = createIngredientQuantityForm({
+    extraFields: [
+      field('location', locSelect),
+      el('label', { class: 'flex items-center gap-2' }, openedInput, 'opened'),
+      expiresField,
+    ],
+  });
+  if (preset) form.selectIngredient(preset);
 
   async function submit(): Promise<void> {
-    if (!chosen) {
-      showError(err, 'Pick an ingredient first.');
-      return;
-    }
-    const quantity = Number(qtyInput.value);
-    if (!Number.isFinite(quantity) || quantity <= 0) {
-      showError(err, 'Quantity must be a positive number.');
-      return;
-    }
-    const unit = unitInput.value.trim();
-    if (!unit) {
-      showError(err, 'Unit is required.');
-      return;
-    }
+    const parsed = form.read();
+    if (!parsed) return;
     const payload: PantryCreate = {
-      ingredientId: chosen.id,
-      quantity,
-      unit,
+      ingredientId: parsed.ingredient.id,
+      quantity: parsed.quantity,
+      unit: parsed.unit,
       location: locSelect.value as PantryLocation,
       opened: openedInput.checked,
     };
@@ -162,14 +59,14 @@ export function openAddItemModal(handlers: AddItemHandlers, preset?: Ingredient)
     }
     try {
       const row = await createPantryItem(payload);
-      say(`${chosen.name} added to pantry`, 'success');
+      say(`${parsed.ingredient.name} added to pantry`, 'success');
       closeModal();
-      handlers.onCreated(row, chosen);
+      handlers.onCreated(row, parsed.ingredient);
     } catch (e) {
       if (isApiError(e) && e.status === 400 && e.body?.error === NO_SHELF_LIFE) {
         expiresField.classList.remove('hidden');
       }
-      showError(err, userMessage(e), fieldErrors(e));
+      showError(form.err, userMessage(e), fieldErrors(e));
     }
   }
 
@@ -180,8 +77,7 @@ export function openAddItemModal(handlers: AddItemHandlers, preset?: Ingredient)
     button('btn btn-primary', 'save', () => void submit()),
   );
 
-  if (preset) selectIngredient(preset);
-  openModal({ title: 'Add pantry item', body, footer, width: 420 });
+  openModal({ title: 'Add pantry item', body: form.body, footer, width: 420 });
 }
 
 export interface EditItemHandlers {
@@ -227,20 +123,12 @@ export function openEditItemModal(
   );
 
   async function submit(): Promise<void> {
-    const quantity = Number(qtyInput.value);
-    if (!Number.isFinite(quantity) || quantity <= 0) {
-      showError(err, 'Quantity must be a positive number.');
-      return;
-    }
-    const unit = unitInput.value.trim();
-    if (!unit) {
-      showError(err, 'Unit is required.');
-      return;
-    }
+    const parsed = readQuantityUnit(qtyInput, unitInput, err);
+    if (!parsed) return;
     try {
       const row = await patchPantryItem(item.id, {
-        quantity,
-        unit,
+        quantity: parsed.quantity,
+        unit: parsed.unit,
         location: locSelect.value as PantryLocation,
         opened: openedInput.checked,
         expiresDate: expiresInput.value,

@@ -7,16 +7,16 @@
 
 import '../css/profile.css';
 import type { Screen, ScreenContext } from '../router.js';
-import type { UserProfile, ProfilePatch, CookingSkill, Ingredient } from '../api/types.js';
+import type { UserProfile, ProfilePatch, CookingSkill } from '../api/types.js';
 import { getProfile, patchProfile } from '../api/profile.js';
-import { searchIngredients, getIngredient } from '../api/ingredients.js';
+import { getIngredient } from '../api/ingredients.js';
 import { userMessage, fieldErrors, isApiError } from '../api/errors.js';
 import { el, button, errorPanel, loadingRow } from '../ui/dom.js';
+import { errorBox, showError, hideError } from '../ui/form.js';
+import { attachIngredientSearch } from '../ui/ingredient-picker.js';
 import { say } from '../ui/toast.js';
 
 const SKILLS: readonly CookingSkill[] = ['beginner', 'competent', 'advanced'];
-const DEBOUNCE_MS = 200;
-const SEARCH_LIMIT = 8;
 
 const field = (label: string, node: HTMLElement): HTMLElement =>
   el('label', { class: 'form-label profile-field' }, label, node);
@@ -97,7 +97,7 @@ function buildTargetsPanel(profile: UserProfile, onUpdated: (p: UserProfile) => 
   const schedule = el('input', {
     class: 'input', type: 'text', value: scheduleNote(profile), placeholder: 'late shift tue+thu · long weekend cooking',
   }) as HTMLInputElement;
-  const errBox = el('div', { class: 'helper-error hidden' });
+  const errBox = errorBox();
   const inputs: TargetsInputs = { name, calorieMin, calorieMax, protein, carbs, fat, householdSize, cookingSkill, schedule };
 
   async function save(): Promise<void> {
@@ -106,11 +106,10 @@ function buildTargetsPanel(profile: UserProfile, onUpdated: (p: UserProfile) => 
     try {
       const updated = await patchProfile(patch);
       say('Profile saved.');
-      errBox.classList.add('hidden');
+      hideError(errBox);
       onUpdated(updated);
     } catch (e) {
-      errBox.replaceChildren(userMessage(e), ...fieldErrors(e).map((m) => el('div', {}, m)));
-      errBox.classList.remove('hidden');
+      showError(errBox, userMessage(e), fieldErrors(e));
     }
   }
 
@@ -203,33 +202,18 @@ function buildDislikedPanel(profile: UserProfile, names: Map<string, string>, on
 
   function showAddForm(): void {
     const input = el('input', { class: 'input', type: 'text', placeholder: 'search ingredients…' }) as HTMLInputElement;
-    const results = el('div', { class: 'profile-search-results' });
-    let timer: ReturnType<typeof setTimeout> | null = null;
-
-    async function runSearch(q: string): Promise<void> {
-      let matches: Ingredient[];
-      try {
-        matches = await searchIngredients(q, SEARCH_LIMIT);
-      } catch (e) {
-        say(userMessage(e), 'error');
-        return;
-      }
-      results.replaceChildren(
-        ...matches.filter((ing) => !ids.includes(ing.id)).map((ing) =>
-          button('profile-search-result', ing.name, () => {
-            names.set(ing.id, ing.name);
-            void commit([...ids, ing.id]);
-            addSlot.replaceChildren(addButton);
-          })),
-      );
-    }
-
-    input.addEventListener('input', () => {
-      if (timer) clearTimeout(timer);
-      const q = input.value;
-      timer = setTimeout(() => void runSearch(q), DEBOUNCE_MS);
-    });
-    addSlot.replaceChildren(el('div', { class: 'profile-search-wrap' }, input, results));
+    const results = el('div', { class: 'pantry-search-results' });
+    attachIngredientSearch(
+      input,
+      results,
+      (ing) => {
+        names.set(ing.id, ing.name);
+        void commit([...ids, ing.id]);
+        addSlot.replaceChildren(addButton);
+      },
+      { filter: (ing) => !ids.includes(ing.id) },
+    );
+    addSlot.replaceChildren(el('div', { class: 'pantry-search-wrap' }, input, results));
     input.focus();
   }
 

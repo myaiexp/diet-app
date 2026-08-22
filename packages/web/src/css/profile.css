@@ -37,31 +37,8 @@
 }
 .chip-x:hover { color: var(--red); }
 
-/* Disliked-ingredient search — absolutely positioned so a handful of matches
-   overlay the add control rather than pushing the chip row around. */
-.profile-search-wrap {
-  position: relative;
+/* Compact add in a chip panel: keep a floor so the shared dropdown doesn't
+   collapse to the input's content width. Dropdown chrome is form.css. */
+.profile-chip-panel .pantry-search-wrap {
   min-width: 200px;
 }
-
-.profile-search-results {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: calc(100% + 2px);
-  z-index: 20;
-  background: var(--bg-surface);
-  border: 1px solid var(--border);
-}
-.profile-search-results:empty { display: none; border: none; }
-
-.profile-search-result {
-  display: block;
-  width: 100%;
-  padding: 6px 8px;
-  text-align: left;
-  color: var(--fg-1);
-  border-bottom: 1px solid var(--border);
-}
-.profile-search-result:last-child { border-bottom: none; }
-.profile-search-result:hover { background: var(--bg-hover); }

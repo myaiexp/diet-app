@@ -1,0 +1,70 @@
+/* Shared form chrome + ingredient-search dropdown. Imported by ui/form.ts so
+   shopping / plan / profile get the styles without visiting pantry. Class
+   names (.pantry-field, .pantry-search-*) are the de facto shared vocabulary
+   already used by shopping-add, add-entry, and plan-cell. */
+
+.pantry-search-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+
+/* Absolutely positioned so a handful of matches overlay the bar rather than
+   pushing layout around — bounded by the search's own result limit, not a
+   scroll region of its own. */
+.pantry-search-results {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 2px);
+  z-index: 20;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+}
+.pantry-search-results:empty { display: none; border: none; }
+
+.pantry-search-result {
+  display: flex;
+  gap: 6px;
+  width: 100%;
+  padding: 6px 8px;
+  text-align: left;
+  color: var(--fg-1);
+  border-bottom: 1px solid var(--border);
+}
+.pantry-search-result:last-child { border-bottom: none; }
+.pantry-search-result:hover { background: var(--bg-hover); }
+
+.pantry-search-empty {
+  padding: 6px 8px;
+  font-size: var(--text-sm);
+  color: var(--fg-3);
+}
+
+.pantry-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pantry-form-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pantry-field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.pantry-chosen {
+  font-size: var(--text-md);
+  color: var(--fg-1);
+}
+
+.pantry-alias {
+  font-size: var(--text-sm);
+  color: var(--fg-2);
+}

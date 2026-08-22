@@ -14,6 +14,7 @@ import type { MealPlanEntry, MealPlanCreate, Recipe, Slot } from '../api/types.j
 import { createEntry } from '../api/meal-plans.js';
 import { listRecipes } from '../api/recipes.js';
 import { el, button } from '../ui/dom.js';
+import { field, errorBox, showError } from '../ui/form.js';
 import { openModal, closeModal } from '../ui/modal.js';
 import { say } from '../ui/toast.js';
 import { userMessage, fieldErrors } from '../api/errors.js';
@@ -144,25 +145,20 @@ export function openAddEntry(opts: AddEntryOptions): void {
     max: '12',
     value: '1',
   }) as HTMLInputElement;
-  const err = el('div', { class: 'helper-error hidden' });
-
-  function showError(message: string, details: string[] = []): void {
-    err.replaceChildren(message, ...details.map((d) => el('div', {}, d)));
-    err.classList.remove('hidden');
-  }
+  const err = errorBox();
 
   const body = el(
     'div',
     { class: 'add-entry-form' },
     picker.element,
-    el('div', { class: 'pantry-field' }, el('span', { class: 'form-label' }, 'servings'), servingsInput),
+    field('servings', servingsInput),
     err,
   );
 
   async function submit(): Promise<void> {
     const sel = picker.getSelection();
     if (!sel.recipeId && !sel.freeformNote) {
-      showError(CONTENT_MSG);
+      showError(err, CONTENT_MSG);
       return;
     }
     const payload: MealPlanCreate = { date, slot };
@@ -177,7 +173,7 @@ export function openAddEntry(opts: AddEntryOptions): void {
       closeModal();
       onCreated(entry);
     } catch (e) {
-      showError(userMessage(e), fieldErrors(e));
+      showError(err, userMessage(e), fieldErrors(e));
     }
   }
 
@@ -198,5 +194,5 @@ export function openAddEntry(opts: AddEntryOptions): void {
 
   void fetchRecipeCollection()
     .then((recipes) => picker.setRecipes(recipes))
-    .catch((e: unknown) => showError(userMessage(e)));
+    .catch((e: unknown) => showError(err, userMessage(e)));
 }

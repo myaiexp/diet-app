@@ -11,6 +11,7 @@ import type { MealPlanEntry, MealPlanPatch, Recipe, Slot, EntryStatus } from '..
 import { SLOTS } from '../api/types.js';
 import { patchEntry } from '../api/meal-plans.js';
 import { el, button } from '../ui/dom.js';
+import { field, errorBox, showError } from '../ui/form.js';
 import { openModal, closeModal } from '../ui/modal.js';
 import { say } from '../ui/toast.js';
 import { userMessage, fieldErrors } from '../api/errors.js';
@@ -169,29 +170,24 @@ export function openEditEntry(
   });
   picker.setRecipes(recipes);
 
-  const err = el('div', { class: 'helper-error hidden' });
+  const err = errorBox();
 
   const body = el(
     'div',
     { class: 'plan-edit-form' },
-    el('div', { class: 'pantry-field' }, el('span', { class: 'form-label' }, 'date'), dateInput),
-    el('div', { class: 'pantry-field' }, el('span', { class: 'form-label' }, 'slot'), slotSelect),
+    field('date', dateInput),
+    field('slot', slotSelect),
     picker.element,
-    el('div', { class: 'pantry-field' }, el('span', { class: 'form-label' }, 'servings'), servingsInput),
-    el('div', { class: 'pantry-field' }, el('span', { class: 'form-label' }, 'notes'), notesInput),
-    el('div', { class: 'pantry-field' }, el('span', { class: 'form-label' }, 'status'), statusSelect),
+    field('servings', servingsInput),
+    field('notes', notesInput),
+    field('status', statusSelect),
     err,
   );
-
-  function showError(message: string, details: string[] = []): void {
-    err.replaceChildren(message, ...details.map((d) => el('div', {}, d)));
-    err.classList.remove('hidden');
-  }
 
   async function submit(): Promise<void> {
     const sel = picker.getSelection();
     if (!sel.recipeId && !sel.freeformNote) {
-      showError('Pick a recipe, or type a note — one of the two is required.');
+      showError(err, 'Pick a recipe, or type a note — one of the two is required.');
       return;
     }
     const status = statusSelect.value as EditableStatus;
@@ -211,7 +207,7 @@ export function openEditEntry(
       closeModal();
       onSaved(updated);
     } catch (e) {
-      showError(userMessage(e), fieldErrors(e));
+      showError(err, userMessage(e), fieldErrors(e));
     }
   }
 

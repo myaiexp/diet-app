@@ -3,8 +3,7 @@
    .bar-sticky, .row, .row-main/-title/-meta/-right, .empty-state, .error-panel,
    .section-header, .panel, .label*) live in base.css / app.css; form
    primitives (.pantry-field, .pantry-form, .pantry-chosen, .pantry-search-*,
-   .helper-error, .form-label) are reused from pantry.css/pantry-form.ts the
-   way plan-cell.ts and add-entry.ts already do — only genuinely
+   .helper-error, .form-label) live in form.css via ui/form.ts — only genuinely
    shopping-specific rules below. */
 
 .shopping-count { font-size: var(--text-md); font-weight: 700; }

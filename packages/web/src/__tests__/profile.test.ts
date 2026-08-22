@@ -199,12 +199,12 @@ describe('profile screen', () => {
 
     const panel = chipPanel(root, 'disliked ingredients');
     panel.querySelector<HTMLButtonElement>('.btn-ghost')!.click();
-    const input = panel.querySelector<HTMLInputElement>('.profile-search-wrap input')!;
+    const input = panel.querySelector<HTMLInputElement>('.pantry-search-wrap input')!;
     input.value = 'liver';
     input.dispatchEvent(new Event('input', { bubbles: true }));
     await flush(250);
 
-    const result = panel.querySelector<HTMLButtonElement>('.profile-search-result')!;
+    const result = panel.querySelector<HTMLButtonElement>('.pantry-search-result')!;
     expect(result.textContent).toContain('Liver');
     result.click();
     await flush();

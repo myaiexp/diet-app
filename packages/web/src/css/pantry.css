@@ -1,7 +1,7 @@
-/* Pantry screen: row layout, ramp accents, search dropdown, add/edit forms.
-   Shared surfaces (.bar-sticky, .chip, .row, .row-main/-meta/-right, .empty-state,
-   .error-panel, .section-header) live in base.css / app.css — only genuinely
-   pantry-specific rules below. */
+/* Pantry screen: row layout, ramp accents. Shared surfaces (.bar-sticky, .chip,
+   .row, .row-main/-meta/-right, .empty-state, .error-panel, .section-header)
+   live in base.css / app.css; form chrome and the ingredient-search dropdown
+   live in form.css (imported by ui/form.ts). Only pantry-row rules below. */
 
 /* One-handed at the fridge: rows never shrink below a comfortable tap target,
    regardless of viewport — this is a phone-first surface first and foremost. */
@@ -45,69 +45,4 @@
   display: flex;
   justify-content: center;
   padding: 10px;
-}
-
-/* ===== Ingredient search (sticky bar + add-modal picker step) ===== */
-
-.pantry-search-wrap {
-  position: relative;
-  flex: 1;
-  min-width: 0;
-}
-
-/* Absolutely positioned so a handful of matches overlay the bar rather than
-   pushing layout around — bounded by the search's own result limit, not a
-   scroll region of its own. */
-.pantry-search-results {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: calc(100% + 2px);
-  z-index: 20;
-  background: var(--bg-surface);
-  border: 1px solid var(--border);
-}
-.pantry-search-results:empty { display: none; border: none; }
-
-.pantry-search-result {
-  display: flex;
-  gap: 6px;
-  width: 100%;
-  padding: 6px 8px;
-  text-align: left;
-  color: var(--fg-1);
-  border-bottom: 1px solid var(--border);
-}
-.pantry-search-result:last-child { border-bottom: none; }
-.pantry-search-result:hover { background: var(--bg-hover); }
-
-.pantry-search-empty {
-  padding: 6px 8px;
-  font-size: var(--text-sm);
-  color: var(--fg-3);
-}
-
-/* ===== Add / edit forms ===== */
-
-.pantry-form {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.pantry-form-detail {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.pantry-field {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-}
-
-.pantry-chosen {
-  font-size: var(--text-md);
-  color: var(--fg-1);
 }
