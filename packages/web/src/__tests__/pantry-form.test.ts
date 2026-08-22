@@ -3,7 +3,7 @@
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 import { configureClient, resetClient } from '../api/client.js';
 import { closeModal } from '../ui/modal.js';
-import { openAddItemModal } from '../screens/pantry/form.js';
+import { openAddItemModal } from '../modals/pantry-form.js';
 import type { Ingredient, PantryItem, PantryLocation } from '../api/types.js';
 
 const NO_SHELF_LIFE =

@@ -2,15 +2,15 @@
 // location / opened / expires, and the shelf-life fallback (API 400 → reveal
 // an expiresDate field).
 
-import type { Ingredient, PantryItem, PantryLocation, PantryCreate } from '../../api/types.js';
-import { LOCATIONS } from '../../api/types.js';
-import { createPantryItem, patchPantryItem, deletePantryItem } from '../../api/pantry.js';
-import { userMessage, fieldErrors, isApiError } from '../../api/errors.js';
-import { el, button } from '../../ui/dom.js';
-import { field, errorBox, showError } from '../../ui/form.js';
-import { createIngredientQuantityForm, readQuantityUnit } from '../../ui/ingredient-picker.js';
-import { openModal, closeModal } from '../../ui/modal.js';
-import { say } from '../../ui/toast.js';
+import type { Ingredient, PantryItem, PantryLocation, PantryCreate } from '../api/types.js';
+import { LOCATIONS } from '../api/types.js';
+import { createPantryItem, patchPantryItem, deletePantryItem } from '../api/pantry.js';
+import { userMessage, fieldErrors, isApiError } from '../api/errors.js';
+import { el, button } from '../ui/dom.js';
+import { field, errorBox, showError } from '../ui/form.js';
+import { createIngredientQuantityForm, readQuantityUnit } from '../ui/ingredient-picker.js';
+import { openModal, closeModal } from '../ui/modal.js';
+import { say } from '../ui/toast.js';
 
 const NO_SHELF_LIFE =
   'expiresDate is required when ingredient has no shelf life for this location';

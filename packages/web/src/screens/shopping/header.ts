@@ -16,7 +16,7 @@ import { isoWeekNumber } from '../../format/date.js';
 import { el, button } from '../../ui/dom.js';
 import { openModal, closeModal } from '../../ui/modal.js';
 import { say } from '../../ui/toast.js';
-import { openAddShoppingItemModal } from './add.js';
+import { openAddShoppingItemModal } from '../../modals/shopping-add.js';
 
 export interface HeaderHandlers {
   onGenerated: (list: ShoppingList, skipped: SkippedGenerateLine[]) => void;

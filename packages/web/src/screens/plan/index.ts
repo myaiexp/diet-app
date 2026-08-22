@@ -1,6 +1,6 @@
 // Meal plan week screen: 7x4 grid, week navigation, and the cook / add-entry
 // wiring. Slot order and title/status rendering live in cell.ts, and the
-// create affordance in add-entry.ts — reused by the Today screen.
+// create affordance in modals/add-entry.ts — reused by the Today screen.
 //
 // `slot` is text and the API deliberately never sorts it (sorted as text it
 // reads breakfast/dinner/lunch/snack) — SLOTS gives the order the client lays
@@ -18,8 +18,9 @@ import { el, button, errorPanel, loadingRow } from '../../ui/dom.js';
 import { say } from '../../ui/toast.js';
 import { openCookFlow } from '../../modals/cook-flow.js';
 import { mondayOf, addDays, isoToday, isoWeekNumber } from '../../format/date.js';
-import { openAddEntry } from './add-entry.js';
-import { buildDayColumn, openEditEntry, type CellHandlers } from './cell.js';
+import { openAddEntry } from '../../modals/add-entry.js';
+import { openEditEntry } from '../../modals/plan-edit.js';
+import { buildDayColumn, type CellHandlers } from './cell.js';
 
 const DAY_COUNT = 7;
 const TOTAL_SLOTS = DAY_COUNT * SLOTS.length;

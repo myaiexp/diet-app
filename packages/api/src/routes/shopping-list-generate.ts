@@ -146,12 +146,17 @@ async function runGenerate(tx: Tx, opts: GenerateOptions): Promise<GenerateResul
         // the plan's numbers without resurrecting or relabeling what the user
         // already decided about a row. `excluded.*` picks up each conflicting
         // row's own proposed values out of the multi-row VALUES list above.
+        // setWhere keeps the rewrite generation-owned: a colliding manual row
+        // (same list/ingredient/unit) is a no-op, not an overwrite — the prune
+        // below is already source-scoped, and without this the user's amount
+        // plus a never-refreshed netted quantityInPantry would stick forever.
         set: {
           quantityNeeded: sql`excluded.quantity_needed`,
           quantityInPantry: sql`excluded.quantity_in_pantry`,
           netToBuy: sql`excluded.net_to_buy`,
           category: sql`excluded.category`,
         },
+        setWhere: eq(shoppingListItems.source, 'generated'),
       });
   }
 

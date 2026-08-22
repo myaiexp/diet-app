@@ -39,7 +39,7 @@ agent's turn boundary. Idea #3539.
 
 Two real-Postgres suites share one gate.
 
-- `packages/api` `routes.test.ts` — 20 `test()` cases under
+- `packages/api` `routes.test.ts` — 21 `test()` cases under
   `describe.skipIf(!hasDb)`, plus the loud gate.
 - `packages/db` `src/__tests__/import-products-sql.test.ts` — 4 real-Postgres
   tests (upsert-in-place, same EAN across two stores, jsonb round-trip,

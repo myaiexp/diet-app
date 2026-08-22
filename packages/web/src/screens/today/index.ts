@@ -21,7 +21,7 @@ import { listAllPantry } from '../../api/pantry.js';
 import { listAllRecipes } from '../../api/recipes.js';
 import { userMessage } from '../../api/errors.js';
 import { el, errorPanel, loadingRow } from '../../ui/dom.js';
-import { openAddEntry } from '../plan/add-entry.js';
+import { openAddEntry } from '../../modals/add-entry.js';
 import { openCookFlow, openFeedbackModal } from '../../modals/cook-flow.js';
 import { mondayOf, isoToday, finnishWeekdayLong, finnishDate } from '../../format/date.js';
 import { buildStatStrip, buildSlotsPanel, buildSpoilingPanel, type SlotHandlers } from './panels.js';
