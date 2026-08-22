@@ -87,7 +87,9 @@ reaches Postgres as an unhandled `invalid input syntax for type uuid`.
   `AI_MODEL_CAPABLE`); missing any → `null` and `POST /recipes/import` returns
   503. Never required at boot.
 - **Recipe import**: draft-only (`POST /api/recipes/import`); never inserts —
-  client confirms via `POST /recipes`. SSRF-safe URL fetch in `ai/fetch-url.ts`;
+  client confirms via `POST /recipes`. SSRF-safe URL fetch in `ai/fetch-url.ts`
+  (hostname/DNS blocklist, ports 80/443 only, TCP connect pinned to the
+  already-allowed DNS answers so undici cannot re-resolve at connect time);
   extract in `ai/import-recipe.ts`; exact catalog match in `ingredient-match.ts`.
 - **Import failure logging**: the import chain talks to two unreliable external
   services and collapses every failure into an opaque sentinel (`{ok:false}` /

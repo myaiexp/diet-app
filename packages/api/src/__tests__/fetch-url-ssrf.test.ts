@@ -1,0 +1,199 @@
+// SSRF guards on fetchUrlAsText: literals, DNS answers, hostnames
+
+import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
+import { fetchUrlAsText, type DnsLookupFn } from '../ai/fetch-url.js';
+import {
+  captureImportLogs,
+  mustNotFetch,
+  publicDns,
+} from './fetch-url-test-util.js';
+
+let logged: string[] = [];
+
+beforeEach(() => {
+  logged = captureImportLogs().logged;
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
+
+describe('fetchUrlAsText URL / hostname blocklist', () => {
+  test('rejects non-http schemes', async () => {
+    for (const url of [
+      'file:///etc/passwd',
+      'ftp://example.com/a',
+      'javascript:alert(1)',
+      'data:text/html,hi',
+    ]) {
+      const result = await fetchUrlAsText(url, {
+        fetchImpl: mustNotFetch(),
+        dnsLookup: publicDns,
+      });
+      expect(result).toEqual({ ok: false, error: 'invalid_url' });
+    }
+  });
+
+  test('rejects credentials in URL', async () => {
+    const result = await fetchUrlAsText('https://user:pass@example.com/recipe', {
+      fetchImpl: mustNotFetch(),
+      dnsLookup: publicDns,
+    });
+    expect(result).toEqual({ ok: false, error: 'invalid_url' });
+  });
+
+  test('rejects loopback host', async () => {
+    for (const url of [
+      'http://localhost/secret',
+      'http://127.0.0.1/secret',
+      'http://[::1]/secret',
+    ]) {
+      const result = await fetchUrlAsText(url, {
+        fetchImpl: mustNotFetch(),
+        dnsLookup: publicDns,
+      });
+      expect(result).toEqual({ ok: false, error: 'blocked_url' });
+    }
+  });
+
+  test('rejects private IPv4 literal', async () => {
+    for (const url of [
+      'http://10.0.0.5/x',
+      'http://192.168.1.1/x',
+      'http://172.16.0.1/x',
+      'http://169.254.169.254/latest/meta-data/',
+      'http://100.64.0.1/x',
+    ]) {
+      const result = await fetchUrlAsText(url, {
+        fetchImpl: mustNotFetch(),
+        dnsLookup: publicDns,
+      });
+      expect(result, url).toEqual({ ok: false, error: 'blocked_url' });
+    }
+  });
+
+  test('rejects IPv6 ULA, link-local, mapped, and compatible embeds', async () => {
+    for (const url of [
+      'http://[fc00::1]/x',
+      'http://[fe80::1]/x',
+      'http://[::ffff:127.0.0.1]/x',
+      'http://[::ffff:7f00:1]/x',
+      'http://[::7f00:1]/x',
+      'http://[::127.0.0.1]/x',
+      'http://[64:ff9b::7f00:1]/x',
+      'http://[64:ff9b::127.0.0.1]/x',
+    ]) {
+      const result = await fetchUrlAsText(url, {
+        fetchImpl: mustNotFetch(),
+        dnsLookup: publicDns,
+      });
+      expect(result, url).toEqual({ ok: false, error: 'blocked_url' });
+    }
+  });
+
+  test('rejects metadata and internal hostnames without fetching', async () => {
+    for (const url of [
+      'http://metadata.google.internal/latest/meta-data/',
+      'http://foo.localhost/x',
+      'http://printer.local/x',
+      'http://svc.internal/x',
+      'http://gateway.lan/x',
+    ]) {
+      let fetched = false;
+      const result = await fetchUrlAsText(url, {
+        fetchImpl: async () => {
+          fetched = true;
+          throw new Error('must not fetch');
+        },
+        dnsLookup: async () => {
+          throw new Error('must not look up blocked hostname');
+        },
+      });
+      expect(result, url).toEqual({ ok: false, error: 'blocked_url' });
+      expect(fetched, url).toBe(false);
+    }
+  });
+});
+
+describe('fetchUrlAsText DNS-answer blocklist', () => {
+  test.each([
+    ['127.0.0.1', 4],
+    ['169.254.169.254', 4],
+    ['10.0.0.1', 4],
+    ['::ffff:127.0.0.1', 6],
+  ] as const)(
+    'blocks https://example.com when DNS returns %s',
+    async (address, family) => {
+      let fetched = false;
+      const dnsLookup: DnsLookupFn = async () => [{ address, family }];
+      const result = await fetchUrlAsText('https://example.com/recipe', {
+        fetchImpl: async () => {
+          fetched = true;
+          throw new Error('must not fetch');
+        },
+        dnsLookup,
+      });
+      expect(result).toEqual({ ok: false, error: 'blocked_url' });
+      expect(fetched).toBe(false);
+    },
+  );
+
+  test('blocks an empty DNS answer set (fail closed)', async () => {
+    let fetched = false;
+    const result = await fetchUrlAsText('https://example.com/recipe', {
+      fetchImpl: async () => {
+        fetched = true;
+        throw new Error('must not fetch');
+      },
+      dnsLookup: async () => [],
+    });
+    expect(result).toEqual({ ok: false, error: 'blocked_url' });
+    expect(fetched).toBe(false);
+  });
+
+  test('blocks a mixed public+private answer set', async () => {
+    let fetched = false;
+    const result = await fetchUrlAsText('https://example.com/recipe', {
+      fetchImpl: async () => {
+        fetched = true;
+        throw new Error('must not fetch');
+      },
+      dnsLookup: async () => [
+        { address: '1.1.1.1', family: 4 },
+        { address: '10.0.0.1', family: 4 },
+      ],
+    });
+    expect(result).toEqual({ ok: false, error: 'blocked_url' });
+    expect(fetched).toBe(false);
+  });
+});
+
+describe('fetchUrlAsText SSRF logging', () => {
+  test('logs a rejected redirect target (the user URL was fine)', async () => {
+    let calls = 0;
+    const result = await fetchUrlAsText('https://example.com/start', {
+      fetchImpl: async () => {
+        calls += 1;
+        return new Response(null, {
+          status: 302,
+          headers: { Location: 'http://169.254.169.254/latest/meta-data/' },
+        });
+      },
+      dnsLookup: publicDns,
+    });
+    expect(result).toEqual({ ok: false, error: 'blocked_url' });
+    expect(calls).toBe(1);
+    expect(logged[0]).toContain('[recipe-import] redirect target rejected');
+    expect(logged[0]).toContain('hop=1');
+    expect(logged[0]).toContain('blocked_url');
+  });
+
+  test('stays silent when the user URL itself is rejected (expected 400)', async () => {
+    const result = await fetchUrlAsText('http://127.0.0.1/secret', {
+      fetchImpl: mustNotFetch(),
+      dnsLookup: publicDns,
+    });
+    expect(result).toEqual({ ok: false, error: 'blocked_url' });
+    expect(logged).toEqual([]);
+  });
+});

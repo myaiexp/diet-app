@@ -7,136 +7,25 @@ import {
   IMPORT_TEXT_MAX_CHARS,
   type DnsLookupFn,
 } from '../ai/fetch-url.js';
+import {
+  captureImportLogs,
+  cancellableResponse,
+  htmlResponse,
+  mustNotFetch,
+  publicDns,
+} from './fetch-url-test-util.js';
 
-// Every failure path logs to console.error by design (it is the operator's only
-// signal behind the flat 502). Capture instead of printing, and assert on the
-// captured lines in the 'failure logging' block below.
 let logged: string[] = [];
 
 beforeEach(() => {
-  logged = [];
-  vi.spyOn(console, 'error').mockImplementation((...args: unknown[]) => {
-    logged.push(args.map((a) => String(a)).join(' '));
-  });
+  logged = captureImportLogs().logged;
 });
 
 afterEach(() => {
   vi.restoreAllMocks();
 });
 
-/** Public IPv4 — never hit real DNS in these tests. */
-const publicDns: DnsLookupFn = async () => [
-  { address: '93.184.216.34', family: 4 },
-];
-
-function htmlResponse(html: string, init?: ResponseInit): Response {
-  return new Response(html, {
-    status: 200,
-    headers: { 'content-type': 'text/html; charset=utf-8' },
-    ...init,
-  });
-}
-
-function mustNotFetch(): typeof fetch {
-  return async () => {
-    throw new Error('must not fetch');
-  };
-}
-
-/**
- * A Response whose body stays open until cancel() — models the leak of leaving
- * a 302/4xx/5xx payload unread. Tests assert cancel fired so undici can
- * release the socket.
- */
-function cancellableResponse(
-  init: ResponseInit,
-  payload = 'unread-payload',
-): { response: Response; cancelled: () => boolean } {
-  let cancelled = false;
-  const stream = new ReadableStream<Uint8Array>({
-    start(controller) {
-      controller.enqueue(new TextEncoder().encode(payload));
-      // Intentionally not closed: an unconsumed body staying open is the leak.
-    },
-    cancel() {
-      cancelled = true;
-    },
-  });
-  return { response: new Response(stream, init), cancelled: () => cancelled };
-}
-
 describe('fetchUrlAsText', () => {
-  test('rejects non-http schemes', async () => {
-    for (const url of [
-      'file:///etc/passwd',
-      'ftp://example.com/a',
-      'javascript:alert(1)',
-      'data:text/html,hi',
-    ]) {
-      const result = await fetchUrlAsText(url, {
-        fetchImpl: mustNotFetch(),
-        dnsLookup: publicDns,
-      });
-      expect(result).toEqual({ ok: false, error: 'invalid_url' });
-    }
-  });
-
-  test('rejects credentials in URL', async () => {
-    const result = await fetchUrlAsText('https://user:pass@example.com/recipe', {
-      fetchImpl: mustNotFetch(),
-      dnsLookup: publicDns,
-    });
-    expect(result).toEqual({ ok: false, error: 'invalid_url' });
-  });
-
-  test('rejects loopback host', async () => {
-    for (const url of [
-      'http://localhost/secret',
-      'http://127.0.0.1/secret',
-      'http://[::1]/secret',
-    ]) {
-      const result = await fetchUrlAsText(url, {
-        fetchImpl: mustNotFetch(),
-        dnsLookup: publicDns,
-      });
-      expect(result).toEqual({ ok: false, error: 'blocked_url' });
-    }
-  });
-
-  test('rejects private IPv4 literal', async () => {
-    for (const url of [
-      'http://10.0.0.5/x',
-      'http://192.168.1.1/x',
-      'http://172.16.0.1/x',
-      'http://169.254.169.254/latest/meta-data/',
-    ]) {
-      const result = await fetchUrlAsText(url, {
-        fetchImpl: mustNotFetch(),
-        dnsLookup: publicDns,
-      });
-      expect(result).toEqual({ ok: false, error: 'blocked_url' });
-    }
-  });
-
-  test('rejects IPv6 ULA, link-local, mapped, and compatible embeds', async () => {
-    for (const url of [
-      'http://[fc00::1]/x',
-      'http://[fe80::1]/x',
-      'http://[::ffff:127.0.0.1]/x',
-      'http://[::ffff:7f00:1]/x',
-      'http://[::7f00:1]/x',
-      'http://[::127.0.0.1]/x',
-      'http://[64:ff9b::7f00:1]/x',
-      'http://[64:ff9b::127.0.0.1]/x',
-    ]) {
-      const result = await fetchUrlAsText(url, {
-        fetchImpl: mustNotFetch(),
-        dnsLookup: publicDns,
-      });
-      expect(result, url).toEqual({ ok: false, error: 'blocked_url' });
-    }
-  });
-
   test('strips HTML tags to text', async () => {
     const html = `
       <html><head>
@@ -186,26 +75,6 @@ describe('fetchUrlAsText', () => {
       dnsLookup: publicDns,
     });
     expect(result).toEqual({ ok: false, error: 'fetch_failed' });
-  });
-
-  test('blocks redirect to private host', async () => {
-    let calls = 0;
-    const fetchImpl: typeof fetch = async () => {
-      calls += 1;
-      if (calls === 1) {
-        return new Response(null, {
-          status: 302,
-          headers: { Location: 'http://127.0.0.1/secret' },
-        });
-      }
-      throw new Error('must not follow blocked redirect');
-    };
-    const result = await fetchUrlAsText('https://example.com/start', {
-      fetchImpl,
-      dnsLookup: publicDns,
-    });
-    expect(result).toEqual({ ok: false, error: 'blocked_url' });
-    expect(calls).toBe(1);
   });
 
   test('rejects body when Content-Length exceeds maxBytes', async () => {
@@ -398,34 +267,6 @@ describe('fetchUrlAsText failure logging', () => {
     expect(result).toEqual({ ok: false, error: 'fetch_failed' });
     expect(logged[0]).toContain('[recipe-import] body read failed');
     expect(logged[0]).toContain('content-length 5000000 exceeds cap 1000');
-  });
-
-  test('logs a rejected redirect target (the user URL was fine)', async () => {
-    let calls = 0;
-    const result = await fetchUrlAsText('https://example.com/start', {
-      fetchImpl: async () => {
-        calls += 1;
-        return new Response(null, {
-          status: 302,
-          headers: { Location: 'http://169.254.169.254/latest/meta-data/' },
-        });
-      },
-      dnsLookup: publicDns,
-    });
-    expect(result).toEqual({ ok: false, error: 'blocked_url' });
-    expect(calls).toBe(1);
-    expect(logged[0]).toContain('[recipe-import] redirect target rejected');
-    expect(logged[0]).toContain('hop=1');
-    expect(logged[0]).toContain('blocked_url');
-  });
-
-  test('stays silent when the user URL itself is rejected (expected 400)', async () => {
-    const result = await fetchUrlAsText('http://127.0.0.1/secret', {
-      fetchImpl: mustNotFetch(),
-      dnsLookup: publicDns,
-    });
-    expect(result).toEqual({ ok: false, error: 'blocked_url' });
-    expect(logged).toEqual([]);
   });
 });
 
