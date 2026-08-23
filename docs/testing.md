@@ -81,6 +81,12 @@ Screen and client suites compose `packages/web/src/__tests__/harness.ts` and
 `fixtures.ts` — they do not re-derive `jsonResponse` / `pathOf` / `flush` /
 `mountRoot` / `makeCtx`, or the per-resource `make*` builders.
 
+Debounced UI (scaler, catalog search) waits with `vi.waitFor` on the
+fetch/DOM assertion, matching `cook-flow.test.ts` — never a hardcoded
+250ms sleep. Suites that pin the delay itself (`ingredient-picker`) install
+fake timers (`toFake: ['setTimeout', 'clearTimeout']` so `AbortSignal.timeout`
+stays native); `flush(ms)` then advances those timers instead of sleeping.
+
 `routeFetch(routes, { unmatched })` is the fetch-side analog of
 `makeSelectRouter`: keys are `"GET /api/pantry"` or `"/api/ingredients"` (any
 method) or `"GET /api/recipes/:id"`. Static segments beat params at the same

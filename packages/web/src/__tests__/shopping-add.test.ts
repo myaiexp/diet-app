@@ -40,7 +40,9 @@ async function pickPotato(): Promise<void> {
   const search = document.querySelector<HTMLInputElement>('.modal-body input[type="text"]')!;
   search.value = 'peruna';
   search.dispatchEvent(new Event('input', { bubbles: true }));
-  await flush(250);
+  await vi.waitFor(() => {
+    expect(document.querySelector('.pantry-search-result')).not.toBeNull();
+  });
 
   document.querySelector<HTMLElement>('.pantry-search-result')!.click();
 }

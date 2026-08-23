@@ -54,8 +54,15 @@ export function pathOf(input: RequestInfo | URL): string {
   return asUrl(input).pathname;
 }
 
-export function flush(ms = 0): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+/** Yield to the event loop. With fake timers installed, advances them instead
+ * of sleeping on the wall clock — debounce suites can `flush(DEBOUNCE_MS)`
+ * without a 200–250ms real wait. */
+export async function flush(ms = 0): Promise<void> {
+  if (vi.isFakeTimers()) {
+    await vi.advanceTimersByTimeAsync(ms);
+    return;
+  }
+  await new Promise<void>((resolve) => setTimeout(resolve, ms));
 }
 
 export function mountRoot(): HTMLElement {

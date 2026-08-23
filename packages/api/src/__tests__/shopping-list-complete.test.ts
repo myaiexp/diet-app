@@ -178,6 +178,22 @@ describe('shoppingListCompleteRoutes', () => {
     expect(await res.json()).toEqual({ error: 'Shopping list already completed' });
   });
 
+  test('completes a list already in shopping status, filing pantry rows and setting done', async () => {
+    const { db, pantryWrites, listWrites } = makeCompleteMock({
+      list: { ...LIST_DRAFT, status: 'shopping' },
+    });
+    const res = await shoppingListCompleteRoutes(db).request(
+      `/${LIST_ID}/complete`,
+      jsonReq({}),
+    );
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.added).toHaveLength(1);
+    expect(body.list.status).toBe('done');
+    expect(pantryWrites()).toHaveLength(1);
+    expect(listWrites()[0]!.values).toMatchObject({ status: 'done' });
+  });
+
   test('creates pantry rows for bought items with net to buy', async () => {
     const { db, pantryWrites } = makeCompleteMock();
     const res = await shoppingListCompleteRoutes(db).request(

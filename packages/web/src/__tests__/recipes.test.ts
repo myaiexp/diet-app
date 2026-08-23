@@ -6,7 +6,7 @@
 // Editing must always read from an unscaled recipe, even when the scaler is
 // showing a scaled view — see the dedicated test for that.
 
-import { describe, test, expect, beforeEach, afterEach } from 'vitest';
+import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 import { configureClient, resetClient } from '../api/client.js';
 import { closeModal } from '../ui/modal.js';
 import { recipesScreen } from '../screens/recipes/index.js';
@@ -14,11 +14,6 @@ import type { PantryItem, RecipeLineInput, RecipeWithIngredients } from '../api/
 
 import { flush, jsonResponse, makeCtx, mountRoot, routeFetch } from './harness.js';
 import { makeIngredient, makePantryItem, makeRecipe } from './fixtures.js';
-
-async function settle(): Promise<void> {
-  // The scaler debounces refetches ~150ms; wait comfortably past it.
-  await new Promise((resolve) => setTimeout(resolve, 250));
-}
 
 const ING_SALMON = makeIngredient({
   id: 'ing-salmon',
@@ -100,6 +95,12 @@ let patchRequests: Array<{ id: string; body: RecipeWithIngredients }>;
 let postRequests: Array<Record<string, unknown>>;
 let pantryRequestCount: number;
 let idCounter: number;
+
+async function waitForScaledFetch(servings: string): Promise<void> {
+  await vi.waitFor(() => {
+    expect(detailRequests.some((r) => r.servings === servings)).toBe(true);
+  });
+}
 
 function resetFixtures(): void {
   recipesById = new Map([
@@ -286,7 +287,7 @@ describe('recipes screen — list and scaler', () => {
 
     root.querySelector<HTMLElement>('.scaler-plus')!.click();
     root.querySelector<HTMLElement>('.scaler-plus')!.click();
-    await settle();
+    await waitForScaledFetch('6');
 
     expect(root.querySelector('.scaler-value')!.textContent).toBe('6');
     expect(root.querySelector('.scaler-note')!.textContent).toBe('scaled ×1.5 from 4');
@@ -299,16 +300,19 @@ describe('recipes screen — list and scaler', () => {
 
     for (let i = 0; i < 15; i += 1) root.querySelector<HTMLElement>('.scaler-plus')!.click();
     expect(root.querySelector('.scaler-value')!.textContent).toBe('12');
-    await settle();
+    await waitForScaledFetch('12');
   });
 
   test('refetches with ?servings=N on scale and renders the API value, not a client-side multiply', async () => {
     const { root } = await mountScreen();
     root.querySelector<HTMLElement>('.scaler-plus')!.click();
     root.querySelector<HTMLElement>('.scaler-plus')!.click();
-    await settle();
+    await waitForScaledFetch('6');
 
     expect(detailRequests).toContainEqual({ id: 'r1', servings: '6' });
+    // Debounced to one extra call, not one per click — would be 2 if the
+    // timer were gone (servings=5 then 6).
+    expect(detailRequests.filter((r) => r.servings !== undefined)).toHaveLength(1);
     const quantities = [...root.querySelectorAll<HTMLElement>('.ingredient-qty')].map((n) => n.textContent);
     // 400*1.5=600 and 20*1.5=30 would be the naive (wrong) client-side answer.
     expect(quantities).toEqual(['605 g', '31 g']);
@@ -349,7 +353,7 @@ describe('recipes screen — fork and edit', () => {
     const { root } = await mountScreen();
     root.querySelector<HTMLElement>('.scaler-plus')!.click();
     root.querySelector<HTMLElement>('.scaler-plus')!.click();
-    await settle();
+    await waitForScaledFetch('6');
     expect(root.querySelector('.scaler-note')!.textContent).toBe('scaled ×1.5 from 4');
 
     root.querySelector<HTMLElement>('.edit-btn')!.click();

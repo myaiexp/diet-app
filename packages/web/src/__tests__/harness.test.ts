@@ -1,7 +1,7 @@
-// Pins the shared web test harness: jsonResponse, pathOf, and routeFetch.
+// Pins the shared web test harness: jsonResponse, pathOf, flush, and routeFetch.
 
-import { describe, test, expect } from 'vitest';
-import { jsonResponse, pathOf, routeFetch } from './harness.js';
+import { describe, test, expect, vi } from 'vitest';
+import { flush, jsonResponse, pathOf, routeFetch } from './harness.js';
 
 describe('jsonResponse', () => {
   test('serializes a body with a JSON content-type', async () => {
@@ -14,6 +14,22 @@ describe('jsonResponse', () => {
   test('an undefined body is empty, not the string "undefined"', async () => {
     const res = jsonResponse(200);
     expect(await res.text()).toBe('');
+  });
+});
+
+describe('flush', () => {
+  test('advances fake timers instead of sleeping on the wall clock', async () => {
+    vi.useFakeTimers();
+    try {
+      let fired = false;
+      setTimeout(() => {
+        fired = true;
+      }, 200);
+      await flush(200);
+      expect(fired).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });
 

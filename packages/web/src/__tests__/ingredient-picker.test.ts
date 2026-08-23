@@ -30,9 +30,13 @@ beforeEach(() => {
   document.body.replaceChildren();
   fetchMock = vi.fn();
   configureClient({ fetch: fetchMock as unknown as typeof fetch });
+  // Only the timer APIs — AbortSignal.timeout stays native so a 25s request
+  // bound is not fired by advancing SEARCH_DEBOUNCE_MS.
+  vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
 });
 
 afterEach(() => {
+  vi.useRealTimers();
   resetClient();
 });
 
@@ -48,10 +52,10 @@ describe('attachIngredientSearch', () => {
 
     input.value = 'peruna';
     input.dispatchEvent(new Event('input', { bubbles: true }));
-    await flush(50);
+    await flush(SEARCH_DEBOUNCE_MS - 1);
     expect(fetchMock).not.toHaveBeenCalled();
 
-    await flush(200);
+    await flush(1);
     expect(fetchMock).toHaveBeenCalledOnce();
     const url = fetchMock.mock.calls[0]![0] as string;
     expect(pathOf(url)).toBe('/api/ingredients');
@@ -73,12 +77,12 @@ describe('attachIngredientSearch', () => {
 
     input.value = 'zzzz';
     input.dispatchEvent(new Event('input', { bubbles: true }));
-    await flush(250);
+    await flush(SEARCH_DEBOUNCE_MS);
     expect(results.querySelector('.pantry-search-empty')?.textContent).toMatch(/no matches/i);
 
     input.value = '   ';
     input.dispatchEvent(new Event('input', { bubbles: true }));
-    await flush(250);
+    await flush(SEARCH_DEBOUNCE_MS);
     expect(results.children).toHaveLength(0);
     // Empty needle must not hit the catalog.
     expect(
@@ -102,7 +106,7 @@ describe('attachIngredientSearch', () => {
 
     input.value = 'i';
     input.dispatchEvent(new Event('input', { bubbles: true }));
-    await flush(250);
+    await flush(SEARCH_DEBOUNCE_MS);
 
     const names = [...results.querySelectorAll('.pantry-search-result')].map((n) => n.textContent);
     expect(names).toEqual(['Liver']);
@@ -117,7 +121,7 @@ describe('attachIngredientSearch', () => {
     });
     input.value = 'peruna';
     input.dispatchEvent(new Event('input', { bubbles: true }));
-    await flush(SEARCH_DEBOUNCE_MS + 50);
+    await flush(SEARCH_DEBOUNCE_MS);
     expect(results.querySelector('.pantry-search-result')).toBeNull();
     expect(results.querySelector('.btn-sm')?.textContent).toBe('Potato');
   });
@@ -149,10 +153,10 @@ describe('attachIngredientSearch', () => {
     attachIngredientSearch(input, results, vi.fn());
     input.value = 'aa';
     input.dispatchEvent(new Event('input', { bubbles: true }));
-    await flush(SEARCH_DEBOUNCE_MS + 50);
+    await flush(SEARCH_DEBOUNCE_MS);
     input.value = 'leek';
     input.dispatchEvent(new Event('input', { bubbles: true }));
-    await flush(SEARCH_DEBOUNCE_MS + 50);
+    await flush(SEARCH_DEBOUNCE_MS);
     expect(results.querySelector('.pantry-search-result')?.textContent).toContain('Leek');
     finishSlow(jsonResponse(200, [makePotato()]));
     await flush(20);
@@ -171,7 +175,7 @@ describe('attachIngredientSearch', () => {
     });
     input.value = 'peruna';
     input.dispatchEvent(new Event('input', { bubbles: true }));
-    await flush(SEARCH_DEBOUNCE_MS + 50);
+    await flush(SEARCH_DEBOUNCE_MS);
 
     expect(document.querySelector('.toast-error')?.textContent).toMatch(/unexpected error/i);
     expect(results.textContent).not.toMatch(/no catalog matches/i);
@@ -186,7 +190,7 @@ describe('attachIngredientSearch', () => {
     input.value = 'peruna';
     input.dispatchEvent(new Event('input', { bubbles: true }));
     detach();
-    await flush(SEARCH_DEBOUNCE_MS + 50);
+    await flush(SEARCH_DEBOUNCE_MS);
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
@@ -283,7 +287,7 @@ describe('createIngredientQuantityForm', () => {
     input.value = 'peruna';
     input.dispatchEvent(new Event('input', { bubbles: true }));
     form.detach();
-    await flush(SEARCH_DEBOUNCE_MS + 50);
+    await flush(SEARCH_DEBOUNCE_MS);
     expect(fetchMock).not.toHaveBeenCalled();
   });
 });

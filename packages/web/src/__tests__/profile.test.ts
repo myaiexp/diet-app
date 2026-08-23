@@ -158,7 +158,9 @@ describe('profile screen', () => {
     const input = panel.querySelector<HTMLInputElement>('.pantry-search-wrap input')!;
     input.value = 'liver';
     input.dispatchEvent(new Event('input', { bubbles: true }));
-    await flush(250);
+    await vi.waitFor(() => {
+      expect(panel.querySelector('.pantry-search-result')).not.toBeNull();
+    });
 
     const result = panel.querySelector<HTMLButtonElement>('.pantry-search-result')!;
     expect(result.textContent).toContain('Liver');

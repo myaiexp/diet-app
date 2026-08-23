@@ -261,6 +261,7 @@ describe('shopping screen', () => {
       routeFetch(
         {
           'GET /api/shopping-lists/current': makeShoppingList({
+            status: 'shopping',
             items: [makeShoppingItem({ bought: true })],
           }),
           'POST /api/shopping-lists/:id/complete': {

@@ -146,7 +146,9 @@ describe('pantry screen', () => {
     const input = root.querySelector<HTMLInputElement>('.pantry-search-wrap input')!;
     input.value = 'peruna';
     input.dispatchEvent(new Event('input', { bubbles: true }));
-    await flush(250);
+    await vi.waitFor(() => {
+      expect(root.querySelector('.pantry-search-result')).not.toBeNull();
+    });
 
     const calls = fetchMock.mock.calls.map((c) => c[0] as string);
     expect(calls.some((u) => pathOf(u) === '/api/ingredients' && u.includes('q=peruna'))).toBe(
@@ -176,7 +178,9 @@ describe('pantry screen', () => {
     const input = root.querySelector<HTMLInputElement>('.pantry-search-wrap input')!;
     input.value = 'xyl';
     input.dispatchEvent(new Event('input', { bubbles: true }));
-    await flush(250);
+    await vi.waitFor(() => {
+      expect(document.querySelector('.pantry-search-result')).not.toBeNull();
+    });
 
     document.querySelector<HTMLElement>('.pantry-search-result')!.click();
     document.querySelector<HTMLButtonElement>('.modal-foot .btn-primary')!.click();
