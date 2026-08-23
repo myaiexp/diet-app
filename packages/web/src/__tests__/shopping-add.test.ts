@@ -5,7 +5,7 @@ import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 import { configureClient, resetClient } from '../api/client.js';
 import { closeModal, isModalOpen } from '../ui/modal.js';
 import { shoppingScreen } from '../screens/shopping/index.js';
-import { flush, jsonResponse, makeCtx, mountRoot, pathOf, routeFetch } from './harness.js';
+import { jsonResponse, makeCtx, mountRoot, pathOf, routeFetch } from './harness.js';
 import { makeIngredient, makeShoppingItem, makeShoppingList } from './fixtures.js';
 
 const POTATO = makeIngredient({
@@ -92,11 +92,12 @@ describe('shopping add modal', () => {
     expect(unitInput.value).toBe('kg');
 
     document.querySelector<HTMLButtonElement>('.modal-foot .btn-primary')!.click();
-    await flush(20);
 
-    expect(itemsPosts()).toEqual([{ ingredientId: 'ing-potato', quantityNeeded: 1, unit: 'kg' }]);
-    expect(isModalOpen()).toBe(false);
-    expect(root.textContent).toMatch(/potato/i);
+    await vi.waitFor(() => {
+      expect(itemsPosts()).toEqual([{ ingredientId: 'ing-potato', quantityNeeded: 1, unit: 'kg' }]);
+      expect(isModalOpen()).toBe(false);
+      expect(root.textContent).toMatch(/potato/i);
+    });
   });
 
   test('rejects quantity <= 0 without POSTing', async () => {
@@ -116,11 +117,12 @@ describe('shopping add modal', () => {
 
     document.querySelector<HTMLInputElement>('.pantry-form-detail input[type="number"]')!.value = '0';
     document.querySelector<HTMLButtonElement>('.modal-foot .btn-primary')!.click();
-    await flush(20);
 
-    expect(itemsPosts()).toEqual([]);
-    expect(isModalOpen()).toBe(true);
-    expect(document.querySelector('.helper-error')?.textContent).toMatch(/positive number/i);
+    await vi.waitFor(() => {
+      expect(itemsPosts()).toEqual([]);
+      expect(isModalOpen()).toBe(true);
+      expect(document.querySelector('.helper-error')?.textContent).toMatch(/positive number/i);
+    });
   });
 
   test('a 409 duplicate shows the API error and keeps the modal open', async () => {
@@ -142,12 +144,13 @@ describe('shopping add modal', () => {
     await pickPotato();
 
     document.querySelector<HTMLButtonElement>('.modal-foot .btn-primary')!.click();
-    await flush(20);
 
-    expect(itemsPosts()).toHaveLength(1);
-    expect(isModalOpen()).toBe(true);
-    expect(document.querySelector('.helper-error')?.textContent).toMatch(
-      /ingredient and unit already exists/i,
-    );
+    await vi.waitFor(() => {
+      expect(itemsPosts()).toHaveLength(1);
+      expect(isModalOpen()).toBe(true);
+      expect(document.querySelector('.helper-error')?.textContent).toMatch(
+        /ingredient and unit already exists/i,
+      );
+    });
   });
 });

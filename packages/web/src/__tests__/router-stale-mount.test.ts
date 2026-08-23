@@ -14,7 +14,10 @@ const { gate, captured } = vi.hoisted(() => {
     promise: Promise.resolve(),
     release: () => {},
   };
-  const captured: { isStale: (() => boolean) | null } = { isStale: null };
+  const captured: { isStale: (() => boolean) | null; painted: boolean } = {
+    isStale: null,
+    painted: false,
+  };
   return { gate, captured };
 });
 
@@ -24,6 +27,7 @@ vi.mock('../screens/today/index.js', () => ({
     async mount(root: HTMLElement, ctx: { isStale: () => boolean }) {
       captured.isStale = ctx.isStale;
       await gate.promise;
+      captured.painted = true;
       const marker = document.createElement('div');
       marker.className = 'stale-today';
       marker.textContent = 'STALE-TODAY';
@@ -34,7 +38,6 @@ vi.mock('../screens/today/index.js', () => ({
 
 import { mountShell } from '../ui/shell.js';
 import { startRouter, navigate } from '../router.js';
-import { flush } from './harness.js';
 
 function boot(path = '/today') {
   window.history.replaceState({}, '', path);
@@ -49,6 +52,7 @@ beforeEach(() => {
   document.body.replaceChildren();
   closeModal();
   captured.isStale = null;
+  captured.painted = false;
   gate.promise = new Promise<void>((resolve) => {
     gate.release = resolve;
   });
@@ -64,7 +68,7 @@ describe('router stale mount', () => {
     expect(shell.content.textContent).toContain('#385');
 
     gate.release();
-    await flush(20);
+    await vi.waitFor(() => expect(captured.painted).toBe(true));
 
     expect(shell.content.querySelector('.placeholder')).not.toBeNull();
     expect(shell.content.textContent).toContain('#385');
@@ -74,14 +78,13 @@ describe('router stale mount', () => {
 
   test('ctx.isStale is false during the active mount and true after navigation', async () => {
     boot('/today');
-    await flush(0);
-    expect(captured.isStale).not.toBeNull();
+    await vi.waitFor(() => expect(captured.isStale).not.toBeNull());
     expect(captured.isStale!()).toBe(false);
 
     navigate('/nutrition');
     expect(captured.isStale!()).toBe(true);
 
     gate.release();
-    await flush(20);
+    await vi.waitFor(() => expect(captured.painted).toBe(true));
   });
 });

@@ -282,6 +282,34 @@ describe('mealPlanCookRoutes', () => {
     expect(await res.json()).toEqual({ error: 'Not found' });
   });
 
+  test('cooks an ingredient-less recipe: marks cooked, bumps timesCooked, writes no pantry', async () => {
+    const { db, writes, updatesTo, deletesTo, reads } = makeCookMock({
+      entry: { ...PLANNED_ENTRY, servings: '1' },
+      recipe: { ...RECIPE, servings: 1 },
+      lines: [],
+      pantryRows: [{ ...PANTRY_ROW }],
+    });
+    const res = await mealPlanCookRoutes(db).request(`/${ENTRY_ID}/cook`, {
+      method: 'POST',
+    });
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.entry.status).toBe('cooked');
+    expect(body.deductions).toEqual([]);
+    expect(body.shortfalls).toEqual([]);
+
+    expect(updatesTo(mealPlanEntries)).toHaveLength(1);
+    expect(updatesTo(mealPlanEntries)[0]!.values).toMatchObject({ status: 'cooked' });
+    expect(updatesTo(recipes)).toHaveLength(1);
+    expect(whereParams(updatesTo(recipes)[0]!.where)).toContain(RECIPE_ID);
+    expect(updatesTo(pantryItems)).toHaveLength(0);
+    expect(deletesTo(pantryItems)).toHaveLength(0);
+    expect(writes).toHaveLength(2);
+
+    // loadCookPlan skips the pantry FOR UPDATE when the recipe has no lines.
+    expect(reads.filter((r) => r.table === 'pantry_items')).toEqual([]);
+  });
+
   test('returns 400 when servings scale is non-finite', async () => {
     const { db } = makeCookMock({
       entry: PLANNED_ENTRY,
@@ -508,6 +536,13 @@ describe('GET /meal-plans/:id/cook-preview', () => {
 
   test('404s for a missing entry', async () => {
     const { db } = makeCookMock({ entry: null });
+    const res = await mealPlanCookRoutes(db).request(`/${ENTRY_ID}/cook-preview`);
+    expect(res.status).toBe(404);
+    expect(await res.json()).toEqual({ error: 'Not found' });
+  });
+
+  test('404s when the resolved recipe is missing', async () => {
+    const { db } = makeCookMock({ entry: PLANNED_ENTRY, recipe: null });
     const res = await mealPlanCookRoutes(db).request(`/${ENTRY_ID}/cook-preview`);
     expect(res.status).toBe(404);
     expect(await res.json()).toEqual({ error: 'Not found' });

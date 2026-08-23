@@ -11,7 +11,7 @@ import { configureClient, resetClient } from '../api/client.js';
 import { closeModal } from '../ui/modal.js';
 import { profileScreen } from '../screens/profile.js';
 import type { UserProfile, Ingredient } from '../api/types.js';
-import { flush, jsonResponse, makeCtx, mountRoot, pathOf, routeFetch } from './harness.js';
+import { jsonResponse, makeCtx, mountRoot, pathOf, routeFetch } from './harness.js';
 import { makeIngredient, makeProfile } from './fixtures.js';
 
 const WHITELIST = [
@@ -103,10 +103,10 @@ describe('profile screen', () => {
 
     fieldControl(root, 'household').value = '4';
     saveButton(root).click();
-    await flush();
-
-    expect(server.patchCalls).toHaveLength(1);
-    expect(server.patchCalls[0]).toEqual({ householdSize: 4 });
+    await vi.waitFor(() => {
+      expect(server.patchCalls).toHaveLength(1);
+      expect(server.patchCalls[0]).toEqual({ householdSize: 4 });
+    });
   });
 
   test('never sends a key outside the strict PATCH whitelist', async () => {
@@ -118,9 +118,7 @@ describe('profile screen', () => {
     fieldControl(root, 'name').value = 'New Name';
     fieldControl(root, 'protein g').value = '140';
     saveButton(root).click();
-    await flush();
-
-    expect(server.patchCalls.length).toBeGreaterThan(0);
+    await vi.waitFor(() => expect(server.patchCalls.length).toBeGreaterThan(0));
     for (const call of server.patchCalls) {
       expect(Object.keys(call).every((k) => WHITELIST.includes(k))).toBe(true);
     }
@@ -139,9 +137,7 @@ describe('profile screen', () => {
     );
 
     panel.querySelectorAll<HTMLButtonElement>('.chip-x')[0]!.click();
-    await flush();
-
-    expect(server.patchCalls).toHaveLength(1);
+    await vi.waitFor(() => expect(server.patchCalls).toHaveLength(1));
     const sent = server.patchCalls[0]!['dislikedIngredientIds'];
     expect(Array.isArray(sent)).toBe(true);
     expect(sent).toEqual(['ing-2']);
@@ -165,9 +161,9 @@ describe('profile screen', () => {
     const result = panel.querySelector<HTMLButtonElement>('.pantry-search-result')!;
     expect(result.textContent).toContain('Liver');
     result.click();
-    await flush();
-
-    expect(server.patchCalls.at(-1)).toEqual({ dislikedIngredientIds: ['ing-1', 'ing-2'] });
+    await vi.waitFor(() =>
+      expect(server.patchCalls.at(-1)).toEqual({ dislikedIngredientIds: ['ing-1', 'ing-2'] }),
+    );
   });
 
   test('clears a nullable target by sending null, leaving the other one omitted', async () => {
@@ -178,10 +174,10 @@ describe('profile screen', () => {
 
     fieldControl(root, 'kcal max').value = '';
     saveButton(root).click();
-    await flush();
-
-    expect(server.patchCalls).toHaveLength(1);
-    expect(server.patchCalls[0]).toEqual({ calorieTargetMax: null });
+    await vi.waitFor(() => {
+      expect(server.patchCalls).toHaveLength(1);
+      expect(server.patchCalls[0]).toEqual({ calorieTargetMax: null });
+    });
     expect(server.patchCalls[0]).not.toHaveProperty('calorieTargetMin');
   });
 
@@ -193,11 +189,11 @@ describe('profile screen', () => {
 
     fieldControl(root, 'schedule profile').value = 'late shift tue+thu · long weekend cooking';
     saveButton(root).click();
-    await flush();
-
-    expect(server.patchCalls).toHaveLength(1);
-    expect(server.patchCalls[0]).toEqual({
-      scheduleProfile: { note: 'late shift tue+thu · long weekend cooking' },
+    await vi.waitFor(() => {
+      expect(server.patchCalls).toHaveLength(1);
+      expect(server.patchCalls[0]).toEqual({
+        scheduleProfile: { note: 'late shift tue+thu · long weekend cooking' },
+      });
     });
   });
 
@@ -229,11 +225,11 @@ describe('profile screen', () => {
 
     fieldControl(root, 'kcal min').value = '3000';
     saveButton(root).click();
-    await flush();
-
-    expect(root.querySelector('.helper-error')?.textContent).toContain(
-      'calorieTargetMin must be ≤ calorieTargetMax',
-    );
+    await vi.waitFor(() => {
+      expect(root.querySelector('.helper-error')?.textContent).toContain(
+        'calorieTargetMin must be ≤ calorieTargetMax',
+      );
+    });
   });
 
   test('does not send a request at all when nothing changed', async () => {
@@ -243,7 +239,6 @@ describe('profile screen', () => {
     await profileScreen().mount(root, makeCtx());
 
     saveButton(root).click();
-    await flush();
 
     expect(server.patchCalls).toHaveLength(0);
   });

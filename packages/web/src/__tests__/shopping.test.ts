@@ -9,7 +9,7 @@ import { configureClient, resetClient } from '../api/client.js';
 import { closeModal } from '../ui/modal.js';
 import { shoppingScreen } from '../screens/shopping/index.js';
 import { groupByAisle, pantryLine } from '../screens/shopping/groups.js';
-import { flush, jsonResponse, makeCtx, mountRoot, pathOf, routeFetch } from './harness.js';
+import { jsonResponse, makeCtx, mountRoot, pathOf, routeFetch } from './harness.js';
 import { makeIngredient, makeShoppingItem, makeShoppingList } from './fixtures.js';
 
 let fetchMock: ReturnType<typeof vi.fn>;
@@ -121,19 +121,18 @@ describe('shopping screen', () => {
     await shoppingScreen().mount(root, makeCtx());
 
     root.querySelector<HTMLElement>('.shopping-row-toggle')!.click();
-    await flush(20);
 
-    const patchCall = fetchMock.mock.calls.find(
-      (c) =>
-        pathOf(c[0] as string) === '/api/shopping-lists/items/item-1' &&
-        (c[1] as RequestInit | undefined)?.method === 'PATCH',
-    );
-    expect(patchCall).toBeTruthy();
-    expect(JSON.parse((patchCall![1] as RequestInit).body as string)).toEqual({ bought: true });
-
-    // Reverted after the 500 — the row is no longer marked checked.
-    const rowAfter = root.querySelector<HTMLElement>('.shopping-row')!;
-    expect(rowAfter.classList.contains('is-checked')).toBe(false);
+    await vi.waitFor(() => {
+      const patchCall = fetchMock.mock.calls.find(
+        (c) =>
+          pathOf(c[0] as string) === '/api/shopping-lists/items/item-1' &&
+          (c[1] as RequestInit | undefined)?.method === 'PATCH',
+      );
+      expect(patchCall).toBeTruthy();
+      expect(JSON.parse((patchCall![1] as RequestInit).body as string)).toEqual({ bought: true });
+      // Reverted after the 500 — the row is no longer marked checked.
+      expect(root.querySelector('.shopping-row')!.classList.contains('is-checked')).toBe(false);
+    });
   });
 
   test('a done list renders read-only — no PATCH fires on a row click', async () => {
@@ -155,7 +154,6 @@ describe('shopping screen', () => {
 
     const before = fetchMock.mock.calls.length;
     root.querySelector<HTMLElement>('.shopping-row-toggle')!.click();
-    await flush(20);
 
     expect(fetchMock.mock.calls.length).toBe(before);
   });
@@ -185,11 +183,12 @@ describe('shopping screen', () => {
     await shoppingScreen().mount(root, makeCtx());
 
     root.querySelector<HTMLButtonElement>('.empty-state .btn-primary')!.click();
-    await flush(20);
 
-    expect(root.querySelector('.shopping-notice')).not.toBeNull();
-    expect(root.textContent).toMatch(/skipped/i);
-    expect(root.textContent).toMatch(/unknown unit/i);
+    await vi.waitFor(() => {
+      expect(root.querySelector('.shopping-notice')).not.toBeNull();
+      expect(root.textContent).toMatch(/skipped/i);
+      expect(root.textContent).toMatch(/unknown unit/i);
+    });
   });
 
   test('the include-optional chip sends includeOptional on the next generate', async () => {
@@ -221,14 +220,16 @@ describe('shopping screen', () => {
       (b) => b.textContent === 'regenerate',
     )!;
     regenerate.click();
-    await flush(20);
 
-    const generateCall = fetchMock.mock.calls.find(
-      (c) => pathOf(c[0] as string) === '/api/shopping-lists/generate',
-    )!;
-    expect(JSON.parse((generateCall[1] as RequestInit).body as string)).toEqual({
-      weekStarting: '2026-08-17',
-      includeOptional: true,
+    await vi.waitFor(() => {
+      const generateCall = fetchMock.mock.calls.find(
+        (c) => pathOf(c[0] as string) === '/api/shopping-lists/generate',
+      );
+      expect(generateCall).toBeTruthy();
+      expect(JSON.parse((generateCall![1] as RequestInit).body as string)).toEqual({
+        weekStarting: '2026-08-17',
+        includeOptional: true,
+      });
     });
   });
 
@@ -249,11 +250,12 @@ describe('shopping screen', () => {
     await shoppingScreen().mount(root, makeCtx());
 
     root.querySelector<HTMLElement>('.shopping-more-btn')!.click();
-    await flush(20);
 
     // The reappearance is deliberate API behaviour (#3232, dismissed): the
     // toast is the only place the user could learn it.
-    expect(document.querySelector('.toast')?.textContent).toMatch(/bring it back/i);
+    await vi.waitFor(() => {
+      expect(document.querySelector('.toast')?.textContent).toMatch(/bring it back/i);
+    });
   });
 
   test('a completion that skipped items says they did NOT reach the pantry', async () => {
@@ -281,12 +283,13 @@ describe('shopping screen', () => {
       .find((b) => b.textContent === 'complete')!
       .click();
     document.querySelector<HTMLButtonElement>('.modal-foot .btn-primary')!.click();
-    await flush(20);
 
     // A skipped item was NOT written to the pantry — copy that implied it was
     // would send the user hunting for food that isn't there.
-    const notice = root.querySelector('.shopping-notice')?.textContent ?? '';
-    expect(notice).toMatch(/did not reach the pantry/i);
-    expect(notice).not.toMatch(/were filed/i);
+    await vi.waitFor(() => {
+      const notice = root.querySelector('.shopping-notice')?.textContent ?? '';
+      expect(notice).toMatch(/did not reach the pantry/i);
+      expect(notice).not.toMatch(/were filed/i);
+    });
   });
 });

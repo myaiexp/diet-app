@@ -5,7 +5,7 @@ import { configureClient, resetClient } from '../api/client.js';
 import { closeModal } from '../ui/modal.js';
 import { pantryScreen } from '../screens/pantry/index.js';
 import type { PantryItem, PantryLocation, PantryPatch } from '../api/types.js';
-import { flush, jsonResponse, makeCtx, mountRoot, pathOf, routeFetch } from './harness.js';
+import { jsonResponse, makeCtx, mountRoot, pathOf, routeFetch } from './harness.js';
 import { makeIngredient, makePantryItem } from './fixtures.js';
 
 let fetchMock: ReturnType<typeof vi.fn>;
@@ -113,24 +113,24 @@ describe('pantry row ⋯ menu', () => {
       expiresDate: '2026-12-31',
     });
     clickSave();
-    await flush(50);
-
-    expect(methodCalls('PATCH')).toEqual([
-      {
-        path: '/api/pantry/item-1',
-        body: {
-          quantity: 250,
-          unit: 'ml',
-          location: 'freezer',
-          opened: true,
-          expiresDate: '2026-12-31',
+    await vi.waitFor(() => {
+      expect(methodCalls('PATCH')).toEqual([
+        {
+          path: '/api/pantry/item-1',
+          body: {
+            quantity: 250,
+            unit: 'ml',
+            location: 'freezer',
+            opened: true,
+            expiresDate: '2026-12-31',
+          },
         },
-      },
-    ]);
-    expect(root.querySelector('.pantry-qty')?.textContent).toBe('250 ml');
-    expect(root.querySelector('.row-meta')?.textContent).toContain('freezer');
-    expect(root.querySelector('.label-muted')?.textContent).toBe('opened');
-    expect(root.querySelectorAll('.pantry-row')).toHaveLength(1);
+      ]);
+      expect(root.querySelector('.pantry-qty')?.textContent).toBe('250 ml');
+      expect(root.querySelector('.row-meta')?.textContent).toContain('freezer');
+      expect(root.querySelector('.label-muted')?.textContent).toBe('opened');
+      expect(root.querySelectorAll('.pantry-row')).toHaveLength(1);
+    });
   });
 
   test('save without edits still PATCHes the seeded expiresDate and other fields', async () => {
@@ -153,20 +153,20 @@ describe('pantry row ⋯ menu', () => {
     expect(form.querySelector<HTMLInputElement>('input[type="number"]')!.value).toBe('400');
     expect(form.querySelector<HTMLInputElement>('input[type="date"]')!.value).toBe('2026-08-10');
     clickSave();
-    await flush(50);
-
-    expect(methodCalls('PATCH')).toEqual([
-      {
-        path: '/api/pantry/item-1',
-        body: {
-          quantity: 400,
-          unit: 'g',
-          location: 'fridge',
-          opened: false,
-          expiresDate: '2026-08-10',
+    await vi.waitFor(() => {
+      expect(methodCalls('PATCH')).toEqual([
+        {
+          path: '/api/pantry/item-1',
+          body: {
+            quantity: 400,
+            unit: 'g',
+            location: 'fridge',
+            opened: false,
+            expiresDate: '2026-08-10',
+          },
         },
-      },
-    ]);
+      ]);
+    });
   });
 
   test('a 400 with fieldErrors renders quantity: must be positive and keeps the row', async () => {
@@ -187,13 +187,13 @@ describe('pantry row ⋯ menu', () => {
     await pantryScreen().mount(root, makeCtx());
     openRow(root);
     clickSave();
-    await flush(50);
-
-    expect(root.querySelector('.row-title')?.textContent).toBe('Milk');
-    expect(document.querySelector('.helper-error')?.textContent).toContain(
-      'quantity: must be positive',
-    );
-    expect(document.querySelector('.modal-backdrop')).not.toBeNull();
+    await vi.waitFor(() => {
+      expect(root.querySelector('.row-title')?.textContent).toBe('Milk');
+      expect(document.querySelector('.helper-error')?.textContent).toContain(
+        'quantity: must be positive',
+      );
+      expect(document.querySelector('.modal-backdrop')).not.toBeNull();
+    });
   });
 
   test('delete DELETEs the item and removes the row from the list', async () => {
@@ -221,11 +221,11 @@ describe('pantry row ⋯ menu', () => {
 
     openRow(root, 'Milk');
     clickDelete();
-    await flush(50);
-
-    expect(methodCalls('DELETE')).toEqual([{ path: '/api/pantry/item-1' }]);
-    expect([...root.querySelectorAll('.row-title')].map((n) => n.textContent)).toEqual(['Peas']);
-    expect(document.querySelector('.modal-backdrop')).toBeNull();
+    await vi.waitFor(() => {
+      expect(methodCalls('DELETE')).toEqual([{ path: '/api/pantry/item-1' }]);
+      expect([...root.querySelectorAll('.row-title')].map((n) => n.textContent)).toEqual(['Peas']);
+      expect(document.querySelector('.modal-backdrop')).toBeNull();
+    });
   });
 
   test('a failed delete surfaces the error and leaves the row', async () => {
@@ -243,12 +243,12 @@ describe('pantry row ⋯ menu', () => {
     await pantryScreen().mount(root, makeCtx());
     openRow(root);
     clickDelete();
-    await flush(50);
-
-    expect(methodCalls('DELETE')).toEqual([{ path: '/api/pantry/item-1' }]);
-    expect(root.querySelector('.row-title')?.textContent).toBe('Milk');
-    expect(root.querySelector('.empty-state')).toBeNull();
-    expect(document.querySelector('.helper-error')?.textContent).toContain('Nothing was saved');
-    expect(document.querySelector('.modal-backdrop')).not.toBeNull();
+    await vi.waitFor(() => {
+      expect(methodCalls('DELETE')).toEqual([{ path: '/api/pantry/item-1' }]);
+      expect(root.querySelector('.row-title')?.textContent).toBe('Milk');
+      expect(root.querySelector('.empty-state')).toBeNull();
+      expect(document.querySelector('.helper-error')?.textContent).toContain('Nothing was saved');
+      expect(document.querySelector('.modal-backdrop')).not.toBeNull();
+    });
   });
 });

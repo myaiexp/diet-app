@@ -6,7 +6,7 @@ import { configureClient, resetClient } from '../api/client.js';
 import { closeModal } from '../ui/modal.js';
 import { openAddItemModal } from '../modals/pantry-form.js';
 import type { PantryLocation } from '../api/types.js';
-import { flush, jsonResponse, pathOf, routeFetch } from './harness.js';
+import { jsonResponse, pathOf, routeFetch } from './harness.js';
 import { makeIngredient, makePantryItem } from './fixtures.js';
 
 const NO_SHELF_LIFE =
@@ -91,23 +91,23 @@ describe('openAddItemModal shelf-life fallback', () => {
     expect(expiresField().classList.contains('hidden')).toBe(true);
 
     clickSave();
-    await flush(50);
-
-    expect(expiresField().classList.contains('hidden')).toBe(false);
-    expect(document.querySelector('.helper-error')?.textContent).toContain(NO_SHELF_LIFE);
-    expect(postedBodies(fetchMock)[0]).not.toHaveProperty('expiresDate');
-    expect(onCreated).not.toHaveBeenCalled();
+    await vi.waitFor(() => {
+      expect(expiresField().classList.contains('hidden')).toBe(false);
+      expect(document.querySelector('.helper-error')?.textContent).toContain(NO_SHELF_LIFE);
+      expect(postedBodies(fetchMock)[0]).not.toHaveProperty('expiresDate');
+      expect(onCreated).not.toHaveBeenCalled();
+    });
 
     expiresInput().value = '2026-12-31';
     clickSave();
-    await flush(50);
-
-    expect(postedBodies(fetchMock)[1]).toMatchObject({
-      ingredientId: 'ing-1',
-      expiresDate: '2026-12-31',
-      location: 'fridge',
+    await vi.waitFor(() => {
+      expect(postedBodies(fetchMock)[1]).toMatchObject({
+        ingredientId: 'ing-1',
+        expiresDate: '2026-12-31',
+        location: 'fridge',
+      });
+      expect(onCreated).toHaveBeenCalledOnce();
     });
-    expect(onCreated).toHaveBeenCalledOnce();
   });
 
   test('a different 400 does not reveal the expires field, and a typed date is not sent', async () => {
@@ -120,14 +120,14 @@ describe('openAddItemModal shelf-life fallback', () => {
 
     openAddItemModal({ onCreated: vi.fn() }, spice());
     clickSave();
-    await flush(50);
-
-    expect(expiresField().classList.contains('hidden')).toBe(true);
-    expect(document.querySelector('.helper-error')?.textContent).toContain('Invalid reference');
+    await vi.waitFor(() => {
+      expect(expiresField().classList.contains('hidden')).toBe(true);
+      expect(document.querySelector('.helper-error')?.textContent).toContain('Invalid reference');
+    });
 
     expiresInput().value = '2026-12-31';
     clickSave();
-    await flush(50);
+    await vi.waitFor(() => expect(postedBodies(fetchMock)).toHaveLength(2));
 
     for (const body of postedBodies(fetchMock)) {
       expect(body).not.toHaveProperty('expiresDate');
@@ -155,19 +155,17 @@ describe('openAddItemModal shelf-life fallback', () => {
     const onCreated = vi.fn();
     openAddItemModal({ onCreated }, spice());
     clickSave();
-    await flush(50);
-
-    expect(expiresField().classList.contains('hidden')).toBe(false);
+    await vi.waitFor(() => expect(expiresField().classList.contains('hidden')).toBe(false));
 
     locationSelect().value = 'freezer';
     expiresInput().value = '2026-11-01';
     clickSave();
-    await flush(50);
-
-    expect(postedBodies(fetchMock)[1]).toMatchObject({
-      location: 'freezer',
-      expiresDate: '2026-11-01',
+    await vi.waitFor(() => {
+      expect(postedBodies(fetchMock)[1]).toMatchObject({
+        location: 'freezer',
+        expiresDate: '2026-11-01',
+      });
+      expect(onCreated).toHaveBeenCalledOnce();
     });
-    expect(onCreated).toHaveBeenCalledOnce();
   });
 });

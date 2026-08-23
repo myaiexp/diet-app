@@ -6,7 +6,7 @@ import { configureClient, resetClient } from '../api/client.js';
 import { closeModal } from '../ui/modal.js';
 import { pantryScreen } from '../screens/pantry/index.js';
 import type { Ingredient } from '../api/types.js';
-import { flush, jsonResponse, makeCtx, mountRoot, pathOf, routeFetch } from './harness.js';
+import { jsonResponse, makeCtx, mountRoot, pathOf, routeFetch } from './harness.js';
 import { makeIngredient, makePantryItem } from './fixtures.js';
 
 let fetchMock: ReturnType<typeof vi.fn>;
@@ -184,9 +184,9 @@ describe('pantry screen', () => {
 
     document.querySelector<HTMLElement>('.pantry-search-result')!.click();
     document.querySelector<HTMLButtonElement>('.modal-foot .btn-primary')!.click();
-    await flush(50);
-
-    expect(document.querySelector('.helper-error')?.textContent).toContain('Invalid reference');
+    await vi.waitFor(() => {
+      expect(document.querySelector('.helper-error')?.textContent).toContain('Invalid reference');
+    });
     // A generic 400 is not the no-shelf-life signal — the date field stays hidden
     // so a retry still omits expiresDate (the dedicated fallback lives in pantry-form.test.ts).
     const expires = document.querySelector<HTMLInputElement>('.pantry-form input[type="date"]');
@@ -216,13 +216,13 @@ describe('pantry screen', () => {
     );
     expect(loadMoreBtn).toBeTruthy();
     loadMoreBtn!.click();
-    await flush(50);
-
-    const pantryCalls = fetchMock.mock.calls
-      .map((c) => c[0] as string)
-      .filter((u) => pathOf(u) === '/api/pantry');
-    expect(pantryCalls.length).toBeGreaterThanOrEqual(2);
-    expect(pantryCalls[1]).toContain('offset=50');
+    await vi.waitFor(() => {
+      const pantryCalls = fetchMock.mock.calls
+        .map((c) => c[0] as string)
+        .filter((u) => pathOf(u) === '/api/pantry');
+      expect(pantryCalls.length).toBeGreaterThanOrEqual(2);
+      expect(pantryCalls[1]).toContain('offset=50');
+    });
   });
 
   test('renders an empty state when the pantry has no items', async () => {

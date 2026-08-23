@@ -12,7 +12,7 @@ import { closeModal } from '../ui/modal.js';
 import { recipesScreen } from '../screens/recipes/index.js';
 import type { PantryItem, RecipeLineInput, RecipeWithIngredients } from '../api/types.js';
 
-import { flush, jsonResponse, makeCtx, mountRoot, routeFetch } from './harness.js';
+import { jsonResponse, makeCtx, mountRoot, routeFetch } from './harness.js';
 import { makeIngredient, makePantryItem, makeRecipe } from './fixtures.js';
 
 const ING_SALMON = makeIngredient({
@@ -246,26 +246,27 @@ describe('recipes screen — list and scaler', () => {
     expect(manualLabel.classList.contains('label-blue')).toBe(false);
 
     root.querySelector<HTMLElement>('[data-id="r2"]')!.click();
-    await flush();
-    expect(root.querySelector('.source-label')!.classList.contains('label-blue')).toBe(true);
+    await vi.waitFor(() =>
+      expect(root.querySelector('.source-label')!.classList.contains('label-blue')).toBe(true),
+    );
 
     root.querySelector<HTMLElement>('[data-id="r3"]')!.click();
-    await flush();
-    expect(root.querySelector('.source-label')!.classList.contains('label-purple')).toBe(true);
+    await vi.waitFor(() =>
+      expect(root.querySelector('.source-label')!.classList.contains('label-purple')).toBe(true),
+    );
 
     root.querySelector<HTMLElement>('[data-id="r4"]')!.click();
-    await flush();
-    expect(root.querySelector('.source-label')!.classList.contains('label-cyan')).toBe(true);
+    await vi.waitFor(() =>
+      expect(root.querySelector('.source-label')!.classList.contains('label-cyan')).toBe(true),
+    );
   });
 
   test('sends multiple selected tags as one comma-joined ?tags= value', async () => {
     const { root } = await mountScreen();
     root.querySelector<HTMLElement>('[data-tag="quick"]')!.click();
-    await flush();
+    await vi.waitFor(() => expect(recipeRequests.some((r) => r.tags === 'quick')).toBe(true));
     root.querySelector<HTMLElement>('[data-tag="fish"]')!.click();
-    await flush();
-    const last = recipeRequests[recipeRequests.length - 1]!;
-    expect(last.tags).toBe('quick,fish');
+    await vi.waitFor(() => expect(recipeRequests.at(-1)?.tags).toBe('quick,fish'));
   });
 
   test('labels each ingredient line from the pantry list without refetching it per line', async () => {
@@ -323,9 +324,7 @@ describe('recipes screen — fork and edit', () => {
   test('forks a recipe into a new one carrying parentRecipeId and sourceType "forked"', async () => {
     const { root } = await mountScreen();
     root.querySelector<HTMLElement>('.fork-btn')!.click();
-    await flush();
-
-    expect(postRequests).toHaveLength(1);
+    await vi.waitFor(() => expect(postRequests).toHaveLength(1));
     expect(postRequests[0]!['parentRecipeId']).toBe('r1');
     expect(postRequests[0]!['sourceType']).toBe('forked');
   });
@@ -333,16 +332,15 @@ describe('recipes screen — fork and edit', () => {
   test('an edit resends the full ingredient list, not just the changed line', async () => {
     const { root } = await mountScreen();
     root.querySelector<HTMLElement>('.edit-btn')!.click();
-    await flush();
+    await vi.waitFor(() =>
+      expect(document.querySelectorAll('.edit-qty-input')).toHaveLength(2),
+    );
 
     const qtyInputs = document.querySelectorAll<HTMLInputElement>('.edit-qty-input');
-    expect(qtyInputs).toHaveLength(2);
     qtyInputs[0]!.value = '999';
 
     document.querySelector<HTMLElement>('.modal-foot .btn-primary')!.click();
-    await flush();
-
-    expect(patchRequests).toHaveLength(1);
+    await vi.waitFor(() => expect(patchRequests).toHaveLength(1));
     const sent = patchRequests[0]!.body.recipeIngredients;
     expect(sent).toHaveLength(2);
     expect(sent[0]).toMatchObject({ ingredientId: 'ing-salmon', quantity: '999' });
@@ -357,7 +355,9 @@ describe('recipes screen — fork and edit', () => {
     expect(root.querySelector('.scaler-note')!.textContent).toBe('scaled ×1.5 from 4');
 
     root.querySelector<HTMLElement>('.edit-btn')!.click();
-    await flush();
+    await vi.waitFor(() =>
+      expect(document.querySelectorAll('.edit-qty-input')).toHaveLength(2),
+    );
 
     // The edit form must show the true base quantities (400/20), not 605/31.
     const qtyInputs = document.querySelectorAll<HTMLInputElement>('.edit-qty-input');
@@ -365,7 +365,7 @@ describe('recipes screen — fork and edit', () => {
     expect(qtyInputs[1]!.value).toBe('20');
 
     document.querySelector<HTMLElement>('.modal-foot .btn-primary')!.click();
-    await flush();
+    await vi.waitFor(() => expect(patchRequests.length).toBeGreaterThan(0));
 
     const sent = patchRequests[patchRequests.length - 1]!.body.recipeIngredients;
     expect(sent[0]).toMatchObject({ quantity: '400' });

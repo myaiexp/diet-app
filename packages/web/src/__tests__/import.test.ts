@@ -4,7 +4,7 @@
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 import { configureClient, resetClient } from '../api/client.js';
 import { importScreen } from '../screens/import/index.js';
-import { flush, jsonResponse, makeCtx, mountRoot, pathOf, routeFetch } from './harness.js';
+import { jsonResponse, makeCtx, mountRoot, pathOf, routeFetch } from './harness.js';
 import { makeDraft, makeIngredient, makeLine } from './fixtures.js';
 
 interface PostedLine {
@@ -23,6 +23,10 @@ function submit(root: HTMLElement, url = 'https://example.com/recipe'): void {
   input.value = url;
   input.dispatchEvent(new Event('input', { bubbles: true }));
   root.querySelector<HTMLButtonElement>('.import-paste .btn-primary')!.click();
+}
+
+async function waitForReview(root: HTMLElement): Promise<void> {
+  await vi.waitFor(() => expect(root.querySelector('.import-review')).not.toBeNull());
 }
 
 function draftFetch(
@@ -65,8 +69,7 @@ describe('recipe import screen', () => {
     expect(root.querySelector('.import-extracting')).not.toBeNull();
     expect(root.querySelectorAll('.shimmer')).toHaveLength(5);
 
-    await flush(20);
-    expect(root.querySelector('.import-review')).not.toBeNull();
+    await waitForReview(root);
   });
 
   test('classifies lines as bound / assumed / unresolved', async () => {
@@ -82,7 +85,7 @@ describe('recipe import screen', () => {
     const root = mountRoot();
     await importScreen().mount(root, makeCtx());
     submit(root);
-    await flush(20);
+    await waitForReview(root);
 
     const classes = [...root.querySelectorAll('.import-line')].map((r) => r.className);
     expect(classes).toEqual([
@@ -108,7 +111,7 @@ describe('recipe import screen', () => {
     const root = mountRoot();
     await importScreen().mount(root, makeCtx());
     submit(root);
-    await flush(20);
+    await waitForReview(root);
 
     expect(root.querySelector('.import-line')!.className).toBe('import-line import-line--bound');
   });
@@ -126,7 +129,7 @@ describe('recipe import screen', () => {
     const root = mountRoot();
     await importScreen().mount(root, makeCtx());
     submit(root);
-    await flush(20);
+    await waitForReview(root);
 
     const saveBtn = root.querySelector<HTMLButtonElement>('.import-footer .btn-primary')!;
     expect(saveBtn.disabled).toBe(true);
@@ -147,7 +150,7 @@ describe('recipe import screen', () => {
     const root = mountRoot();
     await importScreen().mount(root, makeCtx());
     submit(root);
-    await flush(20);
+    await waitForReview(root);
 
     const saveBtn = root.querySelector<HTMLButtonElement>('.import-footer .btn-primary')!;
     expect(saveBtn.disabled).toBe(false);
@@ -171,10 +174,11 @@ describe('recipe import screen', () => {
     const root = mountRoot();
     await importScreen().mount(root, makeCtx());
     submit(root);
-    await flush(20);
-
-    const names = [...root.querySelectorAll('.import-candidate-results .btn-sm')].map((b) => b.textContent);
-    expect(names).toContain('Mushroom, button');
+    await waitForReview(root);
+    await vi.waitFor(() => {
+      const names = [...root.querySelectorAll('.import-candidate-results .btn-sm')].map((b) => b.textContent);
+      expect(names).toContain('Mushroom, button');
+    });
   });
 
   test('picking a catalog candidate binds the line and allows save', async () => {
@@ -198,7 +202,14 @@ describe('recipe import screen', () => {
     const root = mountRoot();
     await importScreen().mount(root, makeCtx());
     submit(root);
-    await flush();
+    await waitForReview(root);
+    await vi.waitFor(() => {
+      expect(
+        [...root.querySelectorAll('.import-candidate-results .btn-sm')].some(
+          (b) => b.textContent === 'Mushroom, button',
+        ),
+      ).toBe(true);
+    });
 
     const pick = [...root.querySelectorAll<HTMLButtonElement>('.import-candidate-results .btn-sm')].find(
       (b) => b.textContent === 'Mushroom, button',
@@ -208,9 +219,7 @@ describe('recipe import screen', () => {
     const saveBtn = root.querySelector<HTMLButtonElement>('.import-footer .btn-primary')!;
     expect(saveBtn.disabled).toBe(false);
     saveBtn.click();
-    await flush();
-
-    expect(posted).not.toBeNull();
+    await vi.waitFor(() => expect(posted).not.toBeNull());
     expect(posted!.ingredients).toEqual([
       { ingredientId: 'ing-mush', quantity: 250, unit: 'g', optional: false, notes: null },
     ]);
@@ -237,7 +246,7 @@ describe('recipe import screen', () => {
     const ctx = makeCtx();
     await importScreen().mount(root, ctx);
     submit(root);
-    await flush(20);
+    await waitForReview(root);
 
     const skipBtn = [...root.querySelectorAll<HTMLButtonElement>('.import-candidates .btn-ghost')].find(
       (b) => b.textContent === 'skip line',
@@ -247,11 +256,11 @@ describe('recipe import screen', () => {
     const saveBtn = root.querySelector<HTMLButtonElement>('.import-footer .btn-primary')!;
     expect(saveBtn.disabled).toBe(false);
     saveBtn.click();
-    await flush(20);
-
-    expect(posted).not.toBeNull();
+    await vi.waitFor(() => {
+      expect(posted).not.toBeNull();
+      expect(ctx.navigate).toHaveBeenCalledWith('/recipes');
+    });
     expect(posted!.ingredients).toEqual([{ ingredientId: 'ing-1', quantity: 100, unit: 'g', optional: false, notes: null }]);
-    expect(ctx.navigate).toHaveBeenCalledWith('/recipes');
   });
 
   test('sends only ingredientId-bound lines to POST /recipes', async () => {
@@ -274,12 +283,10 @@ describe('recipe import screen', () => {
     const root = mountRoot();
     await importScreen().mount(root, makeCtx());
     submit(root);
-    await flush(20);
+    await waitForReview(root);
 
     root.querySelector<HTMLButtonElement>('.import-footer .btn-primary')!.click();
-    await flush(20);
-
-    expect(posted).not.toBeNull();
+    await vi.waitFor(() => expect(posted).not.toBeNull());
     expect(posted!.ingredients.length).toBeGreaterThan(0);
     for (const line of posted!.ingredients) {
       expect(typeof line.ingredientId).toBe('string');
@@ -298,10 +305,10 @@ describe('recipe import screen', () => {
     const root = mountRoot();
     await importScreen().mount(root, makeCtx());
     submit(root);
-    await flush(20);
-
-    expect(root.querySelector('.import-paste')).not.toBeNull();
-    expect(root.textContent).toContain('AI import is not configured on the server.');
+    await vi.waitFor(() => {
+      expect(root.querySelector('.import-paste')).not.toBeNull();
+      expect(root.textContent).toContain('AI import is not configured on the server.');
+    });
   });
 
   test('renders 502 as a retryable extraction failure', async () => {
@@ -315,11 +322,11 @@ describe('recipe import screen', () => {
     const root = mountRoot();
     await importScreen().mount(root, makeCtx());
     submit(root);
-    await flush(20);
-
-    expect(root.querySelector('.import-paste')).not.toBeNull();
-    expect(root.textContent).toContain('Recipe extraction failed');
-    expect(root.textContent).toContain('nothing was saved');
+    await vi.waitFor(() => {
+      expect(root.querySelector('.import-paste')).not.toBeNull();
+      expect(root.textContent).toContain('Recipe extraction failed');
+      expect(root.textContent).toContain('nothing was saved');
+    });
   });
 
   test('rebuilding rows does not re-issue a catalog search for unresolved lines', async () => {
@@ -339,7 +346,7 @@ describe('recipe import screen', () => {
     const root = mountRoot();
     await importScreen().mount(root, makeCtx());
     submit(root);
-    await flush();
+    await waitForReview(root);
 
     const ingredientCalls = (): number =>
       fetchMock.mock.calls.filter((c) => pathOf(c[0] as string) === '/api/ingredients').length;
@@ -349,7 +356,6 @@ describe('recipe import screen', () => {
     const qty = root.querySelector<HTMLInputElement>('.import-line--bound .import-qty')!;
     qty.value = '120';
     qty.dispatchEvent(new Event('change', { bubbles: true }));
-    await flush(50);
 
     expect(ingredientCalls()).toBe(before);
   });
@@ -359,13 +365,20 @@ describe('recipe import screen', () => {
     const pending = new Promise<Response>((resolve) => {
       finish = resolve;
     });
+    let ingredientsSettled = false;
     const draft = makeDraft({
       ingredients: [makeLine({ rawName: 'metsäsieniä', ingredientId: null, quantity: 250, match: 'none' })],
     });
     fetchMock.mockImplementation(async (url: string) => {
       const path = pathOf(url);
       if (path === '/api/recipes/import') return jsonResponse(200, { draft, unmatchedCount: 1 });
-      if (path === '/api/ingredients') return pending;
+      if (path === '/api/ingredients') {
+        try {
+          return await pending;
+        } finally {
+          ingredientsSettled = true;
+        }
+      }
       return jsonResponse(404, { error: 'unhandled' });
     });
 
@@ -373,13 +386,12 @@ describe('recipe import screen', () => {
     const screen = importScreen();
     await screen.mount(root, makeCtx());
     submit(root);
-    await flush();
-    expect(root.querySelector('.import-review')).not.toBeNull();
+    await waitForReview(root);
     expect(screen.unmount).toEqual(expect.any(Function));
 
     screen.unmount!();
     finish(jsonResponse(200, [makeIngredient()]));
-    await flush(20);
+    await vi.waitFor(() => expect(ingredientsSettled).toBe(true));
 
     expect(root.querySelector('.import-candidate-results')?.textContent ?? '').not.toContain('Potato');
   });
