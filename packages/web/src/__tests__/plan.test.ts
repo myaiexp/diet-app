@@ -20,7 +20,7 @@ interface RouterOpts {
   recipes?: Recipe[];
 }
 
-/** Routes: week GET, recipes GET, entry POST, cook-preview GET, entry PATCH, pantry GET. */
+/** Routes: week GET, recipes GET, entry POST, cook-preview GET, cook POST, entry PATCH, pantry GET. */
 function buildRouter(opts: RouterOpts = {}) {
   const entries = opts.entries ?? [];
   const recipes = opts.recipes ?? [];
@@ -43,6 +43,11 @@ function buildRouter(opts: RouterOpts = {}) {
       return jsonResponse(201, entry);
     },
     'GET /api/meal-plans/:id/cook-preview': { deductions: [], shortfalls: [], servings: 4 },
+    'POST /api/meal-plans/:id/cook': ({ params }) => {
+      const id = params['id']!;
+      const base = entries.find((e) => e.id === id) ?? makeEntry({ id });
+      return { entry: { ...base, status: 'cooked' as const }, deductions: [], shortfalls: [] };
+    },
     'PATCH /api/meal-plans/:id': ({ params, json }) => {
       const id = params['id'];
       const body = json<Record<string, unknown>>();
@@ -243,6 +248,40 @@ describe('planned and cooked cell clicks', () => {
       expect(fetchMock.mock.calls.some(([u]) => pathOf(String(u)).endsWith('/cook-preview'))).toBe(true),
     );
     expect(isModalOpen()).toBe(true);
+  });
+
+  test('deduct & mark cooked from a planned cell POSTs /cook and flips the cell', async () => {
+    const entry = makeEntry({ id: 'e-planned', slot: 'dinner', status: 'planned', freeformNote: 'Lohikeitto' });
+    fetchMock.mockImplementation(buildRouter({ entries: [entry] }));
+    const root = mountRoot();
+    await planScreen().mount(root, makeCtx());
+
+    expect(root.querySelector('.plan-fill-stats')?.textContent).toMatch(/0 cooked/);
+
+    root.querySelector<HTMLButtonElement>('.plan-cell[data-status="planned"]')!.click();
+    await vi.waitFor(() => expect(document.querySelector('.cook-commit')).not.toBeNull());
+    document.querySelector<HTMLButtonElement>('.cook-commit')!.click();
+
+    await vi.waitFor(() =>
+      expect(
+        fetchMock.mock.calls.some(
+          ([url, init]) =>
+            pathOf(String(url)) === '/api/meal-plans/e-planned/cook' &&
+            (init as RequestInit | undefined)?.method === 'POST',
+        ),
+      ).toBe(true),
+    );
+
+    // Confirm is gone; cook-flow opens feedback on success. Skip it so the
+    // grid is the only surface left — the cell already flipped via onCooked.
+    await vi.waitFor(() => expect(document.querySelector('.cook-chip-row')).not.toBeNull());
+    expect(document.querySelector('.cook-commit')).toBeNull();
+    expect(root.querySelector('.plan-cell[data-status="cooked"]')).not.toBeNull();
+    expect(root.querySelector('.plan-cell[data-status="planned"]')).toBeNull();
+    expect(root.querySelector('.plan-fill-stats')?.textContent).toMatch(/1 cooked/);
+
+    document.querySelector<HTMLButtonElement>('.cook-feedback-skip')!.click();
+    expect(isModalOpen()).toBe(false);
   });
 
   test('does not open the cook modal from a cooked cell, and explains why', async () => {

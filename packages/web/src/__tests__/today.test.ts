@@ -11,7 +11,7 @@ import { closeModal, isModalOpen } from '../ui/modal.js';
 import { todayScreen } from '../screens/today/index.js';
 import { mondayOf, isoToday } from '../format/date.js';
 import type { MealPlanEntry, PantryItem, Recipe } from '../api/types.js';
-import { jsonResponse, makeCtx, mountRoot, routeFetch } from './harness.js';
+import { jsonResponse, makeCtx, mountRoot, pathOf, routeFetch } from './harness.js';
 import { makeEntry, makeFeedback, makeIngredient, makePantryItem, makeRecipe } from './fixtures.js';
 
 const TODAY = isoToday();
@@ -25,7 +25,7 @@ interface RouterOpts {
   ratedEntryIds?: string[];
 }
 
-/** Routes: week GET, pantry GET, recipes GET, per-entry feedback GET. */
+/** Routes: week GET, pantry GET, recipes GET, per-entry feedback GET, cook-preview/cook. */
 function buildRouter(opts: RouterOpts = {}) {
   const entries = opts.entries ?? [];
   const pantry = opts.pantry ?? [];
@@ -40,6 +40,12 @@ function buildRouter(opts: RouterOpts = {}) {
       const id = params['id']!;
       if (rated.has(id)) return jsonResponse(200, makeFeedback(id));
       return jsonResponse(404, { error: 'Not found' });
+    },
+    'GET /api/meal-plans/:id/cook-preview': { deductions: [], shortfalls: [], servings: 4 },
+    'POST /api/meal-plans/:id/cook': ({ params }) => {
+      const id = params['id']!;
+      const base = entries.find((e) => e.id === id) ?? makeEntry({ id });
+      return { entry: { ...base, status: 'cooked' as const }, deductions: [], shortfalls: [] };
     },
   });
 }
@@ -86,6 +92,63 @@ describe('today slots', () => {
     expect(cookBtn?.className).toContain('btn-primary');
 
     expect(snack!.querySelector('button')?.textContent).toBe('fill');
+  });
+
+  test('cook → opens the cook modal and a successful cook flips the slot', async () => {
+    const entries = [
+      makeEntry({ id: 'e-planned', slot: 'dinner', status: 'planned', freeformNote: 'Lohikeitto' }),
+    ];
+    fetchMock.mockImplementation(buildRouter({ entries, pantry: [makePantryItem()] }));
+
+    const root = mountRoot();
+    await todayScreen().mount(root, makeCtx());
+
+    const cookBtn = [...root.querySelectorAll('button')].find((b) => b.textContent === 'cook →')!;
+    cookBtn.click();
+
+    await vi.waitFor(() =>
+      expect(fetchMock.mock.calls.some(([u]) => pathOf(String(u)).includes('/cook-preview'))).toBe(true),
+    );
+    expect(isModalOpen()).toBe(true);
+    await vi.waitFor(() => expect(document.querySelector('.cook-commit')).not.toBeNull());
+
+    document.querySelector<HTMLButtonElement>('.cook-commit')!.click();
+
+    await vi.waitFor(() =>
+      expect(
+        fetchMock.mock.calls.some(
+          ([url, init]) =>
+            pathOf(String(url)) === '/api/meal-plans/e-planned/cook' &&
+            (init as RequestInit | undefined)?.method === 'POST',
+        ),
+      ).toBe(true),
+    );
+
+    await vi.waitFor(() => {
+      const dinner = [...root.querySelectorAll('.today-slot-row')].find(
+        (r) => r.querySelector('.today-slot-name')?.textContent === 'dinner',
+      )!;
+      expect(dinner.querySelector('button')?.textContent).toBe('rate');
+      expect(dinner.textContent).toMatch(/cooked/i);
+    });
+  });
+
+  test('rate on an unrated cooked slot opens the feedback modal', async () => {
+    const entries = [
+      makeEntry({ id: 'e-unrated', slot: 'lunch', status: 'cooked', freeformNote: 'Ruisleipä' }),
+    ];
+    fetchMock.mockImplementation(buildRouter({ entries, pantry: [makePantryItem()], ratedEntryIds: [] }));
+
+    const root = mountRoot();
+    await todayScreen().mount(root, makeCtx());
+
+    const rateBtn = [...root.querySelectorAll('button')].find((b) => b.textContent === 'rate')!;
+    rateBtn.click();
+
+    expect(isModalOpen()).toBe(true);
+    expect(document.querySelector('.modal-title')?.textContent).toBe('Cook feedback');
+    expect(document.querySelector('.cook-chip-row')).not.toBeNull();
+    expect(document.querySelector('.cook-feedback-save')).not.toBeNull();
   });
 
   test('an empty slot opens the add-entry affordance without navigating', async () => {

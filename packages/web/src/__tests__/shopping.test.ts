@@ -1,18 +1,42 @@
 // Shopping screen: aisle grouping order (and that within-group server order
 // survives grouping), first-run/empty states, bought toggle with optimistic
 // revert, a done list rendering read-only, the three pantry-arithmetic
-// phrasings, and the generate-skipped notice. Mirrors pantry.test.ts's
-// fixture/mock style.
+// phrasings, generate-skipped notice, and complete (happy path, 409, 500,
+// network, filing-count confirm copy). Mirrors pantry.test.ts's fixture/mock
+// style.
 
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 import { configureClient, resetClient } from '../api/client.js';
-import { closeModal } from '../ui/modal.js';
+import { closeModal, isModalOpen } from '../ui/modal.js';
 import { shoppingScreen } from '../screens/shopping/index.js';
 import { groupByAisle, pantryLine } from '../screens/shopping/groups.js';
 import { jsonResponse, makeCtx, mountRoot, pathOf, routeFetch } from './harness.js';
 import { makeIngredient, makeShoppingItem, makeShoppingList } from './fixtures.js';
+import type { ShoppingListRow } from '../api/types.js';
 
 let fetchMock: ReturnType<typeof vi.fn>;
+
+/** Complete's `list` is the bare row — spreading a full list would wipe items. */
+function completedRow(): ShoppingListRow {
+  const list = makeShoppingList({ status: 'done' });
+  return {
+    id: list.id,
+    weekStarting: list.weekStarting,
+    status: list.status,
+    createdAt: list.createdAt,
+    updatedAt: list.updatedAt,
+  };
+}
+
+function clickComplete(root: HTMLElement): void {
+  [...root.querySelectorAll<HTMLButtonElement>('.shopping-actions .btn')]
+    .find((b) => b.textContent === 'complete')!
+    .click();
+}
+
+function confirmComplete(): void {
+  document.querySelector<HTMLButtonElement>('.modal-foot .btn-primary')!.click();
+}
 
 beforeEach(() => {
   document.body.replaceChildren();
@@ -267,7 +291,7 @@ describe('shopping screen', () => {
             items: [makeShoppingItem({ bought: true })],
           }),
           'POST /api/shopping-lists/:id/complete': {
-            list: { ...makeShoppingList(), status: 'done' },
+            list: completedRow(),
             added: [],
             skipped: [{ itemId: 'item-1', reason: 'no_shelf_life' }],
           },
@@ -279,10 +303,8 @@ describe('shopping screen', () => {
     const root = mountRoot();
     await shoppingScreen().mount(root, makeCtx());
 
-    [...root.querySelectorAll<HTMLElement>('.shopping-actions .btn')]
-      .find((b) => b.textContent === 'complete')!
-      .click();
-    document.querySelector<HTMLButtonElement>('.modal-foot .btn-primary')!.click();
+    clickComplete(root);
+    confirmComplete();
 
     // A skipped item was NOT written to the pantry — copy that implied it was
     // would send the user hunting for food that isn't there.
@@ -291,5 +313,209 @@ describe('shopping screen', () => {
       expect(notice).toMatch(/did not reach the pantry/i);
       expect(notice).not.toMatch(/were filed/i);
     });
+  });
+});
+
+describe('shopping complete', () => {
+  test('confirm copy counts bought rows that actually file (netToBuy > 0)', async () => {
+    fetchMock.mockImplementation(
+      routeFetch(
+        {
+          'GET /api/shopping-lists/current': makeShoppingList({
+            status: 'shopping',
+            items: [
+              makeShoppingItem({ id: 'file-me', bought: true, netToBuy: '400' }),
+              makeShoppingItem({
+                id: 'covered',
+                bought: true,
+                netToBuy: '0',
+                quantityInPantry: '400',
+                ingredient: makeIngredient({ id: 'ing-2', name: 'Milk' }),
+              }),
+              makeShoppingItem({
+                id: 'unbought',
+                bought: false,
+                netToBuy: '200',
+                ingredient: makeIngredient({ id: 'ing-3', name: 'Dill' }),
+              }),
+            ],
+          }),
+        },
+        { unmatched: '404' },
+      ),
+    );
+
+    const root = mountRoot();
+    await shoppingScreen().mount(root, makeCtx());
+
+    clickComplete(root);
+
+    expect(isModalOpen()).toBe(true);
+    expect(document.querySelector('.modal')?.textContent).toMatch(
+      /1 item will be filed into the pantry\. This can't be undone\./,
+    );
+  });
+
+  test('confirm copy is 0 items when every bought row is already fully covered', async () => {
+    fetchMock.mockImplementation(
+      routeFetch(
+        {
+          'GET /api/shopping-lists/current': makeShoppingList({
+            status: 'shopping',
+            items: [
+              makeShoppingItem({
+                id: 'covered',
+                bought: true,
+                netToBuy: '0',
+                quantityInPantry: '400',
+              }),
+            ],
+          }),
+        },
+        { unmatched: '404' },
+      ),
+    );
+
+    const root = mountRoot();
+    await shoppingScreen().mount(root, makeCtx());
+
+    clickComplete(root);
+
+    expect(isModalOpen()).toBe(true);
+    expect(document.querySelector('.modal')?.textContent).toMatch(
+      /0 items will be filed into the pantry\. This can't be undone\./,
+    );
+  });
+
+  test('a successful complete toasts, marks the list read-only, and files no skip notice', async () => {
+    fetchMock.mockImplementation(
+      routeFetch(
+        {
+          'GET /api/shopping-lists/current': makeShoppingList({
+            status: 'shopping',
+            items: [makeShoppingItem({ bought: true, netToBuy: '400' })],
+          }),
+          'POST /api/shopping-lists/:id/complete': {
+            list: completedRow(),
+            added: [],
+            skipped: [],
+          },
+        },
+        { unmatched: '404' },
+      ),
+    );
+
+    const root = mountRoot();
+    await shoppingScreen().mount(root, makeCtx());
+
+    clickComplete(root);
+    confirmComplete();
+
+    await vi.waitFor(() => expect(isModalOpen()).toBe(false));
+    expect(document.querySelector('.toast')?.textContent).toBe('Shopping list completed.');
+    expect(document.querySelector('.toast')?.className).toContain('toast-success');
+
+    expect(root.querySelector('.shopping-readonly-note')?.textContent).toMatch(/read-only/i);
+    expect(root.querySelector('.shopping-notice')).toBeNull();
+    expect([...root.querySelectorAll('.shopping-actions .btn')].some((b) => b.textContent === 'complete')).toBe(
+      false,
+    );
+    expect(root.querySelector('.shopping-row-toggle')?.tagName).toBe('DIV');
+    expect(root.querySelector('.shopping-more-btn')).toBeNull();
+
+    const completeCall = fetchMock.mock.calls.find(
+      (c) =>
+        pathOf(c[0] as string) === '/api/shopping-lists/list-1/complete' &&
+        (c[1] as RequestInit | undefined)?.method === 'POST',
+    );
+    expect(completeCall).toBeTruthy();
+  });
+
+  test('a 409 already-completed toasts the conflict and leaves the confirm modal open', async () => {
+    fetchMock.mockImplementation(
+      routeFetch(
+        {
+          'GET /api/shopping-lists/current': makeShoppingList({
+            status: 'shopping',
+            items: [makeShoppingItem({ bought: true })],
+          }),
+          'POST /api/shopping-lists/:id/complete': jsonResponse(409, {
+            error: 'Shopping list already completed',
+          }),
+        },
+        { unmatched: '404' },
+      ),
+    );
+
+    const root = mountRoot();
+    await shoppingScreen().mount(root, makeCtx());
+
+    clickComplete(root);
+    confirmComplete();
+
+    await vi.waitFor(() =>
+      expect(document.querySelector('.toast')?.textContent).toMatch(/already completed/i),
+    );
+    expect(document.querySelector('.toast')?.className).toContain('toast-error');
+    expect(isModalOpen()).toBe(true);
+    expect(document.querySelector('.modal-title')?.textContent).toBe('Complete shopping list');
+    expect(root.querySelector('.shopping-readonly-note')).toBeNull();
+  });
+
+  test('a 500 leaves the confirm modal open and does not mark the list done', async () => {
+    fetchMock.mockImplementation(
+      routeFetch(
+        {
+          'GET /api/shopping-lists/current': makeShoppingList({
+            status: 'shopping',
+            items: [makeShoppingItem({ bought: true })],
+          }),
+          'POST /api/shopping-lists/:id/complete': jsonResponse(500, { error: 'boom' }),
+        },
+        { unmatched: '404' },
+      ),
+    );
+
+    const root = mountRoot();
+    await shoppingScreen().mount(root, makeCtx());
+
+    clickComplete(root);
+    confirmComplete();
+
+    await vi.waitFor(() =>
+      expect(document.querySelector('.toast')?.textContent).toMatch(/unexpected error|nothing was saved/i),
+    );
+    expect(isModalOpen()).toBe(true);
+    expect(document.querySelector('.modal-foot .btn-primary')?.textContent).toBe('complete');
+    expect(root.querySelector('.shopping-readonly-note')).toBeNull();
+  });
+
+  test('a network failure leaves the confirm modal open', async () => {
+    fetchMock.mockImplementation(
+      routeFetch(
+        {
+          'GET /api/shopping-lists/current': makeShoppingList({
+            status: 'shopping',
+            items: [makeShoppingItem({ bought: true })],
+          }),
+          'POST /api/shopping-lists/:id/complete': () => {
+            throw new TypeError('Failed to fetch');
+          },
+        },
+        { unmatched: '404' },
+      ),
+    );
+
+    const root = mountRoot();
+    await shoppingScreen().mount(root, makeCtx());
+
+    clickComplete(root);
+    confirmComplete();
+
+    await vi.waitFor(() =>
+      expect(document.querySelector('.toast')?.textContent).toMatch(/never reached the server/i),
+    );
+    expect(isModalOpen()).toBe(true);
+    expect(root.querySelector('.shopping-readonly-note')).toBeNull();
   });
 });
