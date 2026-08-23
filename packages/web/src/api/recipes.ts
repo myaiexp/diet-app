@@ -1,4 +1,4 @@
-// Recipe reads/writes. Scaling is the API's job — never multiply client-side.
+// Recipe list, get, create, patch, delete, and fork
 
 import { apiGet, apiSend } from './client.js';
 import { fetchAllPages } from './pagination.js';
