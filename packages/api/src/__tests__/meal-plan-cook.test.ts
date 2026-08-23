@@ -318,9 +318,8 @@ describe('mealPlanCookRoutes', () => {
   });
 
   test('applies planner output: updates touched rows, deletes zeroed rows, bumps timesCooked', async () => {
-    // exact consume 1000g from 1000g → delete row
     const { db, deletesTo } = makeCookMock({
-      entry: { ...PLANNED_ENTRY, servings: '2' }, // scale = 2/2 = 1, need 500... use 1000 line
+      entry: { ...PLANNED_ENTRY, servings: '2' },
       recipe: { ...RECIPE, servings: 1 },
       lines: [{ ...LINE, quantity: '1000', unit: 'g' }],
       pantryRows: [{ ...PANTRY_ROW, quantity: '1000', unit: 'g' }],

@@ -27,6 +27,11 @@ Today, Pantry, Recipes, Recipe import, Meal plan, Cook confirm + feedback modals
 flight in another session), AI suggestions (#380), Nutrition (#385), Waste (#389). Their
 nav entries render a shared "not built yet" placeholder so the shell is complete.
 
+**Process lesson:** a backend plan should carry its screen as a final task. This plan
+scoped shopping out awaiting an API; the API plan ended at deploy; the list shipped an
+unconsumed API for weeks. The screen later landed as #3238/#3233 (design §8). Same trap
+for #380/#385/#389: the placeholder is not the screen.
+
 **Backend prerequisites:** Task 0 adds the cook-deduction preview endpoint (#3225), without
 which the cook confirm modal cannot be built truthfully. Task 0b adds an inferred-quantity
 flag to recipe import, without which the design's three-state reconciliation is not

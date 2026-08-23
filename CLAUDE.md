@@ -17,6 +17,9 @@ paragraph of "why", the why belongs in the linked subdoc.
   under `src/api/`, `base.css` from mase.fi). Screen loads go through
   `loadInto` (`packages/web/src/ui/async.ts`) and `ctx.isStale()` from the
   router — never a module-local `destroyed` flag.
+- **Web client**: paginated collections drain through `fetchAllPages`
+  (`listAllRecipes` / `listAllPantry`) at the API max page (200); every fetch
+  uses `AbortSignal.timeout` (25s, 45s for recipe import).
 - **Public URL**: `https://diet.mase.fi` — the app at `/`, its API at `/api/`
   (same origin). Auth (two independent gates), CORS, deploy, secrets, and the
   DB pool: **`docs/auth-deploy.md`**. Password rotation: `docs/db-rotation.md`.
@@ -34,10 +37,11 @@ paragraph of "why", the why belongs in the linked subdoc.
   Drizzle `with:` vs core builder, pantry-always-joins-ingredient, list
   filter/page/order (id tie-break), shared 4xx helpers, JSON/PATCH, recipe
   import logging, and walking the PG `cause` chain: **`docs/api-conventions.md`**.
-- **Cook flow**: `cooked` is terminal via `POST /meal-plans/:id/cook`; PATCH
-  cannot change the inputs the deduction was computed from. Feedback invariant
-  (`changesNote` iff `usedAsIs` is false) is resolved once by `mergeFeedback`.
-  Rules: **`docs/cook-flow.md`**. Design: `docs/plans/2026-07-20-cook-flow-design.md`.
+- **Cook flow**: confirm loads `GET /meal-plans/:id/cook-preview` (read-only);
+  `cooked` is terminal via `POST /meal-plans/:id/cook`; PATCH cannot change the
+  inputs the deduction was computed from. Feedback invariant (`changesNote`
+  iff `usedAsIs` is false) is resolved once by `mergeFeedback`. Rules:
+  **`docs/cook-flow.md`**. Design: `docs/plans/2026-07-20-cook-flow-design.md`.
 - **Shopping lists**: generate merges, never rebuilds; netting is a per-day
   FEFO simulation (`quantityInPantry` = demand covered, not stock on hand);
   `done` is terminal via `/complete`. Rules: **`docs/shopping-lists.md`**.
@@ -76,16 +80,9 @@ Active design docs in `docs/plans/`:
   meal plan #381, item/status writes and the `/complete` pantry hand-off #382,
   shipped
 - `2026-08-04-frontend-design.md` + `2026-08-04-frontend-phase1-plan.md` — the
-  frontend #391 (design reference from claude.ai/design plus the Phase 1
-  implementation plan), **shipped**: every screen the API could serve at the
-  time, on `https://diet.mase.fi` behind central-hub SSO. The shopping list
-  screen followed (#3238/#3233, design §8). Still unbuilt in the UI, each
-  rendering a placeholder that names the blocker: AI suggestions (#380),
-  nutrition (#385), waste (#389) — all three still have no endpoint. **A
-  backend plan should carry its screen as a final task**: the shopping list
-  fell between two plans (the frontend plan scoped it out awaiting an API, the
-  API plan ended at deploy) and shipped an unconsumed API for weeks as a
-  result.
+  frontend #391, **shipped** (including shopping list #3238/#3233). Placeholders
+  remain for AI suggestions (#380), nutrition (#385), and waste (#389) — no
+  endpoint yet.
 - `2026-08-05-grocery-products-design.md` — products table and S-market Jämsä
   import, shipped
 

@@ -2,9 +2,9 @@
 // pin the four things that make that safe — only changed fields are sent, an
 // empty diff never calls the API, nullable targets clear with an explicit
 // null (never omitted, never 0), and scheduleProfile is always an object
-// (the design doc shows free text; the API's schema is z.record(...) and a
-// bare string is a 400) — plus that dislikedIngredientIds round-trips ids to
-// names for display and back to a uuid array on write.
+// (the design doc shows free text; a bare string is a 400) — plus that
+// dislikedIngredientIds round-trips ids to names for display and back to a
+// uuid array on write.
 
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 import { configureClient, resetClient } from '../api/client.js';

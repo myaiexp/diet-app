@@ -1,6 +1,6 @@
 # Cook flow
 
-> Terminal `cooked`, FEFO deduction, and the feedback invariant. Design:
+> Preview, terminal `cooked`, FEFO deduction, and the feedback invariant. Design:
 > `docs/plans/2026-07-20-cook-flow-design.md`. `CLAUDE.md` keeps the map.
 
 ## Skip is not a cook
@@ -9,6 +9,16 @@
 back through the same `onCooked` callback the plan/today grids use to
 refresh. It must not open the feedback modal, and it must not leave the
 cell showing `planned`. `cooked` stays terminal via POST `/cook` only.
+
+## Preview is not a cook
+
+`GET /meal-plans/:id/cook-preview` is the read-only twin of POST `/cook`. Optional
+`?servings=` re-plans without persisting; there is no transaction and no
+`FOR UPDATE` — a preview that locked rows would stall real cooks, and the pantry
+may move before commit. The confirm modal always renders that payload; FEFO sort
+keys live in `cook-deduct.ts` (soonest `expiresDate`, then opened-before-unopened,
+then oldest `createdAt`) and must not be recomputed on the client. The POST
+`/cook` response is the source of truth; the preview may be stale by then.
 
 ## `cooked` is terminal
 
