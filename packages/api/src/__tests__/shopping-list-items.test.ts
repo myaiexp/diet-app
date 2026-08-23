@@ -262,6 +262,23 @@ describe('shoppingListItemsRoutes', () => {
       expect(updates[0]).toEqual({ netToBuy: '3', customNote: 'brand X only' });
     });
 
+    // Finding #7557: quantityNeeded is numeric in Postgres — Drizzle wants the
+    // string form. The netToBuy case above already covers that sibling; a drop
+    // of the quantityNeeded String() line would only show up on this PATCH.
+    test('writes quantityNeeded as a string', async () => {
+      const { db, updates } = makeWriteMock();
+      const res = await shoppingListItemsRoutes(db).request(`/items/${ITEM_ID}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ quantityNeeded: 2.5 }),
+      });
+      expect(res.status).toBe(200);
+      expect(updates[0]).toEqual({ quantityNeeded: '2.5' });
+      expect((updates[0] as { quantityNeeded: unknown }).quantityNeeded).toBe('2.5');
+      const body = await res.json();
+      expect(body.quantityNeeded).toBe('2.5');
+    });
+
     test('clears customNote with null', async () => {
       const { db, updates } = makeWriteMock();
       const res = await shoppingListItemsRoutes(db).request(`/items/${ITEM_ID}`, {
