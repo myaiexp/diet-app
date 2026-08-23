@@ -3,8 +3,10 @@
 // Scaling must never be recomputed client-side (the fixtures below use scaled
 // quantities that deliberately DIFFER from a naive qty*servings/base multiply,
 // so a passing "no client-side math" assertion actually proves something).
-// Editing must always read from an unscaled recipe, even when the scaler is
-// showing a scaled view — see the dedicated test for that.
+// A failed scale fetch must not leave N-serving chrome over the previous
+// quantities; switching recipes mid-fetch must not paint the old recipe's
+// scaled lines. Editing must always read from an unscaled recipe, even when
+// the scaler is showing a scaled view — see the dedicated test for that.
 
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 import { configureClient, resetClient } from '../api/client.js';
@@ -12,7 +14,7 @@ import { closeModal } from '../ui/modal.js';
 import { recipesScreen } from '../screens/recipes/index.js';
 import type { PantryItem, RecipeLineInput, RecipeWithIngredients } from '../api/types.js';
 
-import { jsonResponse, makeCtx, mountRoot, routeFetch } from './harness.js';
+import { flush, jsonResponse, makeCtx, mountRoot, routeFetch } from './harness.js';
 import { makeIngredient, makePantryItem, makeRecipe } from './fixtures.js';
 
 const ING_SALMON = makeIngredient({
@@ -95,6 +97,8 @@ let patchRequests: Array<{ id: string; body: RecipeWithIngredients }>;
 let postRequests: Array<Record<string, unknown>>;
 let pantryRequestCount: number;
 let idCounter: number;
+/** Override GET /recipes/r1?servings=6 — default returns the non-naive scaled fixture. */
+let scale6: () => RecipeWithIngredients | Response | Promise<RecipeWithIngredients | Response>;
 
 async function waitForScaledFetch(servings: string): Promise<void> {
   await vi.waitFor(() => {
@@ -115,6 +119,7 @@ function resetFixtures(): void {
   postRequests = [];
   pantryRequestCount = 0;
   idCounter = 0;
+  scale6 = () => makeR1Scaled6();
 }
 
 function appRouter() {
@@ -172,7 +177,7 @@ function appRouter() {
       const id = params['id']!;
       const servings = url.searchParams.get('servings') ?? undefined;
       detailRequests.push({ id, servings });
-      if (id === 'r1' && servings === '6') return makeR1Scaled6();
+      if (id === 'r1' && servings === '6') return scale6();
       const found = recipesById.get(id);
       return found ?? jsonResponse(404, { error: 'Not found' });
     },
@@ -317,6 +322,57 @@ describe('recipes screen — list and scaler', () => {
     const quantities = [...root.querySelectorAll<HTMLElement>('.ingredient-qty')].map((n) => n.textContent);
     // 400*1.5=600 and 20*1.5=30 would be the naive (wrong) client-side answer.
     expect(quantities).toEqual(['605 g', '31 g']);
+  });
+
+  test('a failed scale fetch toasts and does not leave 6-serving chrome over 4-serving quantities', async () => {
+    scale6 = () => jsonResponse(500, { error: 'cannot scale' });
+    const { root } = await mountScreen();
+    const baseQuantities = [...root.querySelectorAll<HTMLElement>('.ingredient-qty')].map((n) => n.textContent);
+    expect(root.querySelector('.scaler-value')!.textContent).toBe('4');
+    expect(baseQuantities).toEqual(['400 g', '20 g']);
+
+    root.querySelector<HTMLElement>('.scaler-plus')!.click();
+    root.querySelector<HTMLElement>('.scaler-plus')!.click();
+    await waitForScaledFetch('6');
+
+    await vi.waitFor(() =>
+      expect(document.querySelector('.toast')?.textContent).toMatch(/unexpected error/i),
+    );
+    expect(document.querySelector('.toast')?.className).toContain('toast-error');
+    // Chrome and quantities stay aligned on the last successful recipe — not
+    // 6-serving chrome over the unscaled 400 g / 20 g lines.
+    expect(root.querySelector('.scaler-value')!.textContent).toBe('4');
+    expect(root.querySelector('.scaler-note')!.textContent).toBe('base recipe');
+    expect([...root.querySelectorAll<HTMLElement>('.ingredient-qty')].map((n) => n.textContent)).toEqual(
+      baseQuantities,
+    );
+  });
+
+  test('switching recipes while a scale fetch is in flight never paints r1 scaled lines on r2', async () => {
+    let release!: (value: RecipeWithIngredients) => void;
+    scale6 = () =>
+      new Promise<RecipeWithIngredients>((resolve) => {
+        release = resolve;
+      });
+    const { root } = await mountScreen();
+
+    root.querySelector<HTMLElement>('.scaler-plus')!.click();
+    root.querySelector<HTMLElement>('.scaler-plus')!.click();
+    await waitForScaledFetch('6');
+
+    root.querySelector<HTMLElement>('[data-id="r2"]')!.click();
+    await vi.waitFor(() => expect(root.querySelector('h1')?.textContent).toBe('Ohrarisotto'));
+    expect(root.querySelectorAll('.ingredient-qty')).toHaveLength(0);
+
+    release(makeR1Scaled6());
+    await flush(0);
+    const detail = root.querySelector('.panel-pad')!;
+    await vi.waitFor(() => expect(detail.querySelector('h1')?.textContent).toBe('Ohrarisotto'));
+    // List still names Lohikeitto; the detail pane must not take r1's scaled
+    // lines once r2 is selected.
+    expect(detail.textContent).not.toContain('605');
+    expect(detail.textContent).not.toContain('Salmon');
+    expect([...detail.querySelectorAll<HTMLElement>('.ingredient-qty')].map((n) => n.textContent)).toEqual([]);
   });
 });
 

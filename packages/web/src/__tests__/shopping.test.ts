@@ -1,9 +1,9 @@
 // Shopping screen: aisle grouping order (and that within-group server order
 // survives grouping), first-run/empty states, bought toggle with optimistic
 // revert, a done list rendering read-only, the three pantry-arithmetic
-// phrasings, generate-skipped notice, and complete (happy path, 409, 500,
-// network, filing-count confirm copy). Mirrors pantry.test.ts's fixture/mock
-// style.
+// phrasings, generate-skipped notice, and complete (draft production path,
+// unused mid-shop 'shopping' status, 409, 500, network, filing-count confirm
+// copy). Mirrors pantry.test.ts's fixture/mock style.
 
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 import { configureClient, resetClient } from '../api/client.js';
@@ -287,7 +287,6 @@ describe('shopping screen', () => {
       routeFetch(
         {
           'GET /api/shopping-lists/current': makeShoppingList({
-            status: 'shopping',
             items: [makeShoppingItem({ bought: true })],
           }),
           'POST /api/shopping-lists/:id/complete': {
@@ -322,7 +321,6 @@ describe('shopping complete', () => {
       routeFetch(
         {
           'GET /api/shopping-lists/current': makeShoppingList({
-            status: 'shopping',
             items: [
               makeShoppingItem({ id: 'file-me', bought: true, netToBuy: '400' }),
               makeShoppingItem({
@@ -361,7 +359,6 @@ describe('shopping complete', () => {
       routeFetch(
         {
           'GET /api/shopping-lists/current': makeShoppingList({
-            status: 'shopping',
             items: [
               makeShoppingItem({
                 id: 'covered',
@@ -387,12 +384,13 @@ describe('shopping complete', () => {
     );
   });
 
-  test('a successful complete toasts, marks the list read-only, and files no skip notice', async () => {
+  test('a successful complete from a draft list toasts, marks the list read-only, and POSTs {}', async () => {
+    // Generate leaves lists as draft; the client never PATCHes status to
+    // 'shopping'. Complete is offered for any non-done list with bought items.
     fetchMock.mockImplementation(
       routeFetch(
         {
           'GET /api/shopping-lists/current': makeShoppingList({
-            status: 'shopping',
             items: [makeShoppingItem({ bought: true, netToBuy: '400' })],
           }),
           'POST /api/shopping-lists/:id/complete': {
@@ -408,7 +406,9 @@ describe('shopping complete', () => {
     const root = mountRoot();
     await shoppingScreen().mount(root, makeCtx());
 
+    expect(root.querySelector('.shopping-actions .btn-primary')?.textContent).toBe('complete');
     clickComplete(root);
+    expect(isModalOpen()).toBe(true);
     confirmComplete();
 
     await vi.waitFor(() => expect(isModalOpen()).toBe(false));
@@ -429,9 +429,13 @@ describe('shopping complete', () => {
         (c[1] as RequestInit | undefined)?.method === 'POST',
     );
     expect(completeCall).toBeTruthy();
+    // Bodyless complete 400s — the API requires {}.
+    expect(JSON.parse(String((completeCall![1] as RequestInit).body))).toEqual({});
   });
 
   test('a 409 already-completed toasts the conflict and leaves the confirm modal open', async () => {
+    // status: 'shopping' is the unused mid-shop branch — the client never
+    // PATCHes it — kept here so a regression that required draft would fail.
     fetchMock.mockImplementation(
       routeFetch(
         {

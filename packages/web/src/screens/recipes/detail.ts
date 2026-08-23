@@ -144,6 +144,10 @@ export function createRecipeDetail(container: HTMLElement, deps: DetailDeps): De
         (err: unknown) => {
           if (myToken !== token || id !== currentId) return;
           say(userMessage(err), 'error');
+          // Roll chrome back to the last successful recipe so a failed
+          // ?servings=N cannot leave 6-serving chrome over 4-serving lines.
+          servings = detail?.servings ?? servings;
+          render();
         },
       );
     }, DEBOUNCE_MS);

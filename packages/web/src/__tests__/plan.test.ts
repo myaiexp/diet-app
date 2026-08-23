@@ -1,4 +1,4 @@
-// Meal plan week grid + the shared add-entry affordance.
+// Meal plan week grid, week navigation, and the shared add-entry affordance.
 //
 // The slot-order test is the one that catches trusting the API's own text
 // ordering of `slot` (which reads breakfast/dinner/lunch/snack) instead of
@@ -8,7 +8,7 @@ import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 import { configureClient, resetClient } from '../api/client.js';
 import { closeModal, isModalOpen } from '../ui/modal.js';
 import { planScreen } from '../screens/plan/index.js';
-import { mondayOf, isoToday } from '../format/date.js';
+import { mondayOf, isoToday, addDays, isoWeekNumber } from '../format/date.js';
 import type { MealPlanEntry, Recipe } from '../api/types.js';
 import { jsonResponse, makeCtx, mountRoot, pathOf, routeFetch } from './harness.js';
 import { makeEntry, makeRecipe } from './fixtures.js';
@@ -18,6 +18,8 @@ const MONDAY = mondayOf(isoToday());
 interface RouterOpts {
   entries?: MealPlanEntry[];
   recipes?: Recipe[];
+  /** When set, the week GET is keyed on `:monday` instead of a static array. */
+  weekByMonday?: (monday: string) => MealPlanEntry[];
 }
 
 /** Routes: week GET, recipes GET, entry POST, cook-preview GET, cook POST, entry PATCH, pantry GET. */
@@ -27,7 +29,10 @@ function buildRouter(opts: RouterOpts = {}) {
   let createdCount = 0;
 
   return routeFetch({
-    'GET /api/meal-plans/week/:monday': entries,
+    'GET /api/meal-plans/week/:monday': ({ params }) => {
+      const monday = params['monday']!;
+      return opts.weekByMonday ? opts.weekByMonday(monday) : entries;
+    },
     'GET /api/recipes': recipes,
     'POST /api/meal-plans': ({ json }) => {
       const body = json<Record<string, unknown>>();
@@ -65,6 +70,25 @@ function postCalls() {
     ([url, init]) =>
       pathOf(String(url)) === '/api/meal-plans' && ((init as RequestInit | undefined)?.method ?? 'GET') === 'POST',
   );
+}
+
+function weekGetMondays(): string[] {
+  return fetchMock.mock.calls
+    .map(([url]) => {
+      const match = pathOf(String(url)).match(/^\/api\/meal-plans\/week\/(\d{4}-\d{2}-\d{2})$/);
+      return match?.[1] ?? null;
+    })
+    .filter((d): d is string => d !== null);
+}
+
+function breakfastDates(root: HTMLElement): string[] {
+  return [...root.querySelectorAll('.plan-cell[data-slot="breakfast"]')].map(
+    (c) => c.getAttribute('data-date') ?? '',
+  );
+}
+
+function isoWeek(monday: string): string[] {
+  return Array.from({ length: 7 }, (_, i) => addDays(monday, i));
 }
 
 beforeEach(() => {
@@ -129,6 +153,59 @@ describe('plan screen layout', () => {
     // Asserted directly on the element, not through a media query: the
     // design requires min-width inside overflow-x:auto unconditionally.
     expect(grid?.style.minWidth).toBe('1050px');
+  });
+});
+
+describe('plan week navigation', () => {
+  function weekRouter() {
+    return buildRouter({
+      weekByMonday: (monday) => [
+        makeEntry({
+          id: `e-${monday}`,
+          date: monday,
+          slot: 'breakfast',
+          freeformNote: `note-${monday}`,
+        }),
+      ],
+    });
+  }
+
+  test("next week requests monday+7 and paints that week's day headers", async () => {
+    fetchMock.mockImplementation(weekRouter());
+    const root = mountRoot();
+    await planScreen().mount(root, makeCtx());
+
+    expect(weekGetMondays().at(-1)).toBe(MONDAY);
+    expect(breakfastDates(root)).toEqual(isoWeek(MONDAY));
+    expect(root.querySelector('.plan-cell-title')?.textContent).toBe(`note-${MONDAY}`);
+    expect(root.querySelector('.plan-week-label')?.textContent).toContain(`vk ${isoWeekNumber(MONDAY)}`);
+
+    const nextMonday = addDays(MONDAY, 7);
+    root.querySelector<HTMLButtonElement>('[aria-label="next week"]')!.click();
+
+    await vi.waitFor(() => expect(breakfastDates(root)[0]).toBe(nextMonday));
+    expect(weekGetMondays().at(-1)).toBe(nextMonday);
+    expect(breakfastDates(root)).toEqual(isoWeek(nextMonday));
+    expect(root.querySelector('.plan-cell-title')?.textContent).toBe(`note-${nextMonday}`);
+    expect(root.querySelector('.plan-week-label')?.textContent).toContain(`vk ${isoWeekNumber(nextMonday)}`);
+    // A ±1-day bug stays inside the same ISO week; the requested monday must
+    // actually move by a full week.
+    expect(nextMonday).not.toBe(addDays(MONDAY, 1));
+  });
+
+  test("previous week requests monday-7 and paints that week's day headers", async () => {
+    fetchMock.mockImplementation(weekRouter());
+    const root = mountRoot();
+    await planScreen().mount(root, makeCtx());
+
+    const prevMonday = addDays(MONDAY, -7);
+    root.querySelector<HTMLButtonElement>('[aria-label="previous week"]')!.click();
+
+    await vi.waitFor(() => expect(breakfastDates(root)[0]).toBe(prevMonday));
+    expect(weekGetMondays().at(-1)).toBe(prevMonday);
+    expect(breakfastDates(root)).toEqual(isoWeek(prevMonday));
+    expect(root.querySelector('.plan-cell-title')?.textContent).toBe(`note-${prevMonday}`);
+    expect(root.querySelector('.plan-week-label')?.textContent).toContain(`vk ${isoWeekNumber(prevMonday)}`);
   });
 });
 
