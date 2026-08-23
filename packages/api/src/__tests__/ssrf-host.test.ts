@@ -42,6 +42,13 @@ describe('isBlockedAddress', () => {
     ['::127.0.0.1'],
     ['64:ff9b::7f00:1'],
     ['64:ff9b::127.0.0.1'],
+    // RFC 8215 local-use NAT64 64:ff9b:1::/48 — blocked wholesale like 6to4
+    // (well-known 64:ff9b::/96 stays unwrapped). Node fetches the literal.
+    ['64:ff9b:1::'],
+    ['64:ff9b:1::7f00:1'],
+    ['64:ff9b:1::127.0.0.1'],
+    ['64:ff9b:1:0:0:0:0:1'],
+    ['64:ff9b:1::0808:0808'], // 8.8.8.8 via local-use — still a tunnel
     // 6to4 2002::/16 embeds IPv4 in the next 32 bits (2002:7f00:1:: → 127.0.0.1).
     ['2002:7f00:1::'],
     ['2002:7f00:1:0:0:0:0:0'],
@@ -62,6 +69,8 @@ describe('isBlockedAddress', () => {
     ['2.2.2.2'],
     ['2001:4860:4860::8888'],
     ['2606:4700:4700::1111'],
+    // Well-known NAT64 64:ff9b::/96 of a public IPv4 is unwrapped, not blocked.
+    ['64:ff9b::8.8.8.8'],
   ])('allows public %s', (addr) => {
     expect(isBlockedAddress(addr)).toBe(false);
   });
@@ -86,6 +95,7 @@ describe('isBlockedHostname', () => {
     ['100.64.0.1'],
     ['[::1]'],
     ['[fec0::1]'],
+    ['[64:ff9b:1::7f00:1]'],
   ])('blocks %s', (host) => {
     expect(isBlockedHostname(host)).toBe(true);
   });

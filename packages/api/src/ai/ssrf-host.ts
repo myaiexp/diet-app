@@ -29,6 +29,11 @@ BLOCKED_NETS.addSubnet('ff00::', 8, 'ipv6');
 // still a tunnel, and Teredo's client IPv4 is XOR'd.
 BLOCKED_NETS.addSubnet('2002::', 16, 'ipv6');
 BLOCKED_NETS.addSubnet('2001:0::', 32, 'ipv6');
+// RFC 8215 local-use NAT64 64:ff9b:1::/48. Distinct from the well-known
+// 64:ff9b::/96 (unwrapped below): a /48 embedding is not last-32-bits, and
+// a translator on-path can reconstruct loopback/RFC1918. Import has no need
+// for NAT64, so the prefix is blocked wholesale like 6to4/Teredo.
+BLOCKED_NETS.addSubnet('64:ff9b:1::', 48, 'ipv6');
 
 const BLOCKED_HOSTNAMES = new Set([
   'localhost',

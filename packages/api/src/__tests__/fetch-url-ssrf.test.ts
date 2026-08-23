@@ -83,6 +83,9 @@ describe('fetchUrlAsText URL / hostname blocklist', () => {
       'http://[::127.0.0.1]/x',
       'http://[64:ff9b::7f00:1]/x',
       'http://[64:ff9b::127.0.0.1]/x',
+      // RFC 8215 local-use NAT64 — prefix blocked wholesale; literals skip DNS.
+      'http://[64:ff9b:1::7f00:1]/x',
+      'http://[64:ff9b:1::127.0.0.1]/x',
       // 6to4 / Teredo embeddings of loopback — IP literals skip DNS, so the
       // blocklist must catch them or parseSafeUrl would fetch.
       'http://[2002:7f00:1::]/x',
@@ -126,6 +129,8 @@ describe('fetchUrlAsText DNS-answer blocklist', () => {
     ['169.254.169.254', 4],
     ['10.0.0.1', 4],
     ['::ffff:127.0.0.1', 6],
+    ['64:ff9b:1::7f00:1', 6],
+    ['64:ff9b:1::0808:0808', 6],
   ] as const)(
     'blocks https://example.com when DNS returns %s',
     async (address, family) => {
