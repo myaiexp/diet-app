@@ -8,10 +8,12 @@ const TRUNCATION_MARKER = '\n\n[truncated]';
 /** Strip scripts/styles/tags and collapse whitespace — no browser. */
 export function htmlToPlainText(html: string): string {
   let s = html;
-  s = s.replace(/<script\b[\s\S]*?<\/script>/gi, ' ');
-  s = s.replace(/<style\b[\s\S]*?<\/style>/gi, ' ');
-  s = s.replace(/<noscript\b[\s\S]*?<\/noscript>/gi, ' ');
-  s = s.replace(/<!--[\s\S]*?-->/g, ' ');
+  // Unclosed script/style/noscript/comment: strip to EOF so leftover markup
+  // cannot leak into the extraction prompt.
+  s = s.replace(/<script\b[\s\S]*?(?:<\/script>|$)/gi, ' ');
+  s = s.replace(/<style\b[\s\S]*?(?:<\/style>|$)/gi, ' ');
+  s = s.replace(/<noscript\b[\s\S]*?(?:<\/noscript>|$)/gi, ' ');
+  s = s.replace(/<!--[\s\S]*?(?:-->|$)/g, ' ');
   s = s.replace(/<[^>]+>/g, ' ');
   s = s.replace(/&nbsp;/gi, ' ');
   s = s.replace(/&amp;/gi, '&');

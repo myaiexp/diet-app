@@ -365,6 +365,35 @@ describe('pantryRoutes', () => {
     expect((await res.json()).ingredient.name).toBe('Salmon fillet');
   });
 
+  // Finding #7551: quantity is numeric in Postgres — Drizzle wants the string
+  // form. The 404 paths send {quantity:5} but return before the write, so a
+  // dropped String() special case (or a silent expiresDate recompute) would
+  // not fail the suite.
+  test('PATCH /:id writes quantity as a string plus opened and expiresDate, keeping the pre-check ingredient', async () => {
+    const { db, updates } = makeWriteMock({});
+    const res = await pantryRoutes(db).request(`/${ITEM_ID}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        quantity: 5,
+        opened: true,
+        expiresDate: '2099-06-01',
+      }),
+    });
+    expect(res.status).toBe(200);
+    expect(updates[0]).toMatchObject({
+      quantity: '5',
+      opened: true,
+      expiresDate: '2099-06-01',
+    });
+    expect((updates[0] as { quantity: unknown }).quantity).toBe('5');
+    const body = await res.json();
+    expect(body.ingredient.name).toBe('Salmon fillet');
+    expect(body.quantity).toBe('5');
+    expect(body.opened).toBe(true);
+    expect(body.expiresDate).toBe('2099-06-01');
+  });
+
   test('DELETE /:id returns 204 when deleted', async () => {
     const { db } = makeWriteMock({ deleteRows: [{ id: ITEM_ID }] });
     const res = await pantryRoutes(db).request(`/${ITEM_ID}`, { method: 'DELETE' });

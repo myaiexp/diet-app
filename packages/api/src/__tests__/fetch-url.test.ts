@@ -1,9 +1,8 @@
-// SSRF-safe fetchUrlAsText + HTML strip coverage (mock fetch + mock DNS only)
+// SSRF-safe fetchUrlAsText (mock fetch + mock DNS only)
 
 import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 import {
   fetchUrlAsText,
-  htmlToPlainText,
   IMPORT_TEXT_MAX_CHARS,
   type DnsLookupFn,
 } from '../ai/fetch-url.js';
@@ -270,8 +269,3 @@ describe('fetchUrlAsText failure logging', () => {
   });
 });
 
-describe('htmlToPlainText', () => {
-  test('collapses whitespace and drops tags', () => {
-    expect(htmlToPlainText('<p>a</p>   <p>b</p>')).toBe('a b');
-  });
-});

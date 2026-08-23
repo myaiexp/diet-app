@@ -109,6 +109,8 @@ function deductionPlan(servings: number) {
 
 interface RouteOpts {
   cookStatus?: number;
+  patchServingsStatus?: number;
+  feedbackStatus?: number;
 }
 
 /** Routes the entry-e1 flow: recipe, pantry, preview, PATCH, cook, feedback. */
@@ -123,6 +125,9 @@ function buildRouter(opts: RouteOpts = {}) {
     },
     'PATCH /api/meal-plans/:id': ({ json }) => {
       const body = json<{ servings?: number; status?: MealPlanEntry['status'] }>();
+      if (typeof body.servings === 'number' && opts.patchServingsStatus) {
+        return jsonResponse(opts.patchServingsStatus, { error: 'could not patch servings' });
+      }
       if (typeof body.servings === 'number') state.servings = body.servings;
       return {
         ...ENTRY,
@@ -132,13 +137,19 @@ function buildRouter(opts: RouteOpts = {}) {
     },
     'POST /api/meal-plans/:id/cook': () => {
       if (opts.cookStatus === 409) return jsonResponse(409, { error: 'Meal plan entry already cooked' });
+      if (opts.cookStatus && opts.cookStatus >= 400) {
+        return jsonResponse(opts.cookStatus, { error: 'cook failed' });
+      }
       return {
         entry: { ...ENTRY, status: 'cooked' as const, servings: String(state.servings) },
         ...deductionPlan(state.servings),
       };
     },
-    'POST /api/meal-plans/:id/feedback': ({ json }) =>
-      jsonResponse(201, {
+    'POST /api/meal-plans/:id/feedback': ({ json }) => {
+      if (opts.feedbackStatus === 409) {
+        return jsonResponse(409, { error: 'Feedback already recorded' });
+      }
+      return jsonResponse(201, {
         id: 'fb1',
         mealPlanEntryId: 'e1',
         rating: 'thumbs_up',
@@ -149,7 +160,8 @@ function buildRouter(opts: RouteOpts = {}) {
         createdAt: '',
         updatedAt: '',
         ...json<Record<string, unknown>>(),
-      }),
+      });
+    },
   });
 }
 
@@ -375,6 +387,78 @@ describe('cook confirm', () => {
     expect(onCooked).toHaveBeenCalledOnce();
     expect(onCooked.mock.calls[0]![0]).toMatchObject({ entry: { status: 'cooked' } });
   });
+
+  test('a non-409 cook failure leaves the modal open and does not fire onCooked after a servings PATCH', async () => {
+    fetchMock.mockImplementation(buildRouter({ cookStatus: 500 }));
+    const onCooked = vi.fn();
+    openCookFlow({ entry: ENTRY, onCooked });
+
+    await vi.waitFor(() => expect(document.querySelector('.cook-commit')).not.toBeNull());
+    click('.cook-step-plus');
+    await vi.waitFor(() => expect(calledWith('cook-preview?servings=5')).toBe(true));
+
+    click('.cook-commit');
+    await vi.waitFor(() =>
+      expect(document.querySelector('.toast')?.textContent).toMatch(/unexpected error|nothing was saved/i),
+    );
+
+    expect(calledWith('/api/meal-plans/e1', 'PATCH')).toBe(true);
+    expect(lastBody('/api/meal-plans/e1', 'PATCH')).toEqual({ servings: 5 });
+    expect(calledWith('/api/meal-plans/e1/cook', 'POST')).toBe(true);
+    expect(isModalOpen()).toBe(true);
+    expect(document.querySelector('.cook-commit')).not.toBeNull();
+    expect(document.querySelector('.cook-chip-row')).toBeNull();
+    expect(onCooked).not.toHaveBeenCalled();
+  });
+
+  test('a failed servings PATCH does not POST /cook', async () => {
+    fetchMock.mockImplementation(buildRouter({ patchServingsStatus: 500 }));
+    const onCooked = vi.fn();
+    openCookFlow({ entry: ENTRY, onCooked });
+
+    await vi.waitFor(() => expect(document.querySelector('.cook-commit')).not.toBeNull());
+    click('.cook-step-plus');
+    await vi.waitFor(() => expect(calledWith('cook-preview?servings=5')).toBe(true));
+
+    click('.cook-commit');
+    await vi.waitFor(() =>
+      expect(document.querySelector('.toast')?.textContent).toMatch(/unexpected error|nothing was saved/i),
+    );
+
+    expect(calledWith('/api/meal-plans/e1', 'PATCH')).toBe(true);
+    expect(calledWith('/api/meal-plans/e1/cook', 'POST')).toBe(false);
+    expect(isModalOpen()).toBe(true);
+    expect(onCooked).not.toHaveBeenCalled();
+  });
+
+  test('renders a unit_mismatch shortfall with dedicated copy', async () => {
+    fetchMock.mockImplementation(
+      routeFetch({
+        'GET /api/recipes/:id': RECIPE,
+        'GET /api/pantry': PANTRY,
+        'GET /api/meal-plans/:id/cook-preview': {
+          deductions: [],
+          shortfalls: [
+            {
+              ingredientId: 'salmon',
+              dimension: null,
+              requested: 400,
+              available: 0,
+              reason: 'unit_mismatch',
+            },
+          ],
+          servings: 4,
+        },
+      }),
+    );
+
+    openCookFlow({ entry: ENTRY });
+
+    await vi.waitFor(() => expect(document.querySelector('.cook-item-shortfall')).not.toBeNull());
+    expect(document.querySelector('.cook-item-shortfall')!.textContent).toBe(
+      "Salmon — units don't convert (mass/volume/count only)",
+    );
+  });
 });
 
 describe('cook feedback', () => {
@@ -436,5 +520,30 @@ describe('cook feedback', () => {
     click('.cook-feedback-skip');
     expect(isModalOpen()).toBe(false);
     expect(calledWith('/feedback')).toBe(false);
+  });
+
+  test('a 409 on feedback save closes the modal, toasts, and still calls onDone', async () => {
+    fetchMock.mockImplementation(buildRouter({ feedbackStatus: 409 }));
+    const onCooked = vi.fn();
+    openCookFlow({ entry: ENTRY, onCooked });
+
+    await vi.waitFor(() => expect(document.querySelector('.cook-commit')).not.toBeNull());
+    click('.cook-commit');
+
+    await vi.waitFor(() => expect(document.querySelector('.cook-chip-row')).not.toBeNull());
+    expect(onCooked).toHaveBeenCalledOnce();
+
+    selectBaseChips();
+    click('.cook-chip[data-value="as_is"]');
+
+    const saveBtn = document.querySelector<HTMLButtonElement>('.cook-feedback-save')!;
+    expect(saveBtn.disabled).toBe(false);
+    saveBtn.click();
+
+    await vi.waitFor(() =>
+      expect(document.querySelector('.toast')?.textContent).toMatch(/already recorded/i),
+    );
+    expect(isModalOpen()).toBe(false);
+    expect(onCooked).toHaveBeenCalledTimes(2);
   });
 });
