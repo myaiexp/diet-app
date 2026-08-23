@@ -34,6 +34,7 @@ describe('isIsoDate', () => {
   test('accepts a real YYYY-MM-DD date', () => {
     expect(isIsoDate('2026-03-05')).toBe(true);
     expect(isIsoDate('2026-02-28')).toBe(true);
+    expect(isIsoDate('2024-02-29')).toBe(true);
   });
 
   test('rejects non-date garbage', () => {
@@ -53,5 +54,8 @@ describe('isIsoDate', () => {
     expect(isIsoDate('2026-02-30')).toBe(false);
     expect(isIsoDate('2026-13-01')).toBe(false);
     expect(isIsoDate('2026-00-10')).toBe(false);
+    // V8 rolls Feb 29 on a non-leap year to Mar 01.
+    expect(isIsoDate('2023-02-29')).toBe(false);
+    expect(isIsoDate('2025-02-29')).toBe(false);
   });
 });

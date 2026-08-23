@@ -332,6 +332,21 @@ describe('recipesRoutes', () => {
     expect(deletes).toHaveLength(0);
   });
 
+  test('PATCH /:id with ingredients: [] returns 400 and does not wipe lines', async () => {
+    const { db, deletes, inserts } = makeWriteMock({
+      findFirst: () => RECIPE_WITH_RELATIONS,
+    });
+    const res = await recipesRoutes(db).request(`/${RECIPE_ID}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ingredients: [] }),
+    });
+    expect(res.status).toBe(400);
+    expect((await res.json()).error).toBe('Validation failed');
+    expect(deletes).toHaveLength(0);
+    expect(inserts).toHaveLength(0);
+  });
+
   test('PATCH /:id with ingredients replaces set', async () => {
     const { db, deletes, inserts } = makeWriteMock({
       findFirst: () => RECIPE_WITH_RELATIONS,

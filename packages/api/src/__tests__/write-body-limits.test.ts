@@ -64,6 +64,10 @@ describe('recipe write bodies', () => {
   test('patch accepts null sourceUrl (clear)', () => {
     expect(recipePatchSchema.safeParse({ sourceUrl: null }).success).toBe(true);
   });
+
+  test('patch rejects an empty ingredients replace', () => {
+    expect(recipePatchSchema.safeParse({ ingredients: [] }).success).toBe(false);
+  });
 });
 
 describe('profile PATCH body', () => {
