@@ -43,6 +43,9 @@ The app and its API are same-origin (`diet.mase.fi/` and `diet.mase.fi/api/`).
 `CORS_ORIGINS` (comma-separated, `config.ts`; unset/empty ⇒ no extra origins)
 still governs any non-browser or cross-origin client. Same-origin needs none;
 never hardcode localhost (or the retired apex origin) in the prod allowlist.
+`cors()` is mounted before `bearerAuth` and short-circuits OPTIONS, so a
+preflight from an allowed extra origin succeeds without a token; a disallowed
+origin gets no `Access-Control-Allow-Origin`.
 
 ## Public URL and deploy
 

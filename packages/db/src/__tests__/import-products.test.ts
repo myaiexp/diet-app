@@ -1,10 +1,11 @@
-// Row-mapping tests for the S-kaupat product import — the transform from an
-// export item to a products row. Upsert behaviour against real SQL is covered by
-// the integration suite; these pin the mapping decisions that are easy to regress.
+// Row-mapping and batching tests for the S-kaupat product import. Upsert
+// behaviour against real SQL is covered by the integration suite; these pin
+// the mapping decisions and the 500-row insert split that are easy to regress.
 
 import { describe, test, expect } from 'vitest';
-import { toProductRow } from '../import-products.js';
+import { importProducts, toProductRow } from '../import-products.js';
 import type { ExportedProduct } from '../import-products.js';
+import type { Db } from '../connection.js';
 
 const lime: ExportedProduct = {
   ean: '2000507900009',
@@ -69,5 +70,70 @@ describe('toProductRow', () => {
 
   test('defaults frozen to false when absent', () => {
     expect(toProductRow({ ...lime, frozen: undefined }, 'S').frozen).toBe(false);
+  });
+});
+
+/** Records each insert().values() payload. The SQL suite owns ON CONFLICT. */
+function makeInsertMock(): { db: Db; batches: unknown[][] } {
+  const batches: unknown[][] = [];
+  const db = {
+    insert: () => ({
+      values: (rows: unknown[]) => {
+        batches.push(rows);
+        return { onConflictDoUpdate: async () => undefined };
+      },
+    }),
+  };
+  return { db: db as unknown as Db, batches };
+}
+
+describe('importProducts', () => {
+  test('splits inserts at 500 rows so a 501-item dump is two statements', async () => {
+    const { db, batches } = makeInsertMock();
+    const items = Array.from({ length: 501 }, (_, i) => ({
+      ...lime,
+      ean: String(2_000_000_000_000 + i),
+      name: `Item ${i}`,
+    }));
+    const result = await importProducts(db, items, 'S');
+    expect(batches).toHaveLength(2);
+    expect(batches[0]).toHaveLength(500);
+    expect(batches[1]).toHaveLength(1);
+    expect(result.imported).toBe(501);
+    expect(result.skipped).toBe(0);
+  });
+
+  test('skips items missing ean or name without inserting them', async () => {
+    const { db, batches } = makeInsertMock();
+    const result = await importProducts(
+      db,
+      [
+        { ...lime, ean: '', name: 'No ean' },
+        { ...lime, ean: '1', name: '' },
+        { ...lime, ean: '2', name: 'Ok' },
+        { ...lime, ean: undefined as unknown as string, name: 'also no ean' },
+      ],
+      'S',
+    );
+    expect(result.skipped).toBe(3);
+    expect(result.imported).toBe(1);
+    expect(batches).toHaveLength(1);
+    expect(batches[0]).toHaveLength(1);
+    expect((batches[0]![0] as { ean: string }).ean).toBe('2');
+  });
+
+  test('does not insert when every item is skipped', async () => {
+    const { db, batches } = makeInsertMock();
+    const result = await importProducts(
+      db,
+      [
+        { name: 'x' } as ExportedProduct,
+        { ean: '1' } as ExportedProduct,
+      ],
+      'S',
+    );
+    expect(result.skipped).toBe(2);
+    expect(result.imported).toBe(0);
+    expect(batches).toHaveLength(0);
   });
 });

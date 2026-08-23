@@ -36,7 +36,7 @@ export interface CookConfirmOptions {
   onSkipped: (entry: MealPlanEntry) => void;
 }
 
-const DEBOUNCE_MS = 150;
+export const DEBOUNCE_MS = 150;
 
 /** How urgent the lot is — the second half of the provenance line. */
 function expiryLabel(expiresDate: string): string {
@@ -132,6 +132,10 @@ export function openCookConfirm(opts: CookConfirmOptions): void {
     body,
     footer,
     width: 520,
+    // Escape/backdrop/navigate must cancel the servings debounce: a late
+    // loadPreview would fetch against a closed modal (detached tableEl) and
+    // can 409 if another tab already cooked the entry.
+    onClose: abortPreview,
   });
 
   function metaText(): string {
@@ -159,6 +163,14 @@ export function openCookConfirm(opts: CookConfirmOptions): void {
     cancelBtn.disabled = next;
     skipBtn.disabled = next;
     commitBtn.disabled = next;
+  }
+
+  function abortPreview(): void {
+    if (debounceTimer !== null) {
+      clearTimeout(debounceTimer);
+      debounceTimer = null;
+    }
+    previewGen++;
   }
 
   function changeServings(delta: number): void {

@@ -6,8 +6,9 @@ import { configureClient, resetClient } from '../api/client.js';
 import { closeModal, isModalOpen } from '../ui/modal.js';
 import type { MealPlanEntry, RecipeWithIngredients, PantryItem } from '../api/types.js';
 
-import { jsonResponse, routeFetch } from './harness.js';
+import { flush, jsonResponse, routeFetch } from './harness.js';
 import { makeEntry, makeIngredient, makePantryItem } from './fixtures.js';
+import { DEBOUNCE_MS } from '../modals/cook-confirm.js';
 
 function click(selector: string): void {
   const node = document.querySelector<HTMLButtonElement>(selector);
@@ -277,6 +278,27 @@ describe('cook confirm', () => {
     await vi.waitFor(() => expect(calledWith('cook-preview?servings=6')).toBe(true));
     // Debounced to one extra call, not one per click: initial load + this one.
     expect(callsMatching('cook-preview')).toHaveLength(2);
+  });
+
+  test('closing mid-debounce does not fire a leftover cook-preview', async () => {
+    fetchMock.mockImplementation(buildRouter());
+    openCookFlow({ entry: ENTRY });
+
+    await vi.waitFor(() => expect(document.querySelector('.cook-item-name')).not.toBeNull());
+    const initial = callsMatching('cook-preview').length;
+
+    // Pin the delay itself: fake only timer APIs so AbortSignal.timeout stays
+    // native, then close before the stepper's reload is due.
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    try {
+      click('.cook-step-plus');
+      click('.cook-cancel');
+      await flush(DEBOUNCE_MS);
+      expect(isModalOpen()).toBe(false);
+      expect(callsMatching('cook-preview')).toHaveLength(initial);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   test('changing servings PATCHes the entry before committing the cook', async () => {

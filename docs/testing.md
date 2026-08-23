@@ -43,7 +43,9 @@ Two real-Postgres suites share one gate.
   `describe.skipIf(!hasDb)`, plus the loud gate.
 - `packages/db` `src/__tests__/import-products-sql.test.ts` — 4 real-Postgres
   tests (upsert-in-place, same EAN across two stores, jsonb round-trip,
-  missing-ean skip), plus its own loud gate.
+  missing-ean skip), plus its own loud gate. Batching (500-row split) and
+  skip-without-insert are mocked in `import-products.test.ts` — a full-store
+  dump is not required to pin the bind-param bound.
 
 Both need `TEST_DATABASE_URL` pointing at `dietapp_test` (name must end in
 `_test`). Provision with `pnpm --filter @diet-app/db setup:test-db` (create +
@@ -83,9 +85,10 @@ Screen and client suites compose `packages/web/src/__tests__/harness.ts` and
 
 Debounced UI (scaler, catalog search) waits with `vi.waitFor` on the
 fetch/DOM assertion, matching `cook-flow.test.ts` — never a hardcoded
-250ms sleep. Suites that pin the delay itself (`ingredient-picker`) install
-fake timers (`toFake: ['setTimeout', 'clearTimeout']` so `AbortSignal.timeout`
-stays native); `flush(ms)` then advances those timers instead of sleeping.
+250ms sleep. Suites that pin the delay itself (`ingredient-picker`, and
+cook-confirm's close-mid-debounce case) install fake timers
+(`toFake: ['setTimeout', 'clearTimeout']` so `AbortSignal.timeout` stays
+native); `flush(ms)` then advances those timers instead of sleeping.
 
 `routeFetch(routes, { unmatched })` is the fetch-side analog of
 `makeSelectRouter`: keys are `"GET /api/pantry"` or `"/api/ingredients"` (any

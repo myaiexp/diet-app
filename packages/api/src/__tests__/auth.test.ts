@@ -99,4 +99,34 @@ describe('CORS allowlist', () => {
     const res = await app.request('/api/health', { headers: { Origin: 'https://mase.fi' } });
     expect(acao(res)).toBeNull();
   });
+
+  // cors() must short-circuit OPTIONS before bearerAuth: a browser preflight
+  // never carries Authorization, so an extra origin would otherwise 401.
+  test('preflight OPTIONS on a protected route succeeds without a token', async () => {
+    const app = createApp({} as any, { authToken: TOKEN, corsOrigins: [ALLOWED] });
+    const res = await app.request('/api/ingredients', {
+      method: 'OPTIONS',
+      headers: {
+        Origin: ALLOWED,
+        'Access-Control-Request-Method': 'GET',
+      },
+    });
+    expect(res.status).toBe(204);
+    expect(acao(res)).toBe(ALLOWED);
+    expect(res.headers.get('access-control-allow-headers')).toMatch(/authorization/i);
+    expect(res.headers.get('access-control-allow-methods')).toMatch(/GET/i);
+  });
+
+  test('preflight from a disallowed origin omits ACAO when the allowlist is empty', async () => {
+    const app = createApp({} as any, { authToken: TOKEN, corsOrigins: [] });
+    const res = await app.request('/api/ingredients', {
+      method: 'OPTIONS',
+      headers: {
+        Origin: ALLOWED,
+        'Access-Control-Request-Method': 'GET',
+      },
+    });
+    expect(res.status).toBe(204);
+    expect(acao(res)).toBeNull();
+  });
 });
