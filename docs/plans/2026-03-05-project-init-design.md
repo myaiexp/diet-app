@@ -1,6 +1,25 @@
 # Diet App — Project Initialization Design
 
-> Approved 2026-03-05. Establishes architecture, tech stack, and project structure for the diet app backend. Supersedes tech stack recommendations in `archived/diet-app-plan-techstack-synthesized.md` — the other synthesized plan docs (features, data model, AI, phases) are archived alongside it for historical context.
+> **Superseded in part.** Approved 2026-03-05 as the original architecture.
+> Everything below the line is the handoff **verbatim** — it is still the
+> source of the schema shape, Hono/Drizzle/Postgres stack, and later plans'
+> starting point. It is **not** current on URL, auth, or frontend.
+>
+> | Handoff says | Actual |
+> |---|---|
+> | Frontend is React+Vite in the central-hub repo | `packages/web` vanilla TS in this repo (`2026-08-04-frontend-design.md`) |
+> | "The diet-app repo contains zero frontend code" | `packages/web/` is the shipped app |
+> | No auth layer; API bound to `127.0.0.1` | Two independent gates (`docs/auth-deploy.md`) |
+> | nginx proxies `/diet/api/` | `https://diet.mase.fi` with same-origin `/api/` |
+> | chrono-node in the stack | not a dependency |
+>
+> Current URL, auth, CORS, deploy: `docs/auth-deploy.md`. Current frontend:
+> Stack in `CLAUDE.md` and `2026-08-04-frontend-design.md`.
+>
+> Also supersedes tech stack recommendations in
+> `archived/diet-app-plan-techstack-synthesized.md` — the other synthesized
+> plan docs (features, data model, AI, phases) are archived alongside it for
+> historical context.
 
 ---
 
