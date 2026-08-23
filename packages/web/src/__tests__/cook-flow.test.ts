@@ -112,14 +112,26 @@ interface RouteOpts {
   cookStatus?: number;
   patchServingsStatus?: number;
   feedbackStatus?: number;
+  pantryStatus?: number;
+  recipeStatus?: number;
 }
 
 /** Routes the entry-e1 flow: recipe, pantry, preview, PATCH, cook, feedback. */
 function buildRouter(opts: RouteOpts = {}) {
   const state = { servings: 4 };
   return routeFetch({
-    'GET /api/recipes/:id': RECIPE,
-    'GET /api/pantry': PANTRY,
+    'GET /api/recipes/:id': () => {
+      if (opts.recipeStatus && opts.recipeStatus >= 400) {
+        return jsonResponse(opts.recipeStatus, { error: 'recipe failed' });
+      }
+      return RECIPE;
+    },
+    'GET /api/pantry': () => {
+      if (opts.pantryStatus && opts.pantryStatus >= 400) {
+        return jsonResponse(opts.pantryStatus, { error: 'pantry failed' });
+      }
+      return PANTRY;
+    },
     'GET /api/meal-plans/:id/cook-preview': ({ url }) => {
       const servings = Number(url.searchParams.get('servings') ?? state.servings);
       return { ...deductionPlan(servings), servings };
@@ -209,6 +221,43 @@ describe('cook confirm', () => {
     expect(lotInfo.textContent).toContain('expires today');
     expect(document.querySelector('.cook-lot-amount')!.textContent).toBe('−400 g');
     expect(document.querySelector('.cook-lot-left')!.textContent).toBe('100 g left');
+    expect(document.querySelector('.cook-degraded')?.classList.contains('hidden')).toBe(true);
+  });
+
+  test('a failed pantry fetch still renders preview amounts and lets you commit', async () => {
+    fetchMock.mockImplementation(buildRouter({ pantryStatus: 500 }));
+    openCookFlow({ entry: ENTRY });
+
+    await vi.waitFor(() => expect(document.querySelector('.cook-lot-amount')).not.toBeNull());
+
+    expect(document.querySelector('.cook-item-name')!.textContent).toBe('Salmon');
+    expect(document.querySelector('.cook-lot-info')!.textContent).toBe('lot ?');
+    expect(document.querySelector('.cook-lot-amount')!.textContent).toBe('−400 g');
+    expect(document.querySelector('.cook-lot-left')!.textContent).toBe('100 g left');
+    const degraded = document.querySelector('.cook-degraded')!;
+    expect(degraded.classList.contains('hidden')).toBe(false);
+    expect(degraded.textContent).toMatch(/pantry/i);
+
+    click('.cook-commit');
+    await vi.waitFor(() => expect(calledWith('/api/meal-plans/e1/cook', 'POST')).toBe(true));
+  });
+
+  test('a failed recipe fetch still renders preview amounts and lets you commit', async () => {
+    fetchMock.mockImplementation(buildRouter({ recipeStatus: 500 }));
+    openCookFlow({ entry: ENTRY });
+
+    await vi.waitFor(() => expect(document.querySelector('.cook-lot-amount')).not.toBeNull());
+
+    expect(document.querySelector('.cook-item-name')!.textContent).toBe('salmon');
+    expect(document.querySelector('.cook-item-shortfall')!.textContent).toContain('dill');
+    expect(document.querySelector('.cook-lot-info')!.textContent).toContain('expires today');
+    expect(document.querySelector('.modal-title')!.textContent).toBe('Cook');
+    const degraded = document.querySelector('.cook-degraded')!;
+    expect(degraded.classList.contains('hidden')).toBe(false);
+    expect(degraded.textContent).toMatch(/recipe/i);
+
+    click('.cook-commit');
+    await vi.waitFor(() => expect(calledWith('/api/meal-plans/e1/cook', 'POST')).toBe(true));
   });
 
   test('renders a shortfall line as "not in pantry — buy first"', async () => {

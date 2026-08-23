@@ -4,6 +4,8 @@
 // then opened-before-unopened, then oldest createdAt — computed server-side, never
 // re-derived here). Ingredient names and lot dates aren't on the preview response, so
 // they're resolved once per modal open from getRecipe() and listAllPantry(), not per row.
+// Either fetch failing still shows cook-preview amounts, a degraded warning, and a
+// live commit — POST /cook re-plans server-side, so missing names/dates are display-only.
 
 import '../css/cook.css';
 import { openModal, closeModal } from '../ui/modal.js';
@@ -73,13 +75,13 @@ function renderDeduction(
     // design's own "lot 2.8. · expires today" only reads as one thing if the
     // two dates are different, and two lots of the same ingredient are told
     // apart by their purchase date.
-    const lotDate = item ? finnishDate(item.addedDate) : '?';
-    const freshness = item ? expiryLabel(item.expiresDate) : '';
-    const opened = item?.opened ? ' · opened' : '';
+    const provenance = item
+      ? `lot ${finnishDate(item.addedDate)} · ${expiryLabel(item.expiresDate)}${item.opened ? ' · opened' : ''}`
+      : 'lot ?';
     return el(
       'div',
       { class: 'cook-lot-row' },
-      el('span', { class: 'cook-lot-info' }, `lot ${lotDate} · ${freshness}${opened}`),
+      el('span', { class: 'cook-lot-info' }, provenance),
       el('span', { class: 'cook-lot-amount' }, `−${formatQuantity(before - after, p.unit)}`),
       el('span', { class: 'cook-lot-left' }, `${formatQuantity(after, p.unit)} left`),
     );
@@ -94,11 +96,14 @@ export function openCookConfirm(opts: CookConfirmOptions): void {
   let servings = initialServings;
   let nameById = new Map<string, string>();
   let pantryById = new Map<string, PantryItem>();
+  let pantryFailed = false;
+  let recipeFailed = false;
   let debounceTimer: ReturnType<typeof setTimeout> | null = null;
   let busy = false;
   let previewGen = 0;
 
   const tableEl = el('div', { class: 'cook-table' }, loadingRow('loading preview…'));
+  const degradedEl = el('div', { class: 'cook-degraded hidden' });
   const warningEl = el('div', { class: 'cook-warning' });
   const stepValue = el('span', { class: 'cook-step-value' }, String(servings));
   const stepRow = el(
@@ -113,6 +118,7 @@ export function openCookConfirm(opts: CookConfirmOptions): void {
   const body = el(
     'div',
     {},
+    degradedEl,
     el('div', { class: 'section-header' }, 'will be deducted · oldest expiry first'),
     tableEl,
     warningEl,
@@ -156,6 +162,16 @@ export function openCookConfirm(opts: CookConfirmOptions): void {
     warningEl.textContent =
       `! Marking cooked is final. The deduction above is computed from ${servings} ` +
       'servings and the entry locks — to change servings or recipe, do it now.';
+  }
+
+  function updateDegraded(): void {
+    const parts = [
+      pantryFailed &&
+        "Couldn't load pantry lots — dates shown as ?. Amounts below are still from the cook preview.",
+      recipeFailed && "Couldn't load recipe — ingredients shown as ids.",
+    ].filter((s): s is string => typeof s === 'string');
+    degradedEl.textContent = parts.join(' ');
+    degradedEl.classList.toggle('hidden', parts.length === 0);
   }
 
   function setBusy(next: boolean): void {
@@ -216,7 +232,9 @@ export function openCookConfirm(opts: CookConfirmOptions): void {
       .then((rows) => {
         pantryById = new Map(rows.map((r) => [r.id, r]));
       })
-      .catch(() => undefined);
+      .catch(() => {
+        pantryFailed = true;
+      });
     const recipeLoad = resolvedRecipeId
       ? getRecipe(resolvedRecipeId)
           .then((recipe) => {
@@ -228,11 +246,14 @@ export function openCookConfirm(opts: CookConfirmOptions): void {
             );
             updateTitle(`Cook · ${recipe.title}`);
           })
-          .catch(() => undefined)
+          .catch(() => {
+            recipeFailed = true;
+          })
       : Promise.resolve().then(() => {
           updateTitle(entry.freeformNote ? `Cook · ${entry.freeformNote}` : 'Cook');
         });
     await Promise.all([pantryLoad, recipeLoad]);
+    updateDegraded();
     await loadPreview();
   }
 

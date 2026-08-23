@@ -297,6 +297,27 @@ describe('aggregateShoppingList', () => {
     expect(skipped).toEqual([{ ingredientId: 'i1', entryId: 'e1', reason: 'unknown_unit' }]);
   });
 
+  test('does not cover gram demand with a pantry row whose unit cannot resolve', () => {
+    // Demand-side unknown_unit is a skip; pantry-side unknown is silent. A
+    // handful on the shelf must not count as grams covering the 400 g line —
+    // that would under-buy. skipped stays empty because this is not demand.
+    const input = baseInput({
+      pantryRows: [ROW({ quantity: 999, unit: 'handful' })],
+    });
+    const { items, skipped } = aggregateShoppingList(input);
+    expect(skipped).toEqual([]);
+    expect(items).toEqual([
+      {
+        ingredientId: 'i1',
+        unit: 'g',
+        quantityNeeded: 400,
+        quantityInPantry: 0,
+        netToBuy: 400,
+        category: 'produce',
+      },
+    ]);
+  });
+
   test('reports an entry whose recipe is missing from recipesById', () => {
     const input = baseInput({
       entries: [ENTRY({ recipeId: 'rMissing' })],

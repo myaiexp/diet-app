@@ -113,6 +113,16 @@ describe('planDeduction', () => {
     expect(shortfalls[0]).toMatchObject({ reason: 'unit_mismatch', dimension: null });
   });
 
+  test('does not treat a pantry row with an unknown unit as covering gram demand', () => {
+    const { deductions, shortfalls } = planDeduction(
+      [LINE()],
+      [ROW({ quantity: 999, unit: 'handful' })],
+      1,
+    );
+    expect(deductions).toEqual([]);
+    expect(shortfalls[0]).toMatchObject({ reason: 'unit_mismatch', available: 0 });
+  });
+
   test('optional lines deduct what is there and never report a shortfall', () => {
     const line = LINE({ optional: true });
     const short = planDeduction([line], [ROW({ quantity: 100 })], 1);

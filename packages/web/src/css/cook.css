@@ -67,7 +67,8 @@
 
 /* ===== Irreversibility warning ===== */
 
-.cook-warning {
+.cook-warning,
+.cook-degraded {
   display: flex;
   gap: 6px;
   padding: 8px;

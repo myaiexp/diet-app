@@ -206,6 +206,49 @@ describe('fetchUrlAsText SSRF logging', () => {
     expect(logged[0]).toContain('blocked_url');
   });
 
+  test('rejects a 302 Location that carries userinfo on a public host', async () => {
+    const fetched: string[] = [];
+    const result = await fetchUrlAsText('https://example.com/start', {
+      fetchImpl: async (url) => {
+        fetched.push(url);
+        return new Response(null, {
+          status: 302,
+          headers: { Location: 'https://user:pass@example.com/recipe' },
+        });
+      },
+      dnsLookup: publicDns,
+    });
+    expect(result).toEqual({ ok: false, error: 'invalid_url' });
+    expect(fetched).toEqual(['https://example.com/start']);
+    expect(logged[0]).toContain('[recipe-import] redirect target rejected');
+    expect(logged[0]).toContain('hop=1');
+    expect(logged[0]).toContain('invalid_url');
+  });
+
+  test('rejects a 302 Location whose userinfo wraps a blocked host', async () => {
+    // Credentials are rejected before the host check, so this is invalid_url
+    // today; blocked_url after stripping userinfo would also be fail-closed.
+    // Either way hop 1 must not fetch https://user:pass@127.0.0.1/.
+    const fetched: string[] = [];
+    const result = await fetchUrlAsText('https://example.com/start', {
+      fetchImpl: async (url) => {
+        fetched.push(url);
+        return new Response(null, {
+          status: 302,
+          headers: { Location: 'https://user:pass@127.0.0.1/' },
+        });
+      },
+      dnsLookup: publicDns,
+    });
+    expect(result.ok).toBe(false);
+    if (result.ok) throw new Error('unreachable');
+    expect(['invalid_url', 'blocked_url']).toContain(result.error);
+    expect(fetched).toEqual(['https://example.com/start']);
+    expect(fetched.some((u) => u.includes('user:pass'))).toBe(false);
+    expect(logged[0]).toContain('[recipe-import] redirect target rejected');
+    expect(logged[0]).toContain('hop=1');
+  });
+
   test('stays silent when the user URL itself is rejected (expected 400)', async () => {
     const result = await fetchUrlAsText('http://127.0.0.1/secret', {
       fetchImpl: mustNotFetch(),
