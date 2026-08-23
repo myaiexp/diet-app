@@ -3,6 +3,15 @@
 import type OpenAI from 'openai';
 import { z } from 'zod';
 import { logImportFailure } from './log.js';
+import {
+  shortText,
+  optionalShort,
+  unitText,
+  tagsField,
+  stepsField,
+  noteText,
+  LIMITS,
+} from '../schemas/fields.js';
 
 export type ExtractedRecipe = {
   title: string;
@@ -25,11 +34,11 @@ export type ExtractedRecipe = {
 };
 
 const extractedIngredientSchema = z.object({
-  name: z.string().trim().min(1),
+  name: shortText,
   quantity: z.coerce.number().positive(),
-  unit: z.string().trim().min(1),
+  unit: unitText,
   optional: z.boolean().optional(),
-  notes: z.string().nullable().optional(),
+  notes: noteText.nullable().optional(),
   // Provenance only — quantity stays required and positive. A line the model
   // genuinely cannot quantify must fail extraction rather than arrive with a
   // silent zero. Optional so a model that ignores the instruction (or an older
@@ -38,15 +47,15 @@ const extractedIngredientSchema = z.object({
 });
 
 const extractedRecipeSchema = z.object({
-  title: z.string().trim().min(1),
-  steps: z.array(z.string()).optional(),
+  title: shortText,
+  steps: stepsField.optional(),
   servings: z.coerce.number().int().positive().optional(),
   prepTime: z.coerce.number().int().nonnegative().nullable().optional(),
   totalTime: z.coerce.number().int().nonnegative().nullable().optional(),
-  cuisineType: z.string().nullable().optional(),
-  tags: z.array(z.string()).optional(),
+  cuisineType: optionalShort.nullable().optional(),
+  tags: tagsField.optional(),
   effortScore: z.coerce.number().int().min(1).max(5).nullable().optional(),
-  ingredients: z.array(extractedIngredientSchema).min(1),
+  ingredients: z.array(extractedIngredientSchema).min(1).max(LIMITS.lines),
 });
 
 const SYSTEM_PROMPT = `You extract a single cooking recipe from the user's text.

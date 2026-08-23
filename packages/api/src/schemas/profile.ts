@@ -2,6 +2,13 @@
 
 import { z } from 'zod';
 import { isUuid } from '../validation.js';
+import {
+  LIMITS,
+  nameText,
+  chipsField,
+  macroTargetsSchema,
+  scheduleProfileSchema,
+} from './fields.js';
 
 const uuidField = z.string().refine(isUuid, { message: 'Invalid UUID' });
 
@@ -11,16 +18,16 @@ const cookingSkillEnum = z.enum(['beginner', 'competent', 'advanced']);
 // non-nullable Zod types (omit = unchanged).
 export const profilePatchSchema = z
   .object({
-    name: z.string().trim().min(1).optional(),
+    name: nameText.optional(),
     calorieTargetMin: z.number().int().nonnegative().nullable().optional(),
     calorieTargetMax: z.number().int().nonnegative().nullable().optional(),
-    macroTargets: z.record(z.string(), z.unknown()).nullable().optional(),
-    dietaryRestrictions: z.array(z.string()).optional(),
+    macroTargets: macroTargetsSchema.nullable().optional(),
+    dietaryRestrictions: chipsField.optional(),
     cookingSkill: cookingSkillEnum.optional(),
-    kitchenEquipment: z.array(z.string()).optional(),
+    kitchenEquipment: chipsField.optional(),
     householdSize: z.number().int().min(1).optional(),
-    scheduleProfile: z.record(z.string(), z.unknown()).optional(),
-    dislikedIngredientIds: z.array(uuidField).optional(),
+    scheduleProfile: scheduleProfileSchema.optional(),
+    dislikedIngredientIds: z.array(uuidField).max(LIMITS.ids).optional(),
   })
   .strict();
 

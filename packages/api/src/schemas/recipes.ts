@@ -2,6 +2,16 @@
 
 import { z } from 'zod';
 import { isUuid } from '../validation.js';
+import {
+  LIMITS,
+  shortText,
+  optionalShort,
+  unitText,
+  tagsField,
+  stepsField,
+  noteText,
+  httpUrl,
+} from './fields.js';
 
 const uuidField = z.string().refine(isUuid, { message: 'Invalid UUID' });
 
@@ -10,40 +20,40 @@ const sourceTypeEnum = z.enum(['manual', 'imported', 'ai', 'forked']);
 export const recipeIngredientLineSchema = z.object({
   ingredientId: uuidField,
   quantity: z.coerce.number().positive(),
-  unit: z.string().trim().min(1),
+  unit: unitText,
   optional: z.boolean().optional(),
-  notes: z.string().nullable().optional(),
+  notes: noteText.nullable().optional(),
 });
 
 export const recipeCreateSchema = z.object({
-  title: z.string().trim().min(1),
+  title: shortText,
   sourceType: sourceTypeEnum.optional(),
-  sourceUrl: z.string().nullable().optional(),
+  sourceUrl: httpUrl.nullable().optional(),
   parentRecipeId: uuidField.nullable().optional(),
-  steps: z.array(z.string()).optional(),
+  steps: stepsField.optional(),
   prepTime: z.number().int().nonnegative().optional(),
   totalTime: z.number().int().nonnegative().optional(),
   servings: z.number().int().positive().optional(),
   effortScore: z.number().int().min(1).max(5).optional(),
-  tags: z.array(z.string()).optional(),
-  cuisineType: z.string().nullable().optional(),
-  ingredients: z.array(recipeIngredientLineSchema).min(1),
+  tags: tagsField.optional(),
+  cuisineType: optionalShort.nullable().optional(),
+  ingredients: z.array(recipeIngredientLineSchema).min(1).max(LIMITS.lines),
 });
 
 export const recipePatchSchema = z
   .object({
-    title: z.string().trim().min(1).optional(),
+    title: shortText.optional(),
     sourceType: sourceTypeEnum.optional(),
-    sourceUrl: z.string().nullable().optional(),
+    sourceUrl: httpUrl.nullable().optional(),
     parentRecipeId: uuidField.nullable().optional(),
-    steps: z.array(z.string()).optional(),
+    steps: stepsField.optional(),
     prepTime: z.number().int().nonnegative().optional(),
     totalTime: z.number().int().nonnegative().optional(),
     servings: z.number().int().positive().optional(),
     effortScore: z.number().int().min(1).max(5).optional(),
-    tags: z.array(z.string()).optional(),
-    cuisineType: z.string().nullable().optional(),
-    ingredients: z.array(recipeIngredientLineSchema).min(1).optional(),
+    tags: tagsField.optional(),
+    cuisineType: optionalShort.nullable().optional(),
+    ingredients: z.array(recipeIngredientLineSchema).min(1).max(LIMITS.lines).optional(),
   })
   .strict();
 

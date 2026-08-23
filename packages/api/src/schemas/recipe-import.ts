@@ -2,10 +2,11 @@
 
 import { z } from 'zod';
 import { IMPORT_TEXT_MAX_CHARS } from '../ai/import-limits.js';
+import { httpUrl } from './fields.js';
 
 export const recipeImportBodySchema = z
   .object({
-    url: z.string().trim().min(1).optional(),
+    url: httpUrl.optional(),
     text: z.string().trim().min(1).max(IMPORT_TEXT_MAX_CHARS).optional(),
   })
   .strict()

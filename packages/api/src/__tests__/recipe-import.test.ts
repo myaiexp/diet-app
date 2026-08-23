@@ -230,13 +230,12 @@ describe('POST /recipes/import', () => {
     expect(extractRecipeFromText).not.toHaveBeenCalled();
   });
 
-  test('invalid url returns 400', async () => {
-    const { app } = makeApp({
-      fetchResult: { ok: false, error: 'invalid_url' },
-    });
+  test('invalid url returns 400 at the schema', async () => {
+    const { app, extractRecipeFromText } = makeApp();
     const res = await postImport(app, { url: 'not-a-url' });
     expect(res.status).toBe(400);
-    expect(await res.json()).toEqual({ error: 'Invalid or blocked URL' });
+    expect((await res.json()).error).toBe('Validation failed');
+    expect(extractRecipeFromText).not.toHaveBeenCalled();
   });
 
   test('fetch_failed returns 502', async () => {

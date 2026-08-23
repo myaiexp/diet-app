@@ -53,6 +53,14 @@ in the prod allowlist.
   (systemd, user `mase`). `scripts/post-deploy.sh` then builds `@diet-app/web`
   and rsyncs `packages/web/dist/` → `/var/www/diet.mase.fi/` (mase-owned), so a
   `deploy` ships frontend and API together.
+- **systemd unit**: committed at `systemd/diet-app-api.service`; live copy
+  `/etc/systemd/system/diet-app-api.service`. After editing: `sudo cp` that
+  file into place, `daemon-reload`, restart. The process is sandboxed
+  (`NoNewPrivileges`, `ProtectSystem=strict`, `ProtectHome=read-only`,
+  `PrivateTmp`, `MemoryMax=1G`, plus kernel/namespace restrictions). Outbound
+  http(s) stays allowed (recipe import + AI). Do not add
+  `MemoryDenyWriteExecute` (V8 JIT) or `IPAddressDeny` (import/AI). A
+  `dist/`-served unit, so no `refuse-dirty-tree` `ExecStartPre`.
 - **Frontend dev**: `pnpm --filter @diet-app/web dev` serves Vite on :5173 and
   proxies `/api` to `API_ORIGIN` (default `127.0.0.1:3300`), injecting
   `Authorization: Bearer $API_TOKEN` — the same header nginx adds in production,

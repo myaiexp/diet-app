@@ -71,7 +71,10 @@ reaches Postgres as an unhandled `invalid input syntax for type uuid`.
   `Invalid JSON body` / `Validation failed` / `Empty patch body` 400s into one
   call — `const parsed = await parseJsonBody(...); if (!parsed.ok) return parsed.response;`.
   Routes never re-inline those shapes and never import `z`. Schemas live under
-  `schemas/`.
+  `schemas/`. Free-text, array, and URL fields share caps in
+  `schemas/fields.ts` (title 200, notes 4k, steps 80×4k, http(s) URLs 2048);
+  `sourceUrl` / import `url` reject non-http(s). `macroTargets` /
+  `scheduleProfile` are small known-key objects, not `z.unknown()` records.
 - **PATCH payloads**: build the `.set()` object with `buildPatch(data, table, omit?)`
   (`patch-builder.ts`), typed `Partial<typeof table.$inferInsert>` so Drizzle
   still type-checks the write. It copies every defined patch field naming a

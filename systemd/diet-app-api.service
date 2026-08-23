@@ -1,0 +1,41 @@
+# Diet App API. Live copy: /etc/systemd/system/diet-app-api.service
+# After editing: sudo cp systemd/diet-app-api.service /etc/systemd/system/ && sudo systemctl daemon-reload && sudo systemctl restart diet-app-api
+[Unit]
+Description=Diet App API
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=mase
+WorkingDirectory=/home/mase/Projects/diet-app
+ExecStart=/usr/bin/node packages/api/dist/index.js
+Restart=always
+RestartSec=5
+Environment=NODE_ENV=production
+EnvironmentFile=/home/mase/Projects/diet-app/.env
+
+# Defense-in-depth against a future RCE in the Node process. Bind is already
+# loopback-only and .env is mode 600. Do not add MemoryDenyWriteExecute — V8
+# JIT needs W^X pages. Do not add IPAddressDeny — recipe import fetches http(s)
+# and the AI client calls an external API.
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=read-only
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+CapabilityBoundingSet=
+MemoryMax=1G
+
+[Install]
+WantedBy=multi-user.target

@@ -2,6 +2,7 @@
 
 import { z } from 'zod';
 import { isUuid, isIsoDate } from '../validation.js';
+import { trimmedNote, noteText } from './fields.js';
 
 const uuidField = z.string().refine(isUuid, { message: 'Invalid UUID' });
 const isoDateField = z.string().refine(isIsoDate, { message: 'Invalid date' });
@@ -21,11 +22,11 @@ export const mealPlanCreateSchema = z
     date: isoDateField,
     slot: z.enum(SLOTS),
     recipeId: uuidField.nullable().optional(),
-    freeformNote: z.string().trim().min(1).nullable().optional(),
+    freeformNote: trimmedNote.nullable().optional(),
     servings: z.coerce.number().positive().optional(),
     status: z.enum(CREATE_STATUSES).optional(),
     substituteRecipeId: uuidField.nullable().optional(),
-    notes: z.string().nullable().optional(),
+    notes: noteText.nullable().optional(),
   })
   .refine((d) => d.recipeId != null || (d.freeformNote != null && d.freeformNote !== ''), {
     message: CONTENT_MSG,
@@ -36,11 +37,11 @@ export const mealPlanPatchSchema = z
     date: isoDateField.optional(),
     slot: z.enum(SLOTS).optional(),
     recipeId: uuidField.nullable().optional(),
-    freeformNote: z.string().trim().min(1).nullable().optional(),
+    freeformNote: trimmedNote.nullable().optional(),
     servings: z.coerce.number().positive().optional(),
     status: z.enum(STATUSES).optional(),
     substituteRecipeId: uuidField.nullable().optional(),
-    notes: z.string().nullable().optional(),
+    notes: noteText.nullable().optional(),
   })
   .strict();
 
@@ -50,7 +51,7 @@ export const feedbackCreateSchema = z
     effortCheck: z.enum(EFFORT_CHECKS),
     makeAgain: z.enum(MAKE_AGAIN),
     usedAsIs: z.boolean(),
-    changesNote: z.string().trim().min(1).nullable().optional(),
+    changesNote: trimmedNote.nullable().optional(),
   })
   .superRefine((d, ctx) => {
     if (d.usedAsIs === false) {
@@ -76,7 +77,7 @@ export const feedbackPatchSchema = z
     effortCheck: z.enum(EFFORT_CHECKS).optional(),
     makeAgain: z.enum(MAKE_AGAIN).optional(),
     usedAsIs: z.boolean().optional(),
-    changesNote: z.string().trim().min(1).nullable().optional(),
+    changesNote: trimmedNote.nullable().optional(),
   })
   .strict();
 

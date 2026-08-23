@@ -3,6 +3,7 @@
 import { z } from 'zod';
 import { isUuid, isIsoDate } from '../validation.js';
 import { LOCATIONS } from '../pantry-location.js';
+import { unitText } from './fields.js';
 
 const uuidField = z.string().refine(isUuid, { message: 'Invalid UUID' });
 const isoDateField = z.string().refine(isIsoDate, { message: 'Invalid date' });
@@ -12,7 +13,7 @@ const locationEnum = z.enum(LOCATIONS);
 export const pantryCreateSchema = z.object({
   ingredientId: uuidField,
   quantity: z.coerce.number().positive(),
-  unit: z.string().trim().min(1),
+  unit: unitText,
   location: locationEnum,
   addedDate: isoDateField.optional(),
   expiresDate: isoDateField.optional(),
@@ -22,7 +23,7 @@ export const pantryCreateSchema = z.object({
 export const pantryPatchSchema = z
   .object({
     quantity: z.coerce.number().positive().optional(),
-    unit: z.string().trim().min(1).optional(),
+    unit: unitText.optional(),
     location: locationEnum.optional(),
     addedDate: isoDateField.optional(),
     expiresDate: isoDateField.optional(),
