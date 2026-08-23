@@ -2,12 +2,12 @@
 // Today and the week grid both open this; its options shape is the public
 // contract, not an implementation detail of either screen.
 //
-// mealPlanCreateSchema requires recipeId OR a non-empty freeformNote, never
-// neither (CONTENT_MSG: "Either recipeId or freeformNote is required") — that
-// is validated here before the request is ever sent, so the round trip to get
-// that 400 back never happens on this path. Picking a recipe and typing a
-// note are mutually exclusive in the UI for the same reason: there is no
-// ambiguity for the API to resolve.
+// The API's hasContent rule is recipeId, substituteRecipeId, or a non-empty
+// freeformNote (same as PATCH). This modal only offers recipe XOR note — never
+// substitute — and validates that pair here so the CONTENT_MSG 400 never
+// happens on this path. Picking a recipe and typing a note are mutually
+// exclusive in the UI for the same reason: there is no ambiguity for the API
+// to resolve.
 
 import type { MealPlanEntry, MealPlanCreate, Slot } from '../api/types.js';
 import { createEntry } from '../api/meal-plans.js';

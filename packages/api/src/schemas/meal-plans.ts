@@ -17,6 +17,20 @@ export const MAKE_AGAIN = ['yes', 'maybe', 'no'] as const;
 
 export const CONTENT_MSG = 'Either recipeId or freeformNote is required';
 
+/** Cook/shopping resolve substituteRecipeId ?? recipeId, so a substitute-only
+ *  row (demo Friday dinner) is content even with recipeId and the note null. */
+export function hasContent(
+  recipeId: string | null | undefined,
+  freeformNote: string | null | undefined,
+  substituteRecipeId?: string | null,
+): boolean {
+  return (
+    recipeId != null ||
+    substituteRecipeId != null ||
+    (freeformNote != null && freeformNote !== '')
+  );
+}
+
 export const mealPlanCreateSchema = z
   .object({
     date: isoDateField,
@@ -28,7 +42,7 @@ export const mealPlanCreateSchema = z
     substituteRecipeId: uuidField.nullable().optional(),
     notes: noteText.nullable().optional(),
   })
-  .refine((d) => d.recipeId != null || (d.freeformNote != null && d.freeformNote !== ''), {
+  .refine((d) => hasContent(d.recipeId, d.freeformNote, d.substituteRecipeId), {
     message: CONTENT_MSG,
   });
 

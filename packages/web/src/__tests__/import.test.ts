@@ -263,6 +263,75 @@ describe('recipe import screen', () => {
     expect(posted!.ingredients).toEqual([{ ingredientId: 'ing-1', quantity: 100, unit: 'g', optional: false, notes: null }]);
   });
 
+  test('skipping every unmatched line keeps save disabled with the empty-payload copy', async () => {
+    const draft = makeDraft({
+      ingredients: [
+        makeLine({ rawName: 'mystery a', ingredientId: null, quantity: 250, unit: 'g', match: 'none' }),
+        makeLine({ rawName: 'mystery b', ingredientId: null, quantity: 10, unit: 'g', match: 'none' }),
+      ],
+    });
+    fetchMock.mockImplementation(draftFetch(draft, 2));
+
+    const root = mountRoot();
+    await importScreen().mount(root, makeCtx());
+    submit(root);
+    await waitForReview(root);
+
+    const skipNext = (): void => {
+      const skipBtn = [...root.querySelectorAll<HTMLButtonElement>('.import-candidates .btn-ghost')].find(
+        (b) => b.textContent === 'skip line',
+      );
+      expect(skipBtn).toBeDefined();
+      skipBtn!.click();
+    };
+    skipNext();
+    skipNext();
+
+    const saveBtn = root.querySelector<HTMLButtonElement>('.import-footer .btn-primary')!;
+    expect(saveBtn.disabled).toBe(true);
+    expect(root.querySelector('.import-footer .helper-error')!.textContent).toContain(
+      'Every line was skipped — add at least one ingredient to save.',
+    );
+    saveBtn.click();
+    const recipePosts = fetchMock.mock.calls.filter(
+      (c) => pathOf(c[0] as string) === '/api/recipes' && (c[1] as RequestInit | undefined)?.method === 'POST',
+    );
+    expect(recipePosts).toHaveLength(0);
+  });
+
+  test('a 400 from POST /recipes keeps the review pane and shows field errors', async () => {
+    const draft = makeDraft({
+      ingredients: [makeLine({ rawName: 'bound', ingredientId: 'ing-1', quantity: 100, unit: 'g', match: 'exact' })],
+    });
+    fetchMock.mockImplementation(
+      draftFetch(draft, 0, {
+        'POST /api/recipes': jsonResponse(400, {
+          error: 'Validation failed',
+          details: { fieldErrors: { ingredients: ['At least one ingredient is required'] } },
+        }),
+      }),
+    );
+
+    const root = mountRoot();
+    const ctx = makeCtx();
+    await importScreen().mount(root, ctx);
+    submit(root);
+    await waitForReview(root);
+
+    const saveBtn = root.querySelector<HTMLButtonElement>('.import-footer .btn-primary')!;
+    expect(saveBtn.disabled).toBe(false);
+    saveBtn.click();
+
+    await vi.waitFor(() => {
+      expect(root.querySelector('.import-review')).not.toBeNull();
+      expect(root.querySelector('.import-footer .helper-error')?.textContent).toContain(
+        'ingredients: At least one ingredient is required',
+      );
+    });
+    expect(ctx.navigate).not.toHaveBeenCalled();
+    expect(saveBtn.disabled).toBe(false);
+  });
+
   test('sends only ingredientId-bound lines to POST /recipes', async () => {
     const draft = makeDraft({
       ingredients: [

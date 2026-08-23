@@ -163,6 +163,37 @@ describe('mealPlansRoutes', () => {
     expect(inserts).toHaveLength(0);
   });
 
+  // Same hasContent rule as PATCH: cook/shopping resolve
+  // substituteRecipeId ?? recipeId, so a substitute-only create (demo Friday
+  // dinner) is content. The create refine used to ignore that column and 400.
+  test('POST creates a substitute-only entry (recipeId and note null)', async () => {
+    const { db, inserts } = makeWriteMock({
+      insertRow: {
+        ...PLANNED_ENTRY,
+        recipeId: null,
+        freeformNote: null,
+        substituteRecipeId: RECIPE_ID,
+        status: 'substituted',
+      },
+    });
+    const res = await mealPlansRoutes(db).request(
+      '/',
+      jsonReq('POST', '/', {
+        date: '2026-07-21',
+        slot: 'dinner',
+        substituteRecipeId: RECIPE_ID,
+        status: 'substituted',
+      }),
+    );
+    expect(res.status).toBe(201);
+    expect(inserts[0]).toMatchObject({
+      recipeId: null,
+      freeformNote: null,
+      substituteRecipeId: RECIPE_ID,
+      status: 'substituted',
+    });
+  });
+
   test('POST rejects an unknown slot', async () => {
     const { db } = makeWriteMock();
     const res = await mealPlansRoutes(db).request(

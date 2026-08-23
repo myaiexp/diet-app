@@ -14,24 +14,11 @@ import {
   mealPlanCreateSchema,
   mealPlanPatchSchema,
   CONTENT_MSG,
+  hasContent,
   type MealPlanPatch,
 } from '../schemas/meal-plans.js';
 import { mealPlanCookRoutes } from './meal-plan-cook.js';
 import { mealPlanFeedbackRoutes } from './meal-plan-feedback.js';
-
-function hasContent(
-  recipeId: string | null | undefined,
-  freeformNote: string | null | undefined,
-  substituteRecipeId?: string | null,
-): boolean {
-  // Cook/shopping resolve substituteRecipeId ?? recipeId, so a substitute-only
-  // row (demo Friday dinner) is content even with recipeId and the note null.
-  return (
-    recipeId != null ||
-    substituteRecipeId != null ||
-    (freeformNote != null && freeformNote !== '')
-  );
-}
 
 export function mealPlansRoutes(db: Db): Hono {
   const app = new Hono();
