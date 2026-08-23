@@ -169,4 +169,41 @@ describe('modal', () => {
     expect(document.querySelectorAll('.modal-backdrop')).toHaveLength(1);
     expect(document.querySelector('.modal-title')!.textContent).toBe('second');
   });
+
+  test('Tab wraps from last focusable to first, Shift+Tab from first to last', () => {
+    boot();
+    const first = el('button', {}, 'cancel');
+    const last = el('button', {}, 'confirm');
+    openModal({
+      title: 'Complete',
+      body: el('div', {}, 'body'),
+      footer: el('div', {}, first, last),
+    });
+    const backdrop = document.querySelector('.modal-backdrop')!;
+
+    // jsdom does not lay out, so offsetParent is null and the trap would
+    // only see document.activeElement. Give both controls a non-null
+    // offsetParent so the trap set matches a real browser.
+    Object.defineProperty(first, 'offsetParent', { configurable: true, get: () => document.body });
+    Object.defineProperty(last, 'offsetParent', { configurable: true, get: () => document.body });
+
+    last.focus();
+    document.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true }),
+    );
+    expect(document.activeElement).toBe(first);
+    expect(backdrop.contains(document.activeElement)).toBe(true);
+
+    first.focus();
+    document.dispatchEvent(
+      new KeyboardEvent('keydown', {
+        key: 'Tab',
+        shiftKey: true,
+        bubbles: true,
+        cancelable: true,
+      }),
+    );
+    expect(document.activeElement).toBe(last);
+    expect(backdrop.contains(document.activeElement)).toBe(true);
+  });
 });
