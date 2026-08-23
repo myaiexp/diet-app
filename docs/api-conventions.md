@@ -88,6 +88,12 @@ reaches Postgres as an unhandled `invalid input syntax for type uuid`.
   numeric columns whose Zod type is `number` (`servings`, `quantity`) go in
   `omit` and get an explicit `String(...)` line after the spread.
 
+## Recipe scaling
+
+Scaled views are `GET /recipes/:id?servings=N` (`recipe-scale.ts`). The
+client must not reimplement `qty × target / base` — a second rounding path
+disagrees with cook deduction. Rationale: `docs/plans/2026-07-21-phase1-closeout-design.md`.
+
 ## Recipe import
 
 - **AI config**: optional `parseAiConfig` (`AI_API_KEY` + `AI_BASE_URL` +

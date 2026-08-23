@@ -18,7 +18,7 @@
 > | `GET /api/nutrition` | does not exist — roadmap #385 |
 > | `GET /api/waste` | does not exist — roadmap #389 |
 >
-> Two further corrections to its "Domain rules" section:
+> Further corrections to its "Domain rules" and "Interactions" sections:
 >
 > - **Pantry `status` is returned by the API**, already derived per row by
 >   `GET /api/pantry` (`withStatus`, `routes/pantry.ts`). The client must render it, never
@@ -26,6 +26,12 @@
 > - **Deduction order is FEFO, not FIFO**: soonest `expiresDate`, then *opened before
 >   unopened*, then oldest `createdAt` (`sortFefo`, `cook-deduct.ts`). The handoff omits
 >   the opened-first tiebreak.
+> - **Recipe quantities come from the API**, never `qty × servings / baseServings`
+>   on the client. `GET /api/recipes/:id?servings=N` (`recipe-scale.ts`) is the only
+>   scaling path; a second rounding implementation would disagree with cook deduction.
+> - **The cook-confirm table comes from `GET /api/meal-plans/:id/cook-preview`**,
+>   never a client FEFO recompute. The recipe scaler and cook stepper do not share
+>   one value — cook starts from the entry's servings and PATCHes it on commit.
 >
 > The prototype (`assets/ruoka-prototype.dc.html`) does **not** render in a browser — it is
 > a `.dc.html` needing the design tool's template runtime, so `{{ }}` bindings stay literal.

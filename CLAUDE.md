@@ -37,6 +37,9 @@ paragraph of "why", the why belongs in the linked subdoc.
   Drizzle `with:` vs core builder, pantry-always-joins-ingredient, list
   filter/page/order (id tie-break), shared 4xx helpers, JSON/PATCH, recipe
   import logging, and walking the PG `cause` chain: **`docs/api-conventions.md`**.
+- **Recipe scaling**: scaled views are `GET /recipes/:id?servings=N`
+  (`recipe-scale.ts`); the client must not reimplement `qty × target / base`.
+  Design: `docs/plans/2026-07-21-phase1-closeout-design.md`.
 - **Cook flow**: confirm loads `GET /meal-plans/:id/cook-preview` (read-only);
   `cooked` is terminal via `POST /meal-plans/:id/cook`; PATCH cannot change the
   inputs the deduction was computed from. Feedback invariant (`changesNote`
