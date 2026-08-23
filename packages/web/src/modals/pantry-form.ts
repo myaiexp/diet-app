@@ -1,6 +1,4 @@
-// Add / edit pantry item modals: shared pick-then-quantity form plus
-// location / opened / expires, and the shelf-life fallback (API 400 → reveal
-// an expiresDate field).
+// Pantry add and edit item modals.
 
 import type { Ingredient, PantryItem, PantryLocation, PantryCreate } from '../api/types.js';
 import { LOCATIONS } from '../api/types.js';

@@ -1,6 +1,6 @@
-// Drizzle relation graph for all schema tables
+// Drizzle relation graph
 // Lives here (not in each table file) to avoid circular imports: this file
-// imports every table one-way, and no table file imports back.
+// imports tables one-way, and no table file imports back.
 import { relations } from 'drizzle-orm';
 import { ingredients } from './ingredients.js';
 import { recipes, recipeIngredients } from './recipes.js';

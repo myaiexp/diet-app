@@ -165,7 +165,7 @@ const COLUMN_SPECS: Record<string, Record<string, ColumnSpec>> = {
   },
 };
 
-// Expected FK wiring. localColumn/refColumn are DB names (snake_case); refTable
+// Expected FK wiring. column/refColumn are DB names (snake_case); refTable
 // is the referenced table's DB name (from getTableName).
 const FK_SPECS = [
   { table: 'recipes', column: 'parent_recipe_id', refTable: 'recipes', refColumn: 'id' },
