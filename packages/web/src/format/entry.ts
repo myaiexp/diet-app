@@ -1,4 +1,4 @@
-// Meal-plan entry titles and status pills — one copy for Today and Plan.
+// Meal-plan entry titles, status pills, and which statuses still cook.
 
 import type { EntryStatus, MealPlanEntry, Recipe } from '../api/types.js';
 
@@ -8,6 +8,11 @@ export const STATUS_LABEL: Record<EntryStatus, { text: string; cls: string }> = 
   skipped: { text: 'skipped', cls: 'label label-red' },
   substituted: { text: 'substituted', cls: 'label label-orange' },
 };
+
+/** Still demand — shopping includes it, and POST /cook accepts it. Skipped is a no. */
+export function isCookable(status: EntryStatus): boolean {
+  return status === 'planned' || status === 'substituted';
+}
 
 /**
  * Substitute wins when set — that's the recipe a cook would actually deduct

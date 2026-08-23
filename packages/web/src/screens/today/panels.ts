@@ -13,7 +13,7 @@ import { SLOTS } from '../../api/types.js';
 import { el, button } from '../../ui/dom.js';
 import { formatQuantity, toNumber } from '../../format/quantity.js';
 import { finnishWeekdayLong, finnishDate, daysUntil, daysRemainingLabel } from '../../format/date.js';
-import { entryTitle, STATUS_LABEL } from '../../format/entry.js';
+import { entryTitle, STATUS_LABEL, isCookable } from '../../format/entry.js';
 import { rampColor, statusLabel, applyRamp } from '../../format/expiry.js';
 
 const SPOIL_COUNT = 5;
@@ -98,7 +98,9 @@ function buildFilledSlot(
   );
   if (entry.status === 'cooked' && !rated) {
     row.appendChild(button('btn btn-sm', 'rate', () => handlers.onRate(entry)));
-  } else if (entry.status === 'planned') {
+  } else if (isCookable(entry.status)) {
+    // Substituted is still to-cook (shopping demand); skipped has no CTA —
+    // un-skip from Plan. Plan itself reopens substituted for edit, never cook.
     row.appendChild(button('btn btn-primary btn-sm', 'cook →', () => handlers.onCook(entry)));
   }
   return row;

@@ -92,6 +92,18 @@ afterEach(() => {
 });
 
 describe('edit substituted entry', () => {
+  test('clicking a substituted cell opens edit, not cook', async () => {
+    const entry = makeEntry();
+    fetchMock.mockImplementation(buildRouter([entry]));
+    const root = mountRoot();
+    await planScreen().mount(root, makeCtx());
+
+    await openEdit(root, 'substituted');
+
+    expect(document.querySelector('.cook-commit')).toBeNull();
+    expect(fetchMock.mock.calls.some(([u]) => pathOf(String(u)).endsWith('/cook-preview'))).toBe(false);
+  });
+
   test('seeds the picker from the substitute, not the original recipeId', async () => {
     const entry = makeEntry();
     fetchMock.mockImplementation(buildRouter([entry]));

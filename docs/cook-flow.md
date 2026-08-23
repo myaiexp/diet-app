@@ -10,6 +10,13 @@ back through the same `onCooked` callback the plan/today grids use to
 refresh. It must not open the feedback modal, and it must not leave the
 cell showing `planned`. `cooked` stays terminal via POST `/cook` only.
 
+## Substituted is still a cook
+
+`substituted` is a planning status (the recipe changed), not a cooked one.
+Shopping still treats it as demand, POST `/cook` accepts it, and Today offers
+`cook →`. Plan reopens the cell for edit instead of cooking. Skipped has no
+Today CTA — un-skip from Plan.
+
 ## Preview is not a cook
 
 `GET /meal-plans/:id/cook-preview` is the read-only twin of POST `/cook`. Optional

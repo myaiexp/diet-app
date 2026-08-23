@@ -123,6 +123,24 @@ describe('router', () => {
     expect(document.querySelector('.modal-backdrop')).toBeNull();
   });
 
+  test('popstate closes an open modal and swaps the pane to the route in the address bar', async () => {
+    const { shell } = boot('/nutrition');
+    expect(shell.content.textContent).toContain('#385');
+    openModal({ title: 'Cook', body: el('div', {}, 'confirm') });
+    expect(isModalOpen()).toBe(true);
+
+    // jsdom's history.back() does not fire popstate; dispatch the same event
+    // the browser would, with the address bar already on the restored route.
+    window.history.replaceState({}, '', '/waste');
+    window.dispatchEvent(new PopStateEvent('popstate'));
+
+    expect(isModalOpen()).toBe(false);
+    expect(document.querySelector('.modal-backdrop')).toBeNull();
+    expect(currentRoute()).toBe('/waste');
+    expect(shell.content.textContent).toContain('#389');
+    expect(shell.content.textContent).not.toContain('#385');
+  });
+
   test('the screen title lands in the header bar and updates on navigation', () => {
     const { root } = boot('/pantry');
     const title = root.querySelector('.screen-title')!;

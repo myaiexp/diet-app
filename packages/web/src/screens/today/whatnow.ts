@@ -5,7 +5,7 @@ import type { MealPlanEntry, PantryItem, Recipe } from '../../api/types.js';
 import { SLOTS } from '../../api/types.js';
 import { el, button } from '../../ui/dom.js';
 import { finnishWeekdayLong, addDays, isoToday } from '../../format/date.js';
-import { entryTitle } from '../../format/entry.js';
+import { entryTitle, isCookable } from '../../format/entry.js';
 
 function whatNowRow(glyph: string, color: string, text: string, onClick: () => void): HTMLElement {
   const row = button('today-whatnow-row', '', onClick);
@@ -37,7 +37,7 @@ export function buildWhatNowPanel(
   const todayIso = isoToday();
   const rows: HTMLElement[] = [];
 
-  const dinner = entries.find((e) => e.date === todayIso && e.slot === 'dinner' && e.status === 'planned');
+  const dinner = entries.find((e) => e.date === todayIso && e.slot === 'dinner' && isCookable(e.status));
   if (dinner) {
     rows.push(
       whatNowRow(

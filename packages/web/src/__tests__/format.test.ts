@@ -14,7 +14,7 @@ import {
   isoWeekNumber,
 } from '../format/date.js';
 import { rampColor, statusLabel } from '../format/expiry.js';
-import { entryTitle, STATUS_LABEL } from '../format/entry.js';
+import { entryTitle, STATUS_LABEL, isCookable } from '../format/entry.js';
 import type { EntryStatus, MealPlanEntry, Recipe } from '../api/types.js';
 
 describe('formatQuantity', () => {
@@ -195,5 +195,14 @@ describe('STATUS_LABEL', () => {
       substituted: { text: 'substituted', cls: 'label label-orange' },
     };
     expect(STATUS_LABEL).toEqual(expected);
+  });
+});
+
+describe('isCookable', () => {
+  test('planned and substituted still need a cook; cooked and skipped do not', () => {
+    expect(isCookable('planned')).toBe(true);
+    expect(isCookable('substituted')).toBe(true);
+    expect(isCookable('cooked')).toBe(false);
+    expect(isCookable('skipped')).toBe(false);
   });
 });

@@ -87,4 +87,20 @@ describe('router stale mount', () => {
     gate.release();
     await vi.waitFor(() => expect(captured.painted).toBe(true));
   });
+
+  test('a held mount that resolves after popstate leaves the new screen in the pane', async () => {
+    const { shell } = boot('/today');
+    window.history.replaceState({}, '', '/nutrition');
+    window.dispatchEvent(new PopStateEvent('popstate'));
+    expect(shell.content.querySelector('.placeholder')).not.toBeNull();
+    expect(shell.content.textContent).toContain('#385');
+
+    gate.release();
+    await vi.waitFor(() => expect(captured.painted).toBe(true));
+
+    expect(shell.content.querySelector('.placeholder')).not.toBeNull();
+    expect(shell.content.textContent).toContain('#385');
+    expect(shell.content.querySelector('.stale-today')).toBeNull();
+    expect(shell.content.textContent).not.toContain('STALE-TODAY');
+  });
 });
