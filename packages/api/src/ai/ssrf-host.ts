@@ -19,6 +19,9 @@ BLOCKED_NETS.addAddress('::', 'ipv6');
 BLOCKED_NETS.addAddress('::1', 'ipv6');
 BLOCKED_NETS.addSubnet('fc00::', 7, 'ipv6');
 BLOCKED_NETS.addSubnet('fe80::', 10, 'ipv6');
+// Deprecated site-local (RFC 3879). fe80::/10 is only fe80–febf; fec0–feff
+// is a separate /10 and Node will fetch http://[fec0::1]/ without this.
+BLOCKED_NETS.addSubnet('fec0::', 10, 'ipv6');
 BLOCKED_NETS.addSubnet('ff00::', 8, 'ipv6');
 // 6to4 (2002::/16) and Teredo (2001:0000::/32) embed an IPv4 in the rest of
 // the address. Recipe import has no need for either tunnel, so the prefixes

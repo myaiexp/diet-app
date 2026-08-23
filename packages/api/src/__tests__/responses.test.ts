@@ -3,7 +3,14 @@
 import { describe, test, expect } from 'vitest';
 import { Hono } from 'hono';
 import { z } from 'zod';
-import { badRequest, badGateway, conflict, notFound, serviceUnavailable } from '../responses.js';
+import {
+  badRequest,
+  badGateway,
+  conflict,
+  notFound,
+  payloadTooLarge,
+  serviceUnavailable,
+} from '../responses.js';
 import { parseJsonBody, type ParseJsonBodyOpts } from '../json-body.js';
 
 function appWith(handler: (c: any) => Response | Promise<Response>) {
@@ -58,6 +65,13 @@ describe('responses', () => {
     const res = await app.request('/');
     expect(res.status).toBe(503);
     expect(await res.json()).toEqual({ error: 'AI not configured' });
+  });
+
+  test('payloadTooLarge returns 413 and error body', async () => {
+    const app = appWith((c) => payloadTooLarge(c));
+    const res = await app.request('/');
+    expect(res.status).toBe(413);
+    expect(await res.json()).toEqual({ error: 'Request body too large' });
   });
 });
 

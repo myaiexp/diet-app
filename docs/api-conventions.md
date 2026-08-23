@@ -62,10 +62,10 @@ reaches Postgres as an unhandled `invalid input syntax for type uuid`.
 ## Shared responses and write bodies
 
 - **Shared responses**: `notFound` / `badRequest` / `unauthorized` / `conflict`
-  / `badGateway` / `serviceUnavailable` in `responses.ts`. Don't re-inline error
-  shapes — every `{ error }` body in the API goes through one of these, so a
-  later envelope change (adding a `code` field) lands once instead of missing
-  whichever handlers drifted.
+  / `payloadTooLarge` / `badGateway` / `serviceUnavailable` in `responses.ts`.
+  Don't re-inline error shapes — every `{ error }` body in the API goes through
+  one of these, so a later envelope change (adding a `code` field) lands once
+  instead of missing whichever handlers drifted.
 - **Write bodies**: `parseJsonBody(c, schema, { requireNonEmpty })`
   (`json-body.ts`) folds the JSON read, the Zod `safeParse`, and the
   `Invalid JSON body` / `Validation failed` / `Empty patch body` 400s into one
@@ -75,6 +75,10 @@ reaches Postgres as an unhandled `invalid input syntax for type uuid`.
   `schemas/fields.ts` (title 200, notes 4k, steps 80×4k, http(s) URLs 2048);
   `sourceUrl` / import `url` reject non-http(s). `macroTargets` /
   `scheduleProfile` are small known-key objects, not `z.unknown()` records.
+  The router also mounts Hono `bodyLimit` at 1 MiB (`MAX_BODY_BYTES` in
+  `app.ts`) *before* CORS/auth, so a loopback client that bypasses nginx's 2M
+  cannot make `c.req.json()` buffer an arbitrary body; oversize is 413 via
+  `payloadTooLarge`.
 - **PATCH payloads**: build the `.set()` object with `buildPatch(data, table, omit?)`
   (`patch-builder.ts`), typed `Partial<typeof table.$inferInsert>` so Drizzle
   still type-checks the write. It copies every defined patch field naming a

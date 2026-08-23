@@ -40,9 +40,9 @@ login page with status 200. No return URL is passed: central-hub's
 ## CORS is not involved in the browser path
 
 The app and its API are same-origin (`diet.mase.fi/` and `diet.mase.fi/api/`).
-`CORS_ORIGINS` (comma-separated, `config.ts`; unset ⇒ `https://mase.fi` only)
-still governs any non-browser or cross-origin client. Never hardcode localhost
-in the prod allowlist.
+`CORS_ORIGINS` (comma-separated, `config.ts`; unset/empty ⇒ no extra origins)
+still governs any non-browser or cross-origin client. Same-origin needs none;
+never hardcode localhost (or the retired apex origin) in the prod allowlist.
 
 ## Public URL and deploy
 

@@ -3,24 +3,24 @@ import { describe, test, expect } from 'vitest';
 import { parseCorsOrigins, parseAiConfig } from '../config.js';
 
 describe('parseCorsOrigins', () => {
-  test('unset => production-safe default (mase.fi only)', () => {
-    expect(parseCorsOrigins(undefined)).toEqual(['https://mase.fi']);
+  test('unset => empty allowlist (same-origin needs no CORS)', () => {
+    expect(parseCorsOrigins(undefined)).toEqual([]);
   });
 
-  test('empty / whitespace-only => production-safe default', () => {
-    expect(parseCorsOrigins('')).toEqual(['https://mase.fi']);
-    expect(parseCorsOrigins('   ,  ')).toEqual(['https://mase.fi']);
+  test('empty / whitespace-only => empty allowlist', () => {
+    expect(parseCorsOrigins('')).toEqual([]);
+    expect(parseCorsOrigins('   ,  ')).toEqual([]);
   });
 
   test('parses and trims a comma-separated list', () => {
-    expect(parseCorsOrigins('https://mase.fi, http://localhost:5173')).toEqual([
-      'https://mase.fi',
+    expect(parseCorsOrigins('https://diet.mase.fi, http://localhost:5173')).toEqual([
+      'https://diet.mase.fi',
       'http://localhost:5173',
     ]);
   });
 
   test('drops empty segments', () => {
-    expect(parseCorsOrigins('https://mase.fi,,')).toEqual(['https://mase.fi']);
+    expect(parseCorsOrigins('https://diet.mase.fi,,')).toEqual(['https://diet.mase.fi']);
   });
 });
 

@@ -2,9 +2,9 @@
 
 import { z } from 'zod';
 
-// Caps sit well under the nginx 2M body limit so an authenticated client cannot
-// persist multi-megabyte text/JSONB. Numbers are the contract the limit tests
-// hardcode — raise one, update the matching test.
+// Caps sit well under the 1 MiB router bodyLimit (and nginx's 2M) so an
+// authenticated client cannot persist multi-megabyte text/JSONB. Numbers are
+// the contract the limit tests hardcode — raise one, update the matching test.
 export const LIMITS = {
   /** Recipe title, cuisine, extracted ingredient name. */
   short: 200,

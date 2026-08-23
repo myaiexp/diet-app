@@ -72,22 +72,31 @@ describe('createApp auth wiring', () => {
 
 describe('CORS allowlist', () => {
   const acao = (res: Response) => res.headers.get('access-control-allow-origin');
+  const ALLOWED = 'https://other.example';
 
   test('reflects an allowed origin', async () => {
-    const app = createApp({} as any, { corsOrigins: ['https://mase.fi'] });
-    const res = await app.request('/api/health', { headers: { Origin: 'https://mase.fi' } });
-    expect(acao(res)).toBe('https://mase.fi');
+    const app = createApp({} as any, { corsOrigins: [ALLOWED] });
+    const res = await app.request('/api/health', { headers: { Origin: ALLOWED } });
+    expect(acao(res)).toBe(ALLOWED);
   });
 
   test('omits the header for a disallowed origin', async () => {
-    const app = createApp({} as any, { corsOrigins: ['https://mase.fi'] });
+    const app = createApp({} as any, { corsOrigins: [ALLOWED] });
     const res = await app.request('/api/health', { headers: { Origin: 'http://evil.example' } });
     expect(acao(res)).toBeNull();
   });
 
-  test('production config (mase.fi only) does NOT allow the dev localhost origin', async () => {
-    const app = createApp({} as any, { corsOrigins: ['https://mase.fi'] });
-    const res = await app.request('/api/health', { headers: { Origin: 'http://localhost:5173' } });
+  test('empty production default does not allow the apex origin or localhost', async () => {
+    const app = createApp({} as any, { corsOrigins: [] });
+    for (const origin of ['https://mase.fi', 'http://localhost:5173', 'https://diet.mase.fi']) {
+      const res = await app.request('/api/health', { headers: { Origin: origin } });
+      expect(acao(res), origin).toBeNull();
+    }
+  });
+
+  test('createApp without corsOrigins does not allowlist the retired apex origin', async () => {
+    const app = createApp({} as any);
+    const res = await app.request('/api/health', { headers: { Origin: 'https://mase.fi' } });
     expect(acao(res)).toBeNull();
   });
 });

@@ -1,19 +1,16 @@
 // Parse runtime API config values from environment strings
 
-// Production-safe default: the live frontend origin only. Dev adds localhost via
-// the CORS_ORIGINS env var so a local Vite server (and nothing else) is allowed.
-const PROD_CORS_ORIGINS = ['https://mase.fi'];
-
-// Parse a comma-separated CORS_ORIGINS value into a trimmed, non-empty list.
-// Falls back to the production-safe default (mase.fi only) when unset or empty,
-// so a missing env var can never silently widen the allowlist to include dev.
+// Parse a comma-separated CORS_ORIGINS value into a trimmed list.
+// Unset, empty, or whitespace-only → []: the live app is same-origin at
+// diet.mase.fi so the browser path needs no CORS, and a missing env var must
+// never silently widen the allowlist (localhost, the retired apex origin, …).
+// Extra origins belong on CORS_ORIGINS.
 export function parseCorsOrigins(raw: string | undefined): string[] {
-  if (!raw) return [...PROD_CORS_ORIGINS];
-  const origins = raw
+  if (!raw) return [];
+  return raw
     .split(',')
     .map((s) => s.trim())
     .filter(Boolean);
-  return origins.length ? origins : [...PROD_CORS_ORIGINS];
 }
 
 /** OpenAI-compatible client settings. All three required for import to run. */

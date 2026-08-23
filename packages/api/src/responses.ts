@@ -36,3 +36,10 @@ export function badGateway(c: Context, error: string) {
 export function serviceUnavailable(c: Context, error: string) {
   return c.json({ error }, 503);
 }
+
+// 413 from the router-level bodyLimit middleware. Without onError, Hono throws
+// HTTPException with a plain-text body; this keeps the JSON `{ error }` envelope
+// every other 4xx uses.
+export function payloadTooLarge(c: Context) {
+  return c.json({ error: 'Request body too large' }, 413);
+}

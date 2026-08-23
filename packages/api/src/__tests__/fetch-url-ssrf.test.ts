@@ -76,6 +76,7 @@ describe('fetchUrlAsText URL / hostname blocklist', () => {
     for (const url of [
       'http://[fc00::1]/x',
       'http://[fe80::1]/x',
+      'http://[fec0::1]/x',
       'http://[::ffff:127.0.0.1]/x',
       'http://[::ffff:7f00:1]/x',
       'http://[::7f00:1]/x',

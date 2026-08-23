@@ -30,6 +30,11 @@ describe('isBlockedAddress', () => {
     ['fc00::1'],
     ['fd12:3456::1'],
     ['fe80::1'],
+    // Deprecated IPv6 site-local fec0::/10 (RFC 3879) — fe80::/10 only covers
+    // fe80–febf; fec0–feff still has to be named.
+    ['fec0::1'],
+    ['fed0::1'],
+    ['feff::1'],
     ['ff00::1'],
     ['::ffff:127.0.0.1'],
     ['::ffff:7f00:1'],
@@ -80,6 +85,7 @@ describe('isBlockedHostname', () => {
     ['169.254.169.254'],
     ['100.64.0.1'],
     ['[::1]'],
+    ['[fec0::1]'],
   ])('blocks %s', (host) => {
     expect(isBlockedHostname(host)).toBe(true);
   });
