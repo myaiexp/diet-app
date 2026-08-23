@@ -165,11 +165,47 @@ describe('userMessage', () => {
     expect(userMessage(aborted)).toMatch(/timed out/);
   });
 
+  test('maps 500 to an unexpected-error message that says nothing was saved', () => {
+    const msg = userMessage(new ApiError(500, { error: 'Internal' }));
+    expect(msg).toBe('The server hit an unexpected error. Nothing was saved.');
+  });
+
+  test('maps 401 to the session-expired copy, ignoring the body', () => {
+    expect(userMessage(new ApiError(401, { error: 'Unauthorized' }))).toBe(
+      'Session expired — reloading.',
+    );
+    expect(userMessage(new ApiError(401, null))).toBe('Session expired — reloading.');
+  });
+});
+
+describe('fieldErrors', () => {
   test('extracts Zod form errors from a 400 details payload', () => {
     const err = new ApiError(400, {
       error: 'Validation failed',
       details: { formErrors: ['Either recipeId or freeformNote is required'] },
     });
     expect(fieldErrors(err)).toEqual(['Either recipeId or freeformNote is required']);
+  });
+
+  test('flattens details.fieldErrors as field: message lines', () => {
+    const err = new ApiError(400, {
+      error: 'Validation failed',
+      details: { fieldErrors: { quantity: ['must be positive'] } },
+    });
+    expect(fieldErrors(err)).toEqual(['quantity: must be positive']);
+  });
+
+  test('concatenates formErrors then each field: message line', () => {
+    const err = new ApiError(400, {
+      error: 'Validation failed',
+      details: {
+        formErrors: ['Either recipeId or freeformNote is required'],
+        fieldErrors: { quantity: ['must be positive'] },
+      },
+    });
+    expect(fieldErrors(err)).toEqual([
+      'Either recipeId or freeformNote is required',
+      'quantity: must be positive',
+    ]);
   });
 });

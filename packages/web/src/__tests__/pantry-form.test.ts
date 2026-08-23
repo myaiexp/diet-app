@@ -1,4 +1,5 @@
 // Add-modal shelf-life fallback: the 400 that reveals expiresDate.
+// Edit/delete coverage lives in pantry-edit.test.ts (⋯ menu through the screen).
 
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 import { configureClient, resetClient } from '../api/client.js';

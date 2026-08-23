@@ -4,7 +4,7 @@
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 import { configureClient, resetClient } from '../api/client.js';
 import { importScreen } from '../screens/import/index.js';
-import { flush, jsonResponse, makeCtx, mountRoot, routeFetch } from './harness.js';
+import { flush, jsonResponse, makeCtx, mountRoot, pathOf, routeFetch } from './harness.js';
 import { makeDraft, makeIngredient, makeLine } from './fixtures.js';
 
 interface PostedLine {
