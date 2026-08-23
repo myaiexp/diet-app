@@ -59,10 +59,13 @@ origin gets no `Access-Control-Allow-Origin`.
 - **systemd unit**: committed at `systemd/diet-app-api.service`; live copy
   `/etc/systemd/system/diet-app-api.service`. After editing: `sudo cp` that
   file into place, `daemon-reload`, restart. The process is sandboxed
-  (`NoNewPrivileges`, `ProtectSystem=strict`, `ProtectHome=read-only`,
-  `PrivateTmp`, `MemoryMax=1G`, plus kernel/namespace restrictions). Outbound
-  http(s) stays allowed (recipe import + AI). Do not add
-  `MemoryDenyWriteExecute` (V8 JIT) or `IPAddressDeny` (import/AI). A
+  (`NoNewPrivileges`, `ProtectSystem=strict`, `ProtectHome=tmpfs` + a
+  read-only bind of the diet-app tree, `PrivateTmp`, `MemoryMax=1G`, plus
+  kernel/namespace restrictions). `IPAddressDeny` covers link-local (IMDS),
+  RFC1918, CGNAT, and IPv6 ULA/link-local/site-local — the same non-routable
+  ranges recipe import already refuses. Loopback (Postgres, resolved) and
+  public HTTP(S) (import / AI) stay allowed. Do not add
+  `MemoryDenyWriteExecute` (V8 JIT). Do not deny `127.0.0.0/8` or `::1`. A
   `dist/`-served unit, so no `refuse-dirty-tree` `ExecStartPre`.
 - **Frontend dev**: `pnpm --filter @diet-app/web dev` serves Vite on :5173 and
   proxies `/api` to `API_ORIGIN` (default `127.0.0.1:3300`), injecting

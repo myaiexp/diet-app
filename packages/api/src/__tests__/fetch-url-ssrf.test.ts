@@ -83,6 +83,11 @@ describe('fetchUrlAsText URL / hostname blocklist', () => {
       'http://[::127.0.0.1]/x',
       'http://[64:ff9b::7f00:1]/x',
       'http://[64:ff9b::127.0.0.1]/x',
+      // SIIT IPv4-translated. Node canonicalizes the dotted form to hex.
+      'http://[::ffff:0:127.0.0.1]/x',
+      'http://[::ffff:0:7f00:1]/x',
+      'http://[::ffff:0:a9fe:a9fe]/x',
+      'http://[0:0:0:0:ffff:0:7f00:1]/x',
       // RFC 8215 local-use NAT64 — prefix blocked wholesale; literals skip DNS.
       'http://[64:ff9b:1::7f00:1]/x',
       'http://[64:ff9b:1::127.0.0.1]/x',
@@ -129,6 +134,9 @@ describe('fetchUrlAsText DNS-answer blocklist', () => {
     ['169.254.169.254', 4],
     ['10.0.0.1', 4],
     ['::ffff:127.0.0.1', 6],
+    ['::ffff:0:7f00:1', 6],
+    ['::ffff:0:a9fe:a9fe', 6],
+    ['0:0:0:0:ffff:0:7f00:1', 6],
     ['64:ff9b:1::7f00:1', 6],
     ['64:ff9b:1::0808:0808', 6],
   ] as const)(

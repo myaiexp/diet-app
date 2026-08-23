@@ -42,6 +42,14 @@ describe('isBlockedAddress', () => {
     ['::127.0.0.1'],
     ['64:ff9b::7f00:1'],
     ['64:ff9b::127.0.0.1'],
+    // SIIT IPv4-translated ::ffff:0:0:0/96 (RFC 2765). Distinct from mapped
+    // ::ffff:0:0/96; Node canonicalizes [::ffff:0:127.0.0.1] to [::ffff:0:7f00:1].
+    ['::ffff:0:127.0.0.1'],
+    ['::ffff:0:7f00:1'],
+    ['::ffff:0:a9fe:a9fe'],
+    ['0:0:0:0:ffff:0:7f00:1'],
+    ['0:0:0:0:ffff:0:a9fe:a9fe'],
+    ['0:0:0:0:ffff:0:127.0.0.1'],
     // RFC 8215 local-use NAT64 64:ff9b:1::/48 — blocked wholesale like 6to4
     // (well-known 64:ff9b::/96 stays unwrapped). Node fetches the literal.
     ['64:ff9b:1::'],
@@ -71,6 +79,9 @@ describe('isBlockedAddress', () => {
     ['2606:4700:4700::1111'],
     // Well-known NAT64 64:ff9b::/96 of a public IPv4 is unwrapped, not blocked.
     ['64:ff9b::8.8.8.8'],
+    // SIIT of a public IPv4 is unwrapped, not blocked.
+    ['::ffff:0:8.8.8.8'],
+    ['::ffff:0:0808:0808'],
   ])('allows public %s', (addr) => {
     expect(isBlockedAddress(addr)).toBe(false);
   });
@@ -96,6 +107,7 @@ describe('isBlockedHostname', () => {
     ['[::1]'],
     ['[fec0::1]'],
     ['[64:ff9b:1::7f00:1]'],
+    ['[::ffff:0:7f00:1]'],
   ])('blocks %s', (host) => {
     expect(isBlockedHostname(host)).toBe(true);
   });

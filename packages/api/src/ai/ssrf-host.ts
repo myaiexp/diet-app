@@ -49,7 +49,7 @@ function hexPairToIpv4(hiHex: string, loHex: string): string {
   return `${(hi >> 8) & 255}.${hi & 255}.${(lo >> 8) & 255}.${lo & 255}`;
 }
 
-/** Unwrap IPv4-mapped, IPv4-compatible, and NAT64 well-known embeddings. */
+/** Unwrap IPv4-mapped, IPv4-compatible, NAT64 well-known, and SIIT embeddings. */
 function embeddedIpv4(lower: string): string | null {
   let m: RegExpMatchArray | null;
   m = lower.match(/^::ffff:(\d{1,3}(?:\.\d{1,3}){3})$/);
@@ -67,6 +67,17 @@ function embeddedIpv4(lower: string): string | null {
   m = lower.match(/^64:ff9b::([0-9a-f]{1,4}):([0-9a-f]{1,4})$/);
   if (m) return hexPairToIpv4(m[1]!, m[2]!);
   m = lower.match(/^64:ff9b:0:0:0:0:([0-9a-f]{1,4}):([0-9a-f]{1,4})$/);
+  if (m) return hexPairToIpv4(m[1]!, m[2]!);
+  // SIIT IPv4-translated ::ffff:0:0:0/96 (RFC 2765). Distinct from mapped
+  // ::ffff:0:0/96 (::ffff:A.B.C.D). Node canonicalizes
+  // http://[::ffff:0:127.0.0.1]/ to [::ffff:0:7f00:1].
+  m = lower.match(/^::ffff:0:(\d{1,3}(?:\.\d{1,3}){3})$/);
+  if (m) return m[1]!;
+  m = lower.match(/^::ffff:0:([0-9a-f]{1,4}):([0-9a-f]{1,4})$/);
+  if (m) return hexPairToIpv4(m[1]!, m[2]!);
+  m = lower.match(/^0:0:0:0:ffff:0:(\d{1,3}(?:\.\d{1,3}){3})$/);
+  if (m) return m[1]!;
+  m = lower.match(/^0:0:0:0:ffff:0:([0-9a-f]{1,4}):([0-9a-f]{1,4})$/);
   if (m) return hexPairToIpv4(m[1]!, m[2]!);
   return null;
 }

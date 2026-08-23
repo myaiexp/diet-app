@@ -17,11 +17,20 @@ EnvironmentFile=/home/mase/Projects/diet-app/.env
 
 # Defense-in-depth against a future RCE in the Node process. Bind is already
 # loopback-only and .env is mode 600. Do not add MemoryDenyWriteExecute — V8
-# JIT needs W^X pages. Do not add IPAddressDeny — recipe import fetches http(s)
-# and the AI client calls an external API.
+# JIT needs W^X pages.
+# ProtectHome=tmpfs (not yes): yes overmounts /home and hides a BindReadOnlyPaths
+# target underneath it. tmpfs + the bind keeps only this tree reachable;
+# sibling .env files and ~/.ssh stay invisible. EnvironmentFile is read by
+# PID 1 as root, not by the service. load-env.ts re-reads the in-tree .env.
+# IPAddressDeny matches the import SSRF policy for non-routable ranges
+# (link-local/IMDS, RFC1918, CGNAT, IPv6 ULA/link-local/site-local). Loopback
+# (Postgres, systemd-resolved) and public HTTP(S) (import / AI) stay allowed.
+# Do not deny 127.0.0.0/8 or ::1.
 NoNewPrivileges=yes
 ProtectSystem=strict
-ProtectHome=read-only
+ProtectHome=tmpfs
+BindReadOnlyPaths=/home/mase/Projects/diet-app
+IPAddressDeny=169.254.0.0/16 10.0.0.0/8 172.16.0.0/12 192.168.0.0/16 100.64.0.0/10 fc00::/7 fe80::/10 fec0::/10
 PrivateTmp=yes
 PrivateDevices=yes
 ProtectKernelTunables=yes
