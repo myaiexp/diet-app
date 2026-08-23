@@ -388,6 +388,86 @@ describe('mealPlanCookRoutes', () => {
     expect(statusUpdates[0]!.values).toMatchObject({ status: 'cooked' });
   });
 
+  test('FEFO cook spanning two lots deletes the sooner and updates the later (finding #8018)', async () => {
+    const soonerId = 'dddddddd-eeee-4fff-8000-222222222222';
+    const laterId = 'dddddddd-eeee-4fff-8000-333333333333';
+    const { db, updatesTo, deletesTo } = makeCookMock({
+      entry: { ...PLANNED_ENTRY, servings: '1' },
+      recipe: { ...RECIPE, servings: 1 },
+      lines: [{ ...LINE, quantity: '500', unit: 'g' }],
+      pantryRows: [
+        { ...PANTRY_ROW, id: laterId, quantity: '400', unit: 'g', expiresDate: '2026-09-01' },
+        { ...PANTRY_ROW, id: soonerId, quantity: '300', unit: 'g', expiresDate: '2026-07-01' },
+      ],
+    });
+    const res = await mealPlanCookRoutes(db).request(`/${ENTRY_ID}/cook`, {
+      method: 'POST',
+    });
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.deductions[0].pantryItems).toEqual([
+      { id: soonerId, unit: 'g', before: '300', after: '0', deleted: true },
+      { id: laterId, unit: 'g', before: '400', after: '200', deleted: false },
+    ]);
+
+    const pantryDeletes = deletesTo(pantryItems);
+    expect(pantryDeletes).toHaveLength(1);
+    expect(whereParams(pantryDeletes[0]!.where)).toContain(soonerId);
+
+    const pantryUpdates = updatesTo(pantryItems);
+    expect(pantryUpdates).toHaveLength(1);
+    expect(pantryUpdates[0]!.values).toMatchObject({ quantity: '200' });
+    expect(whereParams(pantryUpdates[0]!.where)).toContain(laterId);
+
+    expect(updatesTo(recipes)).toHaveLength(1);
+  });
+
+  test('two recipe lines sharing one lot UPDATE then DELETE the same id (finding #8018)', async () => {
+    const lineB = {
+      ...LINE,
+      id: 'eeeeeeee-ffff-4000-8000-333333333333',
+      quantity: '400',
+    };
+    const { db, updatesTo, deletesTo } = makeCookMock({
+      entry: { ...PLANNED_ENTRY, servings: '1' },
+      recipe: { ...RECIPE, servings: 1 },
+      lines: [
+        { ...LINE, quantity: '400', unit: 'g' },
+        lineB,
+      ],
+      pantryRows: [{ ...PANTRY_ROW, quantity: '600', unit: 'g' }],
+    });
+    const res = await mealPlanCookRoutes(db).request(`/${ENTRY_ID}/cook`, {
+      method: 'POST',
+    });
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.deductions).toHaveLength(2);
+    expect(body.deductions[0].pantryItems[0]).toMatchObject({
+      id: PANTRY_ID,
+      before: '600',
+      after: '200',
+      deleted: false,
+    });
+    expect(body.deductions[1].pantryItems[0]).toMatchObject({
+      id: PANTRY_ID,
+      before: '200',
+      after: '0',
+      deleted: true,
+    });
+
+    const pantryUpdates = updatesTo(pantryItems);
+    expect(pantryUpdates).toHaveLength(1);
+    expect(pantryUpdates[0]!.values).toMatchObject({ quantity: '200' });
+    expect(whereParams(pantryUpdates[0]!.where)).toContain(PANTRY_ID);
+
+    const pantryDeletes = deletesTo(pantryItems);
+    expect(pantryDeletes).toHaveLength(1);
+    expect(whereParams(pantryDeletes[0]!.where)).toContain(PANTRY_ID);
+
+    expect(updatesTo(recipes)).toHaveLength(1);
+  });
+
   test('a shortfall does not prevent the cook', async () => {
     const { db } = makeCookMock({
       entry: { ...PLANNED_ENTRY, servings: '1' },

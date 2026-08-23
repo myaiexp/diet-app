@@ -23,6 +23,7 @@ export function unauthorized(c: Context) {
 }
 
 // 403 from csrfGuard when Sec-Fetch-Site is present and not same-origin
+// (same-site, cross-site, and none — missing header is the curl/cron exception)
 // (and Origin is not in CORS_ORIGINS). Same envelope as central-hub logout.
 export function forbidden(c: Context) {
   return c.json({ error: 'Forbidden' }, 403);

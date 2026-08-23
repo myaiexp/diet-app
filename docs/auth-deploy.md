@@ -53,8 +53,9 @@ every sibling origin (prospect, wiki, sm, …) is same-site and the browser
 attaches the cookie; nginx then injects the bearer. `csrfGuard` (`csrf.ts`)
 therefore gates mutating `/api/` methods before `bearerAuth`: if
 `Sec-Fetch-Site` is present it must be `same-origin` (missing is allowed for
-curl/cron; `same-site`/`cross-site` are 403 unless `Origin` is in
-`CORS_ORIGINS`), and POST/PUT/PATCH must be `application/json` (415 otherwise,
+curl/cron; `same-site`/`cross-site`/`none` are 403 unless `Origin` is in
+`CORS_ORIGINS` — `none` is a real Fetch Metadata value for user-initiated /
+non-web requests, not the curl exception), and POST/PUT/PATCH must be `application/json` (415 otherwise,
 including empty POST `/cook`). The SPA always sends that Content-Type on
 mutating fetches, even with no body.
 

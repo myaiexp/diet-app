@@ -18,8 +18,10 @@ function isJsonContentType(header: string | undefined): boolean {
  * POST with text/plain (or no Content-Type, or a form) is CORS-simple, so a
  * page on prospect/wiki/sm can credentials-include a JSON body — or hit empty
  * POST /cook — without a preflight. Sec-Fetch-Site is a forbidden header, so
- * a browser cannot spoof `same-origin`. Missing is allowed for curl/cron.
- * Extra CORS origins (cross-site fetch) are allowed when Origin is listed.
+ * a browser cannot spoof `same-origin`. Missing is allowed for curl/cron;
+ * `none` (user-initiated / non-web) is present and not same-origin, so 403
+ * unless Origin is CORS-allowlisted — same as same-site/cross-site.
+ * Extra CORS origins (cross-site or none) are allowed when Origin is listed.
  *
  * POST/PUT/PATCH always require application/json (media type before ';'),
  * including empty bodies: an HTML form POST to /cook has no JSON body and

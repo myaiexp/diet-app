@@ -106,6 +106,55 @@ describe('mutating CSRF guard', () => {
     expect(res.status).toBe(401);
   });
 
+  test('rejects Sec-Fetch-Site: none without Origin (403, not curl-style 401)', async () => {
+    // `none` is a real Fetch Metadata value (user-initiated / non-web). The
+    // guard treats any present site other than same-origin as 403 unless Origin
+    // is CORS-allowlisted — missing header is the curl/cron exception, not none.
+    const res = await app().request('/api/meal-plans', {
+      method: 'POST',
+      headers: { ...JSON_CT, 'Sec-Fetch-Site': 'none' },
+      body: MEAL_PLAN_BODY,
+    });
+    expect(res.status).toBe(403);
+    expect(await res.json()).toEqual({ error: 'Forbidden' });
+  });
+
+  test('rejects Sec-Fetch-Site: none with a sibling Origin', async () => {
+    const res = await app().request('/api/meal-plans', {
+      method: 'POST',
+      headers: {
+        ...JSON_CT,
+        Origin: SIBLING,
+        'Sec-Fetch-Site': 'none',
+      },
+      body: MEAL_PLAN_BODY,
+    });
+    expect(res.status).toBe(403);
+  });
+
+  test('allows Sec-Fetch-Site: none when Origin is CORS-allowlisted (reaches auth)', async () => {
+    const extra = 'https://other.example';
+    const res = await app([extra]).request('/api/meal-plans', {
+      method: 'POST',
+      headers: {
+        ...JSON_CT,
+        Origin: extra,
+        'Sec-Fetch-Site': 'none',
+      },
+      body: MEAL_PLAN_BODY,
+    });
+    expect(res.status).toBe(401);
+  });
+
+  test('PUT with Sec-Fetch-Site: none is 403 the same way as POST', async () => {
+    const res = await app().request('/api/meal-plans', {
+      method: 'PUT',
+      headers: { ...JSON_CT, 'Sec-Fetch-Site': 'none' },
+      body: MEAL_PLAN_BODY,
+    });
+    expect(res.status).toBe(403);
+  });
+
   test('allows a CORS-allowlisted Origin even when Sec-Fetch-Site is cross-site', async () => {
     const extra = 'https://other.example';
     const res = await app([extra]).request('/api/meal-plans', {

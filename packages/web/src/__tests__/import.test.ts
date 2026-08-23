@@ -70,6 +70,29 @@ describe('recipe import screen', () => {
     expect(root.querySelectorAll('.shimmer')).toHaveLength(5);
 
     await waitForReview(root);
+    expect(root.querySelector('.import-truncated')).toBeNull();
+  });
+
+  test('shows a truncation warning on review when the import was truncated', async () => {
+    const draft = makeDraft();
+    fetchMock.mockImplementation(
+      routeFetch(
+        {
+          '/api/recipes/import': { draft, unmatchedCount: 0, truncated: true },
+          '/api/ingredients': [],
+        },
+        { unmatched: '404' },
+      ),
+    );
+
+    const root = mountRoot();
+    await importScreen().mount(root, makeCtx());
+    submit(root);
+    await waitForReview(root);
+
+    const warn = root.querySelector('.import-truncated');
+    expect(warn).not.toBeNull();
+    expect(warn!.textContent).toMatch(/truncated/i);
   });
 
   test('classifies lines as bound / assumed / unresolved', async () => {

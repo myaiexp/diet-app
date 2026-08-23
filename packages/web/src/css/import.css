@@ -22,6 +22,8 @@
 }
 .import-extracting .shimmer { align-self: stretch; }
 
+.import-truncated { margin: 0 0 8px; }
+
 .import-review {
   display: grid;
   grid-template-columns: 1fr 1.15fr;

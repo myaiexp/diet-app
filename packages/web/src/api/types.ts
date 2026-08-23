@@ -289,6 +289,11 @@ export interface RecipeDraft {
 export interface RecipeImportResponse {
   draft: RecipeDraft;
   unmatchedCount: number;
+  /**
+   * URL fetch hit IMPORT_TEXT_MAX_CHARS and the model saw a partial page.
+   * Always false on the paste path (oversize paste is 400, never truncated).
+   */
+  truncated: boolean;
 }
 
 export type ShoppingListStatus = 'draft' | 'shopping' | 'done';

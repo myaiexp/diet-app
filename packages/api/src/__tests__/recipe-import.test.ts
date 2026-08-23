@@ -195,6 +195,8 @@ describe('POST /recipes/import', () => {
       },
     ]);
     expect(body.unmatchedCount).toBe(1);
+    // Paste never truncates — oversize text is 400 at the schema.
+    expect(body.truncated).toBe(false);
     // Draft quantity is a number, not a string
     expect(typeof body.draft.ingredients[0].quantity).toBe('number');
   });
@@ -218,6 +220,27 @@ describe('POST /recipes/import', () => {
     const body = await res.json();
     expect(body.draft.sourceUrl).toBe('https://example.com/final');
     expect(body.draft.sourceType).toBe('imported');
+    expect(body.truncated).toBe(false);
+  });
+
+  test('url path surfaces truncated:true on the import JSON (finding #8019)', async () => {
+    // Fetch still extracts from the partial page — no 4xx — but the client
+    // must see the flag so the review screen can warn. Paste oversize stays 400.
+    const { app, extractRecipeFromText } = makeApp({
+      fetchResult: {
+        ok: true,
+        text: 'partial page',
+        finalUrl: 'https://example.com/long',
+        truncated: true,
+      },
+    });
+    const res = await postImport(app, { url: 'https://example.com/long' });
+    expect(res.status).toBe(200);
+    expect(extractRecipeFromText).toHaveBeenCalledOnce();
+    expect(extractRecipeFromText.mock.calls[0]![2]).toBe('partial page');
+    const body = await res.json();
+    expect(body.truncated).toBe(true);
+    expect(body.draft.sourceUrl).toBe('https://example.com/long');
   });
 
   test('blocked url returns 400', async () => {

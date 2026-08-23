@@ -69,7 +69,8 @@ reaches Postgres as an unhandled `invalid input syntax for type uuid`.
   handlers drifted.
 - **CSRF on writes**: `csrfGuard` (`csrf.ts`) is mounted on `/api/*` before
   `bearerAuth`. Mutating methods with `Sec-Fetch-Site` other than `same-origin`
-  are 403 (unless `Origin` is in `CORS_ORIGINS`); POST/PUT/PATCH without
+  are 403 (unless `Origin` is in `CORS_ORIGINS`) — including `none`; a missing
+  header is the curl/cron exception (401 at auth), not `none`. POST/PUT/PATCH without
   `application/json` are 415. Why: `docs/auth-deploy.md`.
 - **Write bodies**: `parseJsonBody(c, schema, { requireNonEmpty })`
   (`json-body.ts`) folds the JSON read, the Zod `safeParse`, and the
@@ -109,6 +110,10 @@ disagrees with cook deduction. Rationale: `docs/plans/2026-07-21-phase1-closeout
   (hostname/DNS blocklist, ports 80/443 only, TCP connect pinned to the
   already-allowed DNS answers so undici cannot re-resolve at connect time);
   extract in `ai/import-recipe.ts`; exact catalog match in `ingredient-match.ts`.
+  Response is `{ draft, unmatchedCount, truncated }`. Paste over
+  `IMPORT_TEXT_MAX_CHARS` is 400; URL fetch truncates instead and sets
+  `truncated: true` so the review screen can warn — the model still runs on
+  the partial page (no 4xx). Paste always returns `truncated: false`.
 - **Import failure logging**: the import chain talks to two unreliable external
   services and collapses every failure into an opaque sentinel (`{ok:false}` /
   `fetch_failed`) behind a flat 502, so **every discarding site logs its cause

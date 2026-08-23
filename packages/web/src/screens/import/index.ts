@@ -20,6 +20,8 @@ export function importScreen(): Screen {
   let url = '';
   let text = '';
   let draft: RecipeDraft | null = null;
+  /** URL fetch was capped — review must warn; paste never sets this. */
+  let truncated = false;
   let error: string | null = null;
   let errorDetails: string[] = [];
   /** Bumped on cancel so a stale extract response can't override the stage. */
@@ -32,7 +34,18 @@ export function importScreen(): Screen {
     rootEl.replaceChildren();
     if (stage === 'paste') rootEl.appendChild(renderPaste());
     else if (stage === 'extracting') rootEl.appendChild(renderExtracting());
-    else if (draft) teardownReview = mountReview(rootEl, ctx, draft);
+    else if (draft) {
+      if (truncated) {
+        rootEl.appendChild(
+          el(
+            'p',
+            { class: 'helper-error import-truncated', role: 'status' },
+            'The source page was truncated before extraction — later steps or ingredients may be missing.',
+          ),
+        );
+      }
+      teardownReview = mountReview(rootEl, ctx, draft);
+    }
   }
 
   function renderPaste(): HTMLElement {
@@ -110,6 +123,7 @@ export function importScreen(): Screen {
       const res = await extractDraft(input);
       if (mine !== token) return; // cancelled or superseded
       draft = res.draft;
+      truncated = res.truncated === true;
       stage = 'review';
       render();
     } catch (err) {
