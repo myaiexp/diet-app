@@ -30,7 +30,8 @@ then oldest `createdAt`) and must not be recomputed on the client. The POST
 ## `cooked` is terminal
 
 `cooked` is reachable only via `POST /meal-plans/:id/cook` (PATCH cannot set or
-leave it). PATCH also cannot *change* `recipeId`, `substituteRecipeId`, or
+leave it). The POST is body-less but still sends `Content-Type: application/json`
+so `csrfGuard` does not 415 it (finding #7991). PATCH also cannot *change* `recipeId`, `substituteRecipeId`, or
 `servings` on a cooked entry — those are the exact inputs the deduction was
 computed from, and cook 409s so it can't be re-run to reconcile; re-sending an
 unchanged value passes, and `date`/`slot`/`notes`/`freeformNote` stay editable.

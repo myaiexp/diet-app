@@ -86,6 +86,14 @@ describe('apiSend', () => {
     expect(JSON.parse(init.body)).toEqual({ quantity: 400 });
   });
 
+  test('POSTs without a body still send application/json (empty cook commit)', async () => {
+    fetchMock.mockResolvedValue(jsonResponse(200, { id: 'e1' }));
+    await apiSend('POST', '/meal-plans/e1/cook');
+    const [, init] = fetchMock.mock.calls[0]!;
+    expect(init.headers['content-type']).toBe('application/json');
+    expect(init.body).toBeUndefined();
+  });
+
   test('handles a 204 with no body', async () => {
     fetchMock.mockResolvedValue(new Response(null, { status: 204 }));
     await expect(apiSend('DELETE', '/pantry/x')).resolves.toBeUndefined();

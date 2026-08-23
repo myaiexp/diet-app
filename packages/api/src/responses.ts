@@ -22,6 +22,18 @@ export function unauthorized(c: Context) {
   return c.json({ error: 'Unauthorized' }, 401);
 }
 
+// 403 from csrfGuard when Sec-Fetch-Site is present and not same-origin
+// (and Origin is not in CORS_ORIGINS). Same envelope as central-hub logout.
+export function forbidden(c: Context) {
+  return c.json({ error: 'Forbidden' }, 403);
+}
+
+// 415 from csrfGuard: POST/PUT/PATCH must be application/json so a sibling
+// origin cannot CORS-simple a text/plain or form body past empty CORS.
+export function unsupportedMediaType(c: Context) {
+  return c.json({ error: 'Content-Type must be application/json' }, 415);
+}
+
 // 409 for conflict guards (e.g. recipe referenced by meal plan / child forks).
 export function conflict(c: Context, error: string) {
   return c.json({ error }, 409);

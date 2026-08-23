@@ -818,6 +818,7 @@ describe.skipIf(!hasDb)('cook flow', () => {
       // 5. Cook → 200, cooked, no shortfalls
       const cookRes = await app!.request(`/api/meal-plans/${entryId}/cook`, {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
       });
       expect(cookRes.status).toBe(200);
       const cookBody = await cookRes.json();
@@ -837,6 +838,7 @@ describe.skipIf(!hasDb)('cook flow', () => {
       // 8. Second cook → 409
       const reCook = await app!.request(`/api/meal-plans/${entryId}/cook`, {
         method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
       });
       expect(reCook.status).toBe(409);
       expect(await reCook.json()).toEqual({

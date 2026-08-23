@@ -8,6 +8,8 @@ export type BodyResult<T> = { ok: true; data: T } | { ok: false; response: Respo
 
 // Private: 'Invalid JSON body' and 'Validation failed' are two halves of one
 // contract, so routes only ever see the folded parseJsonBody below.
+// Content-Type is gated by csrfGuard, not here: c.req.json() ignores it, and
+// body-less POST /cook never calls this.
 async function readJsonBody(c: Context): Promise<BodyResult<unknown>> {
   try {
     return { ok: true, data: await c.req.json() };

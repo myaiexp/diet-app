@@ -61,11 +61,16 @@ reaches Postgres as an unhandled `invalid input syntax for type uuid`.
 
 ## Shared responses and write bodies
 
-- **Shared responses**: `notFound` / `badRequest` / `unauthorized` / `conflict`
-  / `payloadTooLarge` / `badGateway` / `serviceUnavailable` in `responses.ts`.
-  Don't re-inline error shapes — every `{ error }` body in the API goes through
-  one of these, so a later envelope change (adding a `code` field) lands once
-  instead of missing whichever handlers drifted.
+- **Shared responses**: `notFound` / `badRequest` / `unauthorized` / `forbidden`
+  / `unsupportedMediaType` / `conflict` / `payloadTooLarge` / `badGateway` /
+  `serviceUnavailable` in `responses.ts`. Don't re-inline error shapes — every
+  `{ error }` body in the API goes through one of these, so a later envelope
+  change (adding a `code` field) lands once instead of missing whichever
+  handlers drifted.
+- **CSRF on writes**: `csrfGuard` (`csrf.ts`) is mounted on `/api/*` before
+  `bearerAuth`. Mutating methods with `Sec-Fetch-Site` other than `same-origin`
+  are 403 (unless `Origin` is in `CORS_ORIGINS`); POST/PUT/PATCH without
+  `application/json` are 415. Why: `docs/auth-deploy.md`.
 - **Write bodies**: `parseJsonBody(c, schema, { requireNonEmpty })`
   (`json-body.ts`) folds the JSON read, the Zod `safeParse`, and the
   `Invalid JSON body` / `Validation failed` / `Empty patch body` 400s into one

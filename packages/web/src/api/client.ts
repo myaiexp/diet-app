@@ -74,13 +74,15 @@ async function send<T>(
   init: { params?: QueryParams; body?: unknown; timeoutMs?: number } = {},
 ): Promise<T> {
   const doFetch = config.fetch ?? globalThis.fetch;
+  const mutating = method !== 'GET' && method !== 'HEAD';
   const options: RequestInit = {
     method,
-    headers: {},
+    // Mutating requests always send JSON Content-Type, even with no body:
+    // POST /cook is otherwise CORS-simple and csrfGuard 415s it (finding #7991).
+    headers: mutating ? { 'content-type': 'application/json' } : {},
     signal: AbortSignal.timeout(init.timeoutMs ?? config.timeoutMs),
   };
   if (init.body !== undefined) {
-    options.headers = { 'content-type': 'application/json' };
     options.body = JSON.stringify(init.body);
   }
 

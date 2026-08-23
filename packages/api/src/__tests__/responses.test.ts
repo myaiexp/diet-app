@@ -7,9 +7,11 @@ import {
   badRequest,
   badGateway,
   conflict,
+  forbidden,
   notFound,
   payloadTooLarge,
   serviceUnavailable,
+  unsupportedMediaType,
 } from '../responses.js';
 import { parseJsonBody, type ParseJsonBodyOpts } from '../json-body.js';
 
@@ -72,6 +74,20 @@ describe('responses', () => {
     const res = await app.request('/');
     expect(res.status).toBe(413);
     expect(await res.json()).toEqual({ error: 'Request body too large' });
+  });
+
+  test('forbidden returns 403 and error body', async () => {
+    const app = appWith((c) => forbidden(c));
+    const res = await app.request('/');
+    expect(res.status).toBe(403);
+    expect(await res.json()).toEqual({ error: 'Forbidden' });
+  });
+
+  test('unsupportedMediaType returns 415 and the JSON Content-Type demand', async () => {
+    const app = appWith((c) => unsupportedMediaType(c));
+    const res = await app.request('/');
+    expect(res.status).toBe(415);
+    expect(await res.json()).toEqual({ error: 'Content-Type must be application/json' });
   });
 });
 

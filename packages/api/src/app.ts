@@ -1,9 +1,10 @@
-// Hono app factory: body cap, CORS, auth, route mount
+// Hono app factory: body cap, CORS, CSRF, auth, route mount
 import { Hono } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
 import { cors } from 'hono/cors';
 import type { Db } from '@diet-app/db';
 import { bearerAuth } from './auth.js';
+import { csrfGuard } from './csrf.js';
 import { ingredientsRoutes } from './routes/ingredients.js';
 import { recipesRoutes } from './routes/recipes.js';
 import { pantryRoutes } from './routes/pantry.js';
@@ -55,6 +56,10 @@ export function createApp(db: Db, config: AppConfig = {}) {
   // Public: the deploy health check, nginx, and uptime monitors hit this with no
   // token. Registered before the auth middleware so it stays unauthenticated.
   app.get('/api/health', (c) => c.json({ ok: true, name: 'diet-app-api' }));
+
+  // Before bearerAuth so a sibling CSRF is 403/415 even with a valid token.
+  // GET/HEAD/OPTIONS skip it; health is registered above and never reaches here.
+  app.use('/api/*', csrfGuard(config.corsOrigins ?? []));
 
   // Everything below requires a valid bearer token when one is configured.
   if (config.authToken) {

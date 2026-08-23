@@ -47,6 +47,17 @@ never hardcode localhost (or the retired apex origin) in the prod allowlist.
 preflight from an allowed extra origin succeeds without a token; a disallowed
 origin gets no `Access-Control-Allow-Origin`.
 
+Empty CORS does **not** stop a CORS-simple request from executing — only from
+reading the response. `hub_session` is `Domain=.mase.fi` + `SameSite=Lax`, so
+every sibling origin (prospect, wiki, sm, …) is same-site and the browser
+attaches the cookie; nginx then injects the bearer. `csrfGuard` (`csrf.ts`)
+therefore gates mutating `/api/` methods before `bearerAuth`: if
+`Sec-Fetch-Site` is present it must be `same-origin` (missing is allowed for
+curl/cron; `same-site`/`cross-site` are 403 unless `Origin` is in
+`CORS_ORIGINS`), and POST/PUT/PATCH must be `application/json` (415 otherwise,
+including empty POST `/cook`). The SPA always sends that Content-Type on
+mutating fetches, even with no body.
+
 ## Public URL and deploy
 
 - **Public URL**: `https://diet.mase.fi` — the app at `/`, its API at `/api/`
