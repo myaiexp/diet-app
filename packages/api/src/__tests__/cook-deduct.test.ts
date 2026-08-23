@@ -183,4 +183,40 @@ describe('planDeduction', () => {
     const { deductions } = planDeduction([LINE()], rows, 1);
     expect(deductions[0]!.pantryItems[0]!.id).toBe('older');
   });
+
+  // Input is reverse id-order on purpose: a stable sort that returns 0 on a
+  // full FEFO tie would keep 'p-z' first. Lower id is the explicit fourth key.
+  test('breaks a full FEFO tie by id (lower id first)', () => {
+    const rows = [
+      ROW({ id: 'p-z', quantity: 400 }),
+      ROW({ id: 'p-a', quantity: 400 }),
+    ];
+    const { deductions } = planDeduction([LINE()], rows, 1);
+    const touched = deductions[0]!.pantryItems;
+    expect(touched[0]!.id).toBe('p-a');
+    expect(touched[0]).toMatchObject({ after: 0, deleted: true });
+    expect(touched[1]).toMatchObject({ id: 'p-z', after: 300, deleted: false });
+  });
+
+  test('ignores unknown-dimension pantry rows when a matching lot exists', () => {
+    // recipe 500 g; 400 g is usable, 3 handfuls must not poison eligibility.
+    const rows = [
+      ROW({ id: 'grams', quantity: 400, unit: 'g' }),
+      ROW({ id: 'handfuls', quantity: 3, unit: 'handful' }),
+    ];
+    const { deductions, shortfalls } = planDeduction([LINE()], rows, 1);
+    expect(deductions[0]!.deducted).toBe(400);
+    expect(deductions[0]!.pantryItems).toEqual([
+      { id: 'grams', unit: 'g', before: 400, after: 0, deleted: true },
+    ]);
+    expect(shortfalls).toEqual([
+      {
+        ingredientId: 'i1',
+        dimension: 'mass',
+        requested: 500,
+        available: 400,
+        reason: 'insufficient_stock',
+      },
+    ]);
+  });
 });

@@ -5,7 +5,7 @@ import { Hono, type Context } from 'hono';
 import type { Db } from '@diet-app/db';
 import { mealPlanEntries, recipes, pantryItems } from '@diet-app/db';
 import { eq, sql } from 'drizzle-orm';
-import { isUuid } from '../validation.js';
+import { isUuid, parseServings } from '../validation.js';
 import { notFound, badRequest, conflict } from '../responses.js';
 import type { Deduction, Shortfall } from '../cook-deduct.js';
 import {
@@ -62,8 +62,8 @@ export function mealPlanCookRoutes(db: Db): Hono {
     const servingsRaw = c.req.query('servings');
     let servings: number | undefined;
     if (servingsRaw !== undefined) {
-      const n = Number(servingsRaw);
-      if (!Number.isFinite(n) || n <= 0) {
+      const n = parseServings(servingsRaw);
+      if (n === null) {
         return badRequest(c, 'Validation failed', {
           formErrors: ['Invalid servings query'],
         });

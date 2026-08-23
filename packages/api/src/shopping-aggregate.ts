@@ -1,6 +1,7 @@
 // Pure meal-plan demand vs pantry supply aggregation for shopping lists
 
 import { toBase, baseUnit, round6, type Dimension } from './units.js';
+import { parseServings } from './validation.js';
 
 export interface PlanEntry {
   id: string;
@@ -98,8 +99,9 @@ export function aggregateShoppingList(input: {
       continue;
     }
 
-    // recipe.servings === 0 (or entry.servings === 0 too, giving NaN) can't scale.
-    const scale = entry.servings / recipe.servings;
+    // recipe.servings === 0 (or entry.servings out of 1–12) can't scale.
+    const entryServings = parseServings(entry.servings);
+    const scale = entryServings === null ? NaN : entryServings / recipe.servings;
     if (!Number.isFinite(scale)) {
       skipped.push({ ingredientId: null, entryId: entry.id, reason: 'bad_scale' });
       continue;

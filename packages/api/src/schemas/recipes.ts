@@ -11,6 +11,7 @@ import {
   stepsField,
   noteText,
   httpUrl,
+  servingsInt,
 } from './fields.js';
 
 const uuidField = z.string().refine(isUuid, { message: 'Invalid UUID' });
@@ -33,7 +34,7 @@ export const recipeCreateSchema = z.object({
   steps: stepsField.optional(),
   prepTime: z.number().int().nonnegative().optional(),
   totalTime: z.number().int().nonnegative().optional(),
-  servings: z.number().int().positive().optional(),
+  servings: servingsInt.optional(),
   effortScore: z.number().int().min(1).max(5).optional(),
   tags: tagsField.optional(),
   cuisineType: optionalShort.nullable().optional(),
@@ -49,7 +50,7 @@ export const recipePatchSchema = z
     steps: stepsField.optional(),
     prepTime: z.number().int().nonnegative().optional(),
     totalTime: z.number().int().nonnegative().optional(),
-    servings: z.number().int().positive().optional(),
+    servings: servingsInt.optional(),
     effortScore: z.number().int().min(1).max(5).optional(),
     tags: tagsField.optional(),
     cuisineType: optionalShort.nullable().optional(),

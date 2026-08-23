@@ -20,15 +20,19 @@ Today CTA — un-skip from Plan.
 ## Preview is not a cook
 
 `GET /meal-plans/:id/cook-preview` is the read-only twin of POST `/cook`. Optional
-`?servings=` re-plans without persisting; there is no transaction and no
+`?servings=` re-plans without persisting (integer 1–12, same cap as meal-plan
+writes, recipe writes, and `GET /recipes/:id?servings=`). A stored entry
+outside that range 400s on cook/preview rather than FEFO-draining the pantry.
+There is no transaction and no
 `FOR UPDATE` — a preview that locked rows would stall real cooks, and the pantry
 may move before commit. The confirm modal always renders that payload; FEFO sort
 keys live in `cook-deduct.ts` (soonest `expiresDate`, then opened-before-unopened,
-then oldest `createdAt`) and must not be recomputed on the client. Ingredient
-names and lot dates are filled from `getRecipe` / `listAllPantry` once on open;
-if either fails the modal still shows the preview amounts, a visible degraded
-warning, and commit stays enabled — POST `/cook` re-plans server-side. The POST
-`/cook` response is the source of truth; the preview may be stale by then.
+then oldest `createdAt`, then lower `id`) and must not be recomputed on the
+client. Ingredient names and lot dates are filled from `getRecipe` /
+`listAllPantry` once on open; if either fails the modal still shows the preview
+amounts, a visible degraded warning, and commit stays enabled — POST `/cook`
+re-plans server-side. The POST `/cook` response is the source of truth; the
+preview may be stale by then.
 
 ## `cooked` is terminal
 

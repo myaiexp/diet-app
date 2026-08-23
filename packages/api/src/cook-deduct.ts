@@ -45,7 +45,7 @@ export interface Shortfall {
 
 const EPSILON = 1e-9;
 
-/** FEFO: soonest expiry → opened first → oldest createdAt. Copies input. */
+/** FEFO: soonest expiry → opened first → oldest createdAt → lower id. Copies input. */
 function sortFefo(rows: PantryRow[]): PantryRow[] {
   return [...rows].sort((a, b) => {
     if (a.expiresDate !== b.expiresDate) {
@@ -56,6 +56,9 @@ function sortFefo(rows: PantryRow[]): PantryRow[] {
     }
     if (a.createdAt !== b.createdAt) {
       return a.createdAt < b.createdAt ? -1 : 1;
+    }
+    if (a.id !== b.id) {
+      return a.id < b.id ? -1 : 1;
     }
     return 0;
   });

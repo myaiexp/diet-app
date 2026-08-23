@@ -51,6 +51,20 @@ describe('scaleRecipeView', () => {
     expect(scaleRecipeView(BASE, -1)).toEqual({ ok: false, error: 'invalid_target' });
   });
 
+  test('scaleRecipeView invalid_target for 13 / 1e9 / 0.5', () => {
+    expect(scaleRecipeView(BASE, 13)).toEqual({ ok: false, error: 'invalid_target' });
+    expect(scaleRecipeView(BASE, 1e9)).toEqual({ ok: false, error: 'invalid_target' });
+    expect(scaleRecipeView(BASE, 0.5)).toEqual({ ok: false, error: 'invalid_target' });
+  });
+
+  test('scaleRecipeView accepts 12', () => {
+    const result = scaleRecipeView(BASE, 12);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.recipe.servings).toBe(12);
+    expect(result.recipe.recipeIngredients[0].quantity).toBe('3000');
+  });
+
   test('scaleRecipeView invalid_base when recipe.servings is 0', () => {
     expect(scaleRecipeView({ ...BASE, servings: 0 }, 2)).toEqual({
       ok: false,

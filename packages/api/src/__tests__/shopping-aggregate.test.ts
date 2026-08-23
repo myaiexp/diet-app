@@ -338,6 +338,15 @@ describe('aggregateShoppingList', () => {
     expect(skipped).toEqual([{ ingredientId: null, entryId: 'e1', reason: 'bad_scale' }]);
   });
 
+  test('reports an out-of-range entry servings as bad_scale', () => {
+    const input = baseInput({
+      entries: [ENTRY({ servings: 1e9 })],
+    });
+    const { items, skipped } = aggregateShoppingList(input);
+    expect(items).toEqual([]);
+    expect(skipped).toEqual([{ ingredientId: null, entryId: 'e1', reason: 'bad_scale' }]);
+  });
+
   test('rounds quantities to six decimals', () => {
     const input = baseInput({
       entries: [ENTRY({ servings: 1 })],

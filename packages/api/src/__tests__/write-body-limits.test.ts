@@ -6,6 +6,7 @@ import { profilePatchSchema } from '../schemas/profile.js';
 import { recipeImportBodySchema } from '../schemas/recipe-import.js';
 import {
   mealPlanCreateSchema,
+  mealPlanPatchSchema,
   feedbackCreateSchema,
 } from '../schemas/meal-plans.js';
 import { pantryCreateSchema } from '../schemas/pantry.js';
@@ -67,6 +68,18 @@ describe('recipe write bodies', () => {
 
   test('patch rejects an empty ingredients replace', () => {
     expect(recipePatchSchema.safeParse({ ingredients: [] }).success).toBe(false);
+  });
+
+  test.each([13, 1e9, 0.5, 0, -1])('create rejects servings=%s', (servings) => {
+    expect(recipeCreateSchema.safeParse({ ...RECIPE, servings }).success).toBe(false);
+  });
+
+  test('create accepts servings=12', () => {
+    expect(recipeCreateSchema.safeParse({ ...RECIPE, servings: 12 }).success).toBe(true);
+  });
+
+  test.each([13, 1e9, 0.5])('patch rejects servings=%s', (servings) => {
+    expect(recipePatchSchema.safeParse({ servings }).success).toBe(false);
   });
 });
 
@@ -130,6 +143,36 @@ describe('recipe import body', () => {
 });
 
 describe('other write-body free text', () => {
+  test.each([13, 1e9, 0.5, 0, -2])('meal-plan create rejects servings=%s', (servings) => {
+    expect(
+      mealPlanCreateSchema.safeParse({
+        date: '2026-07-21',
+        slot: 'dinner',
+        recipeId: UUID,
+        servings,
+      }).success,
+    ).toBe(false);
+  });
+
+  test('meal-plan create accepts servings=12', () => {
+    expect(
+      mealPlanCreateSchema.safeParse({
+        date: '2026-07-21',
+        slot: 'dinner',
+        recipeId: UUID,
+        servings: 12,
+      }).success,
+    ).toBe(true);
+  });
+
+  test.each([13, 1e9, 0.5])('meal-plan patch rejects servings=%s', (servings) => {
+    expect(mealPlanPatchSchema.safeParse({ servings }).success).toBe(false);
+  });
+
+  test('meal-plan patch accepts servings=12', () => {
+    expect(mealPlanPatchSchema.safeParse({ servings: 12 }).success).toBe(true);
+  });
+
   test('meal-plan freeformNote over 4000 is rejected', () => {
     expect(
       mealPlanCreateSchema.safeParse({

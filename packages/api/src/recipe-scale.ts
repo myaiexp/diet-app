@@ -1,6 +1,7 @@
 // Pure recipe view scaling for GET /recipes/:id?servings=N (no DB write)
 
 import { round6 } from './units.js';
+import { parseServings } from './validation.js';
 
 export type RecipeIngredientLineView = {
   id: string;
@@ -42,7 +43,7 @@ export function scaleRecipeView(
   recipe: RecipeWithIngredients,
   targetServings: number,
 ): ScaleResult {
-  if (!Number.isFinite(targetServings) || targetServings <= 0) {
+  if (parseServings(targetServings) === null) {
     return { ok: false, error: 'invalid_target' };
   }
   const base = asPositiveFinite(recipe.servings);

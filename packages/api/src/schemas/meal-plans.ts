@@ -2,7 +2,7 @@
 
 import { z } from 'zod';
 import { isUuid, isIsoDate } from '../validation.js';
-import { trimmedNote, noteText } from './fields.js';
+import { trimmedNote, noteText, servingsCoerced } from './fields.js';
 
 const uuidField = z.string().refine(isUuid, { message: 'Invalid UUID' });
 const isoDateField = z.string().refine(isIsoDate, { message: 'Invalid date' });
@@ -37,7 +37,7 @@ export const mealPlanCreateSchema = z
     slot: z.enum(SLOTS),
     recipeId: uuidField.nullable().optional(),
     freeformNote: trimmedNote.nullable().optional(),
-    servings: z.coerce.number().positive().optional(),
+    servings: servingsCoerced.optional(),
     status: z.enum(CREATE_STATUSES).optional(),
     substituteRecipeId: uuidField.nullable().optional(),
     notes: noteText.nullable().optional(),
@@ -52,7 +52,7 @@ export const mealPlanPatchSchema = z
     slot: z.enum(SLOTS).optional(),
     recipeId: uuidField.nullable().optional(),
     freeformNote: trimmedNote.nullable().optional(),
-    servings: z.coerce.number().positive().optional(),
+    servings: servingsCoerced.optional(),
     status: z.enum(STATUSES).optional(),
     substituteRecipeId: uuidField.nullable().optional(),
     notes: noteText.nullable().optional(),

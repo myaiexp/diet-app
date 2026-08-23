@@ -2,7 +2,7 @@
 // read-only twin GET /meal-plans/:id/cook-preview
 
 import { describe, test, expect } from 'vitest';
-import { type Table } from 'drizzle-orm';
+import { type Table, asc } from 'drizzle-orm';
 import { mealPlanEntries, pantryItems, recipeIngredients, recipes } from '@diet-app/db';
 import { mealPlansRoutes } from '../routes/meal-plans.js';
 import { mealPlanCookRoutes } from '../routes/meal-plan-cook.js';
@@ -320,6 +320,46 @@ describe('mealPlanCookRoutes', () => {
     });
     expect(res.status).toBe(400);
     expect(await res.json()).toEqual({ error: 'Invalid servings scale' });
+  });
+
+  test('returns 400 when stored entry servings is above 12', async () => {
+    const { db, writes } = makeCookMock({
+      entry: { ...PLANNED_ENTRY, servings: '1e9' },
+    });
+    const res = await mealPlanCookRoutes(db).request(`/${ENTRY_ID}/cook`, {
+      method: 'POST',
+    });
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({ error: 'Invalid servings scale' });
+    expect(writes).toEqual([]);
+  });
+
+  test('cooks at 12 servings', async () => {
+    const entry = { ...PLANNED_ENTRY, servings: '12' };
+    const { db } = makeCookMock({
+      entry,
+      recipe: { ...RECIPE, servings: 2 },
+      lines: [{ ...LINE, quantity: '500', unit: 'g' }],
+      pantryRows: [{ ...PANTRY_ROW, quantity: '4000', unit: 'g' }],
+    });
+    const res = await mealPlanCookRoutes(db).request(`/${ENTRY_ID}/cook`, {
+      method: 'POST',
+    });
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    // scale 12/2 = 6 → 3000 g of the 500 g line
+    expect(body.deductions[0].requested).toBe(3000);
+    expect(body.entry.status).toBe('cooked');
+  });
+
+  test('loads pantry rows ordered by id (FEFO last-tie)', async () => {
+    const { db, reads } = makeCookMock();
+    const res = await mealPlanCookRoutes(db).request(`/${ENTRY_ID}/cook`, {
+      method: 'POST',
+    });
+    expect(res.status).toBe(200);
+    const pantry = reads.find((r) => r.table === 'pantry_items');
+    expect(pantry?.orderBy).toEqual([asc(pantryItems.id)]);
   });
 
   test('scales the deduction by entry servings over recipe servings', async () => {
@@ -640,7 +680,7 @@ describe('GET /meal-plans/:id/cook-preview', () => {
     expect(bad.status).toBe(400);
     expect(await bad.json()).toEqual({ error: 'Invalid id format' });
 
-    for (const raw of ['0', '-2', 'abc', '']) {
+    for (const raw of ['0', '-2', 'abc', '', '13', '1e9', '0.5']) {
       const { db, writes } = makeCookMock(stockedOpts);
       const res = await mealPlanCookRoutes(db).request(
         `/${ENTRY_ID}/cook-preview?servings=${raw}`,
@@ -652,6 +692,19 @@ describe('GET /meal-plans/:id/cook-preview', () => {
       });
       expect(writes).toEqual([]);
     }
+  });
+
+  test('cook-preview at servings=12 still plans', async () => {
+    const { db, writes } = makeCookMock(stockedOpts);
+    const res = await mealPlanCookRoutes(db).request(
+      `/${ENTRY_ID}/cook-preview?servings=12`,
+    );
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.servings).toBe(12);
+    // scale 12/2 = 6 → 3000 g requested against a 2000 g lot
+    expect(body.deductions[0].requested).toBe(3000);
+    expect(writes).toEqual([]);
   });
 
   test('is mounted on mealPlansRoutes at GET /:id/cook-preview', async () => {

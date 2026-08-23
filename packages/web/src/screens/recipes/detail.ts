@@ -190,7 +190,7 @@ export function createRecipeDetail(container: HTMLElement, deps: DetailDeps): De
       removed: false,
     }));
     const title = textInput(base.title);
-    const servingsInput = textInput(base.servings, { type: 'number', min: '1' });
+    const servingsInput = textInput(base.servings, { type: 'number', min: '1', max: '12' });
     const cuisine = textInput(base.cuisineType ?? '');
     const tags = textInput((base.tags ?? []).join(', '));
     const steps = el('textarea', { class: 'textarea' }) as HTMLTextAreaElement; // value is child text, not an attribute

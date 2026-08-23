@@ -1,6 +1,7 @@
-// Shared write-body string, array, and http(s) URL field limits
+// Shared write-body field limits (strings, arrays, URLs, servings 1–12)
 
 import { z } from 'zod';
+import { MAX_SERVINGS } from '../validation.js';
 
 // Caps sit well under the 1 MiB router bodyLimit (and nginx's 2M) so an
 // authenticated client cannot persist multi-megabyte text/JSONB. Numbers are
@@ -26,7 +27,14 @@ export const LIMITS = {
   ids: 200,
   scheduleNote: 500,
   macroGrams: 10_000,
+  /** Meal-plan writes, cook-preview, recipe GET ?servings=, and recipe writes. */
+  servings: MAX_SERVINGS,
 } as const;
+
+/** Meal-plan servings (JSON may send a numeric string). */
+export const servingsCoerced = z.coerce.number().int().min(1).max(LIMITS.servings);
+/** Recipe servings — JSON number, same 1–12 cap as the UI scaler. */
+export const servingsInt = z.number().int().min(1).max(LIMITS.servings);
 
 export const shortText = z.string().trim().min(1).max(LIMITS.short);
 export const optionalShort = z.string().trim().max(LIMITS.short);

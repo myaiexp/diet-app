@@ -78,7 +78,8 @@ reaches Postgres as an unhandled `invalid input syntax for type uuid`.
   call — `const parsed = await parseJsonBody(...); if (!parsed.ok) return parsed.response;`.
   Routes never re-inline those shapes and never import `z`. Schemas live under
   `schemas/`. Free-text, array, and URL fields share caps in
-  `schemas/fields.ts` (title 200, notes 4k, steps 80×4k, http(s) URLs 2048);
+  `schemas/fields.ts` (title 200, notes 4k, steps 80×4k, http(s) URLs 2048,
+  servings 1–12);
   `sourceUrl` / import `url` reject non-http(s). `macroTargets` /
   `scheduleProfile` are small known-key objects, not `z.unknown()` records.
   The router also mounts Hono `bodyLimit` at 1 MiB (`MAX_BODY_BYTES` in
@@ -96,9 +97,10 @@ reaches Postgres as an unhandled `invalid input syntax for type uuid`.
 
 ## Recipe scaling
 
-Scaled views are `GET /recipes/:id?servings=N` (`recipe-scale.ts`). The
-client must not reimplement `qty × target / base` — a second rounding path
-disagrees with cook deduction. Rationale: `docs/plans/2026-07-21-phase1-closeout-design.md`.
+Scaled views are `GET /recipes/:id?servings=N` (`recipe-scale.ts`). `N` is an
+integer 1–12 (same cap as meal-plan writes and cook-preview). The client must
+not reimplement `qty × target / base` — a second rounding path disagrees with
+cook deduction. Rationale: `docs/plans/2026-07-21-phase1-closeout-design.md`.
 
 ## Recipe import
 

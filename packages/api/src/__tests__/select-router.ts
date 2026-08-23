@@ -26,6 +26,8 @@ export interface SelectRead {
   params: unknown[];
   where?: unknown;
   limit?: number;
+  /** Columns passed to .orderBy(), so a cook/list test can pin the sort. */
+  orderBy?: unknown[];
 }
 
 /** Rows a table's select resolves to; a function to key on the id queried. */
@@ -75,7 +77,10 @@ export function makeSelectRouter(
         return builder;
       },
       offset: () => builder,
-      orderBy: () => builder,
+      orderBy: (...cols: unknown[]) => {
+        read.orderBy = cols;
+        return builder;
+      },
       for: () => {
         read.forUpdate = true;
         return builder;

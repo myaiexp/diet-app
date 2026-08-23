@@ -1,4 +1,4 @@
-// Route parameter validators (UUID format, etc.)
+// Route parameter validators (UUID, calendar dates, servings 1–12)
 
 // Lenient RFC-4122-shaped UUID matcher: any 8-4-4-4-12 hex string, including the
 // nil UUID. This matches exactly what PostgreSQL's `uuid` type accepts, so any
@@ -25,4 +25,15 @@ export function isIsoDate(value: string): boolean {
   const t = Date.parse(value);
   if (Number.isNaN(t)) return false;
   return new Date(t).toISOString().slice(0, 10) === value;
+}
+
+/** Integer 1–12 — same cap the cook modal and recipe scaler use. */
+export const MIN_SERVINGS = 1;
+export const MAX_SERVINGS = 12;
+
+/** Parse a servings write/query value. Null when missing, fractional, or out of range. */
+export function parseServings(value: unknown): number | null {
+  const n = typeof value === 'number' ? value : Number(value);
+  if (!Number.isInteger(n) || n < MIN_SERVINGS || n > MAX_SERVINGS) return null;
+  return n;
 }

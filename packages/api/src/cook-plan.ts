@@ -3,6 +3,7 @@
 import type { Db } from '@diet-app/db';
 import { mealPlanEntries, recipes, recipeIngredients, pantryItems } from '@diet-app/db';
 import { asc, eq, inArray } from 'drizzle-orm';
+import { parseServings } from './validation.js';
 import {
   planDeduction,
   type Deduction,
@@ -66,6 +67,7 @@ export async function loadCookPlan(
   if (entry.status === 'cooked') return { kind: 'already_cooked' };
 
   const servings = opts.servings ?? Number(entry.servings);
+  if (parseServings(servings) === null) return { kind: 'bad_scale' };
   const resolvedRecipeId = entry.substituteRecipeId ?? entry.recipeId;
   if (resolvedRecipeId == null) {
     // Freeform entry: nothing to deduct, but it still cooks.
