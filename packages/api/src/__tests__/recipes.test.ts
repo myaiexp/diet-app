@@ -213,6 +213,21 @@ describe('recipesRoutes', () => {
     expect((await res.json()).error).toBe('Validation failed');
   });
 
+  // Distinct from invalid query servings=0: a stored recipe with a non-positive
+  // base cannot scale, and the route maps that to a different 400.
+  test('GET /:id?servings=4 returns 400 Invalid servings scale when stored servings is 0 or NaN', async () => {
+    for (const servings of [0, NaN]) {
+      const mockDb = {
+        query: {
+          recipes: { findFirst: async () => ({ ...RECIPE_WITH_RELATIONS, servings }) },
+        },
+      } as any;
+      const res = await recipesRoutes(mockDb).request(`/${RECIPE_ID}?servings=4`);
+      expect(res.status).toBe(400);
+      expect(await res.json()).toEqual({ error: 'Invalid servings scale' });
+    }
+  });
+
   test('POST / creates recipe and returns recipeIngredients', async () => {
     const { db } = makeWriteMock({
       findFirst: () => RECIPE_WITH_RELATIONS,
