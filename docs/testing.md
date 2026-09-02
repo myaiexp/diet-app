@@ -181,14 +181,20 @@ names and bound params come from `drizzle-introspect.ts` (`tableNameOf`,
 
 ## drizzle-kit override
 
-Root `package.json` (`packageManager: pnpm@10.33.0`): `drizzle-kit` still
+Root `pnpm-workspace.yaml` (`packageManager: pnpm@10.33.0`): `drizzle-kit` still
 declares the deprecated `@esbuild-kit/esm-loader` (predecessor of tsx) in its
 `dependencies` but never imports it — at runtime it loads `drizzle.config.ts`
 via `tsx/cjs/api`. The live override is
-`pnpm.overrides["drizzle-kit>@esbuild-kit/esm-loader"]: "npm:tsx@^4"`, which
+`overrides["drizzle-kit>@esbuild-kit/esm-loader"]: npm:tsx@^4`, which
 aliases that dead declaration to the tsx we already depend on and drops
 `@esbuild-kit/{esm-loader,core-utils}` plus the stale `esbuild@0.18.20` chain
 they pulled in (~56 fewer lockfile entries). pnpm needs the `drizzle-kit>`
 parent selector for this nested dep; a flat `"@esbuild-kit/esm-loader"` key
 would not rewrite drizzle-kit's own dependency. Remove the override once
 drizzle-kit (>0.31.10) drops the vestigial dep.
+
+It lives in `pnpm-workspace.yaml` rather than package.json's `pnpm` block
+because pnpm 11 ignores that field — silently, at install time, so an override
+that stopped applying would surface only as a fatter lockfile.
+`packages/db/src/__tests__/pnpm-settings-location.test.ts` guards the location
+(idea #3195).
