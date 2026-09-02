@@ -3,7 +3,7 @@ import { config } from 'dotenv';
 // Resolved from this file, not the CWD: a CWD-relative path silently loads
 // nothing when vitest is invoked from the repo root instead of packages/api,
 // which puts the whole suite back into silent-skip mode.
-config({ path: fileURLToPath(new URL('../../../../.env', import.meta.url)) });
+config({ path: fileURLToPath(new URL('../../../../.env', import.meta.url)), quiet: true });
 
 import { describe, test, expect, afterAll } from 'vitest';
 import {

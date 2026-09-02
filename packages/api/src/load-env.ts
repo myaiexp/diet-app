@@ -10,4 +10,6 @@ import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const repoRootEnv = resolve(dirname(fileURLToPath(import.meta.url)), '../../../.env');
-config({ path: repoRootEnv });
+// quiet: dotenv 17 otherwise prints a random tip from its TIPS array on every
+// call — including a third-party ad — into the service's journald stream.
+config({ path: repoRootEnv, quiet: true });

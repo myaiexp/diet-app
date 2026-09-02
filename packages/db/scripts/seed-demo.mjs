@@ -146,7 +146,7 @@ async function main() {
   const force = process.argv.includes('--force');
 
   const { config } = await import('dotenv');
-  config({ path: '../../.env' });
+  config({ path: '../../.env', quiet: true });
 
   const { resolveConnectionString } = await import('../dist/seed-core.js');
   const connectionString = resolveConnectionString(process.env);
