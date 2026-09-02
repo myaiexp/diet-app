@@ -59,7 +59,10 @@ paragraph of "why", the why belongs in the linked subdoc.
 
 api/db emit and exclude tests from `dist` (`tsconfig.typecheck.json` covers
 them); web type-checks tests via its main no-emit `tsconfig.json`. One vitest
-entry at the repo root. Real-SQL suites (21 cases in `routes.test.ts`, 4 in
+entry at the repo root. Tests and type-check resolve `@diet-app/db` from
+source, so a fresh clone or worktree needs no build; root `pnpm build`
+(`pnpm -r build`, dependency-ordered) is for the api's Node-resolved paths —
+`build`, `start`, `dev`. Real-SQL suites (21 cases in `routes.test.ts`, 4 in
 `import-products-sql.test.ts`) share the loud `TEST_DATABASE_URL` /
 `DIET_APP_SKIP_DB_TESTS` gate. Mocks, fixture-by-table (never call-order),
 demo seed, drizzle-kit override, schema-migration workflow:

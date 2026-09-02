@@ -6,7 +6,21 @@
     "noEmit": true,
     "declaration": false,
     "declarationMap": false,
-    "sourceMap": false
+    "sourceMap": false,
+    // Widened from api/src to packages/ so the db sources pulled in by the
+    // paths mapping below don't trip TS6059 — rootDir is still checked even
+    // under noEmit, and it has no other effect here because nothing is emitted.
+    "rootDir": "..",
+    // @diet-app/db's package.json points types at dist/index.d.ts, so without
+    // this a checkout that has not run `pnpm --filter @diet-app/db build` gets
+    // ~20 "Cannot find module '@diet-app/db'" errors that read like broken
+    // code. Checking against db's source is also stricter than checking
+    // against a possibly-stale .d.ts. This lives here and NOT in
+    // tsconfig.json: that config emits with rootDir "src", and pulling a file
+    // from ../db into an emitting program is a TS6059 error.
+    "paths": {
+      "@diet-app/db": ["../db/src/index.ts"]
+    }
   },
   "include": ["src"],
   "exclude": []

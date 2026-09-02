@@ -47,12 +47,18 @@ function sameMacro(a: Record<string, number> | null, b: Record<string, number> |
   return ak.length === bk.length && ak.every((k, idx) => k === bk[idx] && a[k] === b[k]);
 }
 
-/** Merges the three rendered keys into whatever macroTargets keys already exist. */
-function nextMacro(original: Record<string, number> | null, protein: string, carbs: string, fat: string): Record<string, number> | null {
-  const next: Record<string, number> = { ...(original ?? {}) };
+/**
+ * The three rendered keys and nothing else. macroTargetsSchema on the API is a
+ * plain z.object over protein/carbs/fat, so it strips anything else on the way
+ * in — echoing back an unknown key would send a value the server deletes and
+ * imply such keys round-trip. Same reasoning for `{ note }` in
+ * buildTargetsPatch below.
+ */
+function nextMacro(protein: string, carbs: string, fat: string): Record<string, number> | null {
+  const next: Record<string, number> = {};
   for (const [key, raw] of [['protein', protein], ['carbs', carbs], ['fat', fat]] as const) {
     const t = raw.trim();
-    if (t === '') delete next[key]; else next[key] = Number(t);
+    if (t !== '') next[key] = Number(t);
   }
   return Object.keys(next).length ? next : null;
 }
@@ -72,7 +78,7 @@ function buildTargetsPatch(profile: UserProfile, i: TargetsInputs): ProfilePatch
   if (min !== profile.calorieTargetMin) patch.calorieTargetMin = min;
   const max = numOrNull(i.calorieMax.value);
   if (max !== profile.calorieTargetMax) patch.calorieTargetMax = max;
-  const macro = nextMacro(profile.macroTargets, i.protein.value, i.carbs.value, i.fat.value);
+  const macro = nextMacro(i.protein.value, i.carbs.value, i.fat.value);
   if (!sameMacro(macro, profile.macroTargets)) patch.macroTargets = macro;
   const household = Number(i.householdSize.value);
   if (Number.isFinite(household) && household > 0 && household !== profile.householdSize) patch.householdSize = household;
@@ -81,7 +87,7 @@ function buildTargetsPatch(profile: UserProfile, i: TargetsInputs): ProfilePatch
   // CORRECTION to the design doc: scheduleProfile is a jsonb object, not free
   // text — the API rejects a bare string, so the text field is wrapped as `{ note }`.
   const note = i.schedule.value.trim();
-  if (note !== scheduleNote(profile)) patch.scheduleProfile = { ...profile.scheduleProfile, note };
+  if (note !== scheduleNote(profile)) patch.scheduleProfile = { note };
   return patch;
 }
 
