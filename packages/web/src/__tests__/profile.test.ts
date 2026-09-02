@@ -197,6 +197,33 @@ describe('profile screen', () => {
     });
   });
 
+  test('sends only the keys the API persists, dropping unknown jsonb keys', async () => {
+    // macroTargetsSchema / scheduleProfileSchema are plain z.object, so the API
+    // strips anything outside protein/carbs/fat and note (pinned by the api
+    // suite's write-body-limits.test.ts). A client that echoed an extra key back
+    // would be sending a value the server silently deletes — and would read as a
+    // promise that such keys round-trip. Nothing writes them today; this pins
+    // that the two layers agree if something ever does.
+    const server = makeServer(
+      makeProfile({
+        macroTargets: { protein: 120, fibre: 30 } as unknown as Record<string, number>,
+        scheduleProfile: { note: 'old note', shiftPattern: '2-2-3' },
+      }),
+    );
+    fetchMock.mockImplementation(server.handle);
+    const root = mountRoot();
+    await profileScreen().mount(root, makeCtx());
+
+    fieldControl(root, 'protein g').value = '140';
+    fieldControl(root, 'schedule profile').value = 'new note';
+    saveButton(root).click();
+    await vi.waitFor(() => expect(server.patchCalls).toHaveLength(1));
+    expect(server.patchCalls[0]).toEqual({
+      macroTargets: { protein: 140 },
+      scheduleProfile: { note: 'new note' },
+    });
+  });
+
   test('states each chip panel’s filter semantics', async () => {
     const server = makeServer(makeProfile());
     fetchMock.mockImplementation(server.handle);
