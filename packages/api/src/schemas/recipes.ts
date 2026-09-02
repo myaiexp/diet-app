@@ -58,6 +58,14 @@ export const recipePatchSchema = z
   })
   .strict();
 
+/**
+ * POST /recipes/:id/fork — everything else is copied from the source, so the
+ * only input is an optional rename. Strict so a client that expects the fork to
+ * also apply `servings` or `tags` gets a 400 instead of a silent no-op; the
+ * body may be omitted entirely.
+ */
+export const recipeForkSchema = z.object({ title: shortText.optional() }).strict();
+
 export type RecipeCreate = z.infer<typeof recipeCreateSchema>;
 export type RecipePatch = z.infer<typeof recipePatchSchema>;
 export type RecipeIngredientLine = z.infer<typeof recipeIngredientLineSchema>;

@@ -66,4 +66,37 @@ describe('logImportFailure', () => {
     logImportFailure('non-success status', undefined, { status: 503 });
     expect(spy.mock.calls[0]![0]).toBe('[recipe-import] non-success status status=503');
   });
+
+  // Redaction sits in the sink, not the call sites: a rejected redirect target
+  // and a raw Location header are both attacker-controlled, and any future
+  // context field carrying a URL would leak the same way. Idea #3742.
+  test('redacts userinfo from any URL-shaped context value', () => {
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    logImportFailure('redirect target rejected', 'invalid_url', {
+      url: 'https://alice:s3cret@example.com/recipe?a=1',
+      location: 'http://bob:hunter2@evil.test/',
+      hop: 1,
+    });
+    const line = spy.mock.calls[0]![0] as string;
+    expect(line).not.toContain('s3cret');
+    expect(line).not.toContain('hunter2');
+    expect(line).toContain('url=https://***:***@example.com/recipe?a=1');
+    expect(line).toContain('location=http://***:***@evil.test/');
+    expect(line).toContain('hop=1');
+  });
+
+  test('redacts a username-only URL and leaves credential-free values alone', () => {
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    logImportFailure('redirect target rejected', undefined, {
+      url: 'https://alice@example.com/r',
+      plain: 'https://example.com/r',
+      host: 'example.com',
+      relative: '/next/page',
+    });
+    const line = spy.mock.calls[0]![0] as string;
+    expect(line).toContain('url=https://***@example.com/r');
+    expect(line).toContain('plain=https://example.com/r');
+    expect(line).toContain('host=example.com');
+    expect(line).toContain('relative=/next/page');
+  });
 });

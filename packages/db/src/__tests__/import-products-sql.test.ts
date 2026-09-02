@@ -15,7 +15,7 @@ import { importProducts, type ExportedProduct } from '../import-products.js';
 
 // vitest does not load the repo-root .env, so the suite reads it the same way
 // the api integration suite does — otherwise the gate below fires spuriously.
-config({ path: fileURLToPath(new URL('../../../../.env', import.meta.url)) });
+config({ path: fileURLToPath(new URL('../../../../.env', import.meta.url)), quiet: true });
 
 const TEST_DB_URL = process.env.TEST_DATABASE_URL;
 

@@ -102,6 +102,24 @@ integer 1–12 (same cap as meal-plan writes and cook-preview). The client must
 not reimplement `qty × target / base` — a second rounding path disagrees with
 cook deduction. Rationale: `docs/plans/2026-07-21-phase1-closeout-design.md`.
 
+## Recipe fork
+
+`POST /recipes/:id/fork` copies a recipe and its ingredient lines into a new
+row with `sourceType: 'forked'` and `parentRecipeId` set to the **immediate**
+source (forking a fork chains rather than reparenting to the root). The body is
+optional and takes only `{ title }`, a rename applied at copy time; it is
+strict, so a client that expects the fork to also apply `servings` or `tags`
+gets a 400 rather than a silent no-op. Bodyless POSTs reach this through
+`parseJsonBody(..., { allowEmptyBody: true })`, the third body shape after
+required and non-empty-patch.
+
+**`userRating` and `timesCooked` are not copied** — a fork starts its own
+history, and inheriting them would make an unmade copy look battle-tested.
+`sourceUrl` *is* copied: it is where the text came from, which stays true of
+the copy. There is no FK mapping on the write (unlike `POST /recipes`): every
+reference written was just read out of the database, so a 23503 means a row
+vanished mid-request, and that belongs in a 500, not a tidy 400.
+
 ## Recipe import
 
 - **AI config**: optional `parseAiConfig` (`AI_API_KEY` + `AI_BASE_URL` +
@@ -115,6 +133,15 @@ cook deduction. Rationale: `docs/plans/2026-07-21-phase1-closeout-design.md`.
   A matched line carries `ingredientName` beside `ingredientId` — the matcher
   already holds the candidate rows, so naming the binding costs no query and
   saves the review screen a per-line lookup.
+  Matching is exact on `ingredients.name` then exact on `aliases`, both
+  case-folded and whitespace-collapsed — so a Finnish recipe line only ever
+  reaches a row through its Finnish alias. **Every catalog row carries at least
+  one**, pinned by `seed-data.test.ts`; an English-only row is unreachable from
+  a Finnish recipe (idea #3391). Aliases do *not* connect the catalog to
+  `products`: product names are brand+descriptor+size strings
+  ("Kotimaista Creme fraiche 18 % 150g vähälaktoosinen"), and only 11 of 462
+  ingredients exact-match one — before or after the alias fill. That gap needs
+  fuzzy matching (#2658) or LLM resolution (#2659), not more aliases.
   Response is `{ draft, unmatchedCount, truncated, lowYield }`. Paste over
   `IMPORT_TEXT_MAX_CHARS` is 400; URL fetch truncates instead and sets
   `truncated: true` so the review screen can warn — the model still runs on

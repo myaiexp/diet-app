@@ -12,6 +12,7 @@ import { parseJsonBody } from '../json-body.js';
 import { buildPatch } from '../patch-builder.js';
 import {
   recipeCreateSchema,
+  recipeForkSchema,
   recipePatchSchema,
   type RecipeIngredientLine,
 } from '../schemas/recipes.js';
@@ -137,6 +138,62 @@ export function recipesRoutes(db: Db, opts: RecipesRoutesOpts = {}): Hono {
       if (isFkViolation(err)) return badRequest(c, 'Invalid reference');
       throw err;
     }
+  });
+
+  // A fork is a fresh personal copy of the content, not of the history:
+  // userRating and timesCooked stay behind so the copy does not look
+  // battle-tested before it has been made once. sourceUrl does ride along —
+  // it is where the text came from, which is still true of the copy.
+  app.post('/:id/fork', async (c) => {
+    const id = c.req.param('id');
+    if (!isUuid(id)) return badRequest(c, 'Invalid id format');
+
+    const parsed = await parseJsonBody(c, recipeForkSchema, { allowEmptyBody: true });
+    if (!parsed.ok) return parsed.response;
+
+    const source = await loadRecipeWithIngredients(db, id);
+    if (!source) return notFound(c);
+
+    // No FK mapping here, unlike POST /: every reference written below was just
+    // read out of the database, so a 23503 means a row vanished mid-request —
+    // a data-integrity bug that should surface as a 500, not a tidy 400.
+    const created = await db.transaction(async (tx) => {
+      const [recipe] = await tx
+        .insert(recipes)
+        .values({
+          title: parsed.data.title ?? source.title,
+          sourceType: 'forked',
+          sourceUrl: source.sourceUrl,
+          parentRecipeId: source.id,
+          steps: source.steps,
+          prepTime: source.prepTime,
+          totalTime: source.totalTime,
+          servings: source.servings,
+          effortScore: source.effortScore,
+          tags: source.tags,
+          cuisineType: source.cuisineType,
+        })
+        .returning();
+
+      // .values([]) is a driver error, not an empty insert.
+      if (source.recipeIngredients.length > 0) {
+        await tx.insert(recipeIngredients).values(
+          source.recipeIngredients.map((line) => ({
+            recipeId: recipe.id,
+            ingredientId: line.ingredientId,
+            quantity: line.quantity,
+            unit: line.unit,
+            optional: line.optional ?? false,
+            notes: line.notes,
+          })),
+        );
+      }
+      return recipe;
+    });
+
+    const full = await loadRecipeWithIngredients(db, created.id);
+    if (!full) return notFound(c);
+    return c.json(full, 201);
   });
 
   app.patch('/:id', async (c) => {

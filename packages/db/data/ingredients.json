@@ -924,7 +924,10 @@
   },
   {
     "name": "bok choy",
-    "aliases": [],
+    "aliases": [
+      "pak choi",
+      "kiinankaali"
+    ],
     "category": "produce",
     "defaultUnit": "g",
     "nutritionPer100g": {
@@ -948,7 +951,10 @@
   },
   {
     "name": "swiss chard",
-    "aliases": [],
+    "aliases": [
+      "lehtimangoldi",
+      "mangoldi"
+    ],
     "category": "produce",
     "defaultUnit": "g",
     "nutritionPer100g": {
@@ -972,7 +978,9 @@
   },
   {
     "name": "watercress",
-    "aliases": [],
+    "aliases": [
+      "vesikrassi"
+    ],
     "category": "produce",
     "defaultUnit": "g",
     "nutritionPer100g": {
@@ -1074,7 +1082,10 @@
   },
   {
     "name": "jalapeño",
-    "aliases": [],
+    "aliases": [
+      "jalapeno",
+      "jalapenopippuri"
+    ],
     "category": "produce",
     "defaultUnit": "g",
     "nutritionPer100g": {
@@ -1802,7 +1813,10 @@
   },
   {
     "name": "kiwi",
-    "aliases": [],
+    "aliases": [
+      "kiivi",
+      "kiwi"
+    ],
     "category": "produce",
     "defaultUnit": "pieces",
     "nutritionPer100g": {
@@ -2404,7 +2418,10 @@
   },
   {
     "name": "beef short ribs",
-    "aliases": [],
+    "aliases": [
+      "naudan lyhytkylki",
+      "short ribs"
+    ],
     "category": "protein",
     "defaultUnit": "g",
     "nutritionPer100g": {
@@ -3158,7 +3175,9 @@
   },
   {
     "name": "tempeh",
-    "aliases": [],
+    "aliases": [
+      "tempeh"
+    ],
     "category": "protein",
     "defaultUnit": "g",
     "nutritionPer100g": {
@@ -3182,7 +3201,9 @@
   },
   {
     "name": "seitan",
-    "aliases": [],
+    "aliases": [
+      "seitan"
+    ],
     "category": "protein",
     "defaultUnit": "g",
     "nutritionPer100g": {
@@ -3346,7 +3367,10 @@
   },
   {
     "name": "edamame",
-    "aliases": [],
+    "aliases": [
+      "edamame",
+      "edamamepavut"
+    ],
     "category": "protein",
     "defaultUnit": "g",
     "nutritionPer100g": {
@@ -3653,7 +3677,10 @@
   },
   {
     "name": "gouda cheese",
-    "aliases": [],
+    "aliases": [
+      "gouda",
+      "goudajuusto"
+    ],
     "category": "dairy",
     "defaultUnit": "g",
     "nutritionPer100g": {
@@ -3753,7 +3780,10 @@
   },
   {
     "name": "ricotta",
-    "aliases": [],
+    "aliases": [
+      "ricotta",
+      "ricottajuusto"
+    ],
     "category": "dairy",
     "defaultUnit": "g",
     "nutritionPer100g": {
@@ -3933,7 +3963,10 @@
   },
   {
     "name": "mascarpone",
-    "aliases": [],
+    "aliases": [
+      "mascarpone",
+      "mascarponejuusto"
+    ],
     "category": "dairy",
     "defaultUnit": "g",
     "nutritionPer100g": {
@@ -4033,7 +4066,10 @@
   },
   {
     "name": "evaporated milk",
-    "aliases": [],
+    "aliases": [
+      "kondensoitu maito",
+      "haihdutettu maito"
+    ],
     "category": "dairy",
     "defaultUnit": "ml",
     "nutritionPer100g": {
@@ -4666,7 +4702,10 @@
   },
   {
     "name": "fusilli",
-    "aliases": [],
+    "aliases": [
+      "fusilli",
+      "spiraalipasta"
+    ],
     "category": "grain",
     "defaultUnit": "g",
     "nutritionPer100g": {
@@ -4764,7 +4803,10 @@
   },
   {
     "name": "udon noodles",
-    "aliases": [],
+    "aliases": [
+      "udon-nuudelit",
+      "udonnuudelit"
+    ],
     "category": "grain",
     "defaultUnit": "g",
     "nutritionPer100g": {
@@ -4787,7 +4829,10 @@
   },
   {
     "name": "ramen noodles",
-    "aliases": [],
+    "aliases": [
+      "ramen-nuudelit",
+      "ramennuudelit"
+    ],
     "category": "grain",
     "defaultUnit": "g",
     "nutritionPer100g": {
@@ -5014,7 +5059,10 @@
   },
   {
     "name": "panko",
-    "aliases": [],
+    "aliases": [
+      "panko",
+      "pankokorppujauho"
+    ],
     "category": "grain",
     "defaultUnit": "g",
     "nutritionPer100g": {
@@ -5037,7 +5085,10 @@
   },
   {
     "name": "polenta",
-    "aliases": [],
+    "aliases": [
+      "polenta",
+      "maissisuurimo"
+    ],
     "category": "grain",
     "defaultUnit": "g",
     "nutritionPer100g": {
@@ -5974,7 +6025,9 @@
   },
   {
     "name": "celery salt",
-    "aliases": [],
+    "aliases": [
+      "sellerisuola"
+    ],
     "category": "spice",
     "defaultUnit": "g",
     "nutritionPer100g": {
@@ -5998,7 +6051,10 @@
   },
   {
     "name": "five-spice powder",
-    "aliases": [],
+    "aliases": [
+      "viiden mausteen jauhe",
+      "kiinalainen viiden mausteen seos"
+    ],
     "category": "spice",
     "defaultUnit": "g",
     "nutritionPer100g": {
@@ -6022,7 +6078,9 @@
   },
   {
     "name": "garam masala",
-    "aliases": [],
+    "aliases": [
+      "garam masala"
+    ],
     "category": "spice",
     "defaultUnit": "g",
     "nutritionPer100g": {
@@ -6072,7 +6130,10 @@
   },
   {
     "name": "italian seasoning",
-    "aliases": [],
+    "aliases": [
+      "italialainen mausteseos",
+      "italian yrtit"
+    ],
     "category": "spice",
     "defaultUnit": "g",
     "nutritionPer100g": {
@@ -6200,7 +6261,9 @@
   },
   {
     "name": "sumac",
-    "aliases": [],
+    "aliases": [
+      "sumakki"
+    ],
     "category": "spice",
     "defaultUnit": "g",
     "nutritionPer100g": {
@@ -6224,7 +6287,10 @@
   },
   {
     "name": "za'atar",
-    "aliases": [],
+    "aliases": [
+      "za'atar",
+      "zaatar"
+    ],
     "category": "spice",
     "defaultUnit": "g",
     "nutritionPer100g": {
@@ -6274,7 +6340,9 @@
   },
   {
     "name": "black cardamom",
-    "aliases": [],
+    "aliases": [
+      "musta kardemumma"
+    ],
     "category": "spice",
     "defaultUnit": "g",
     "nutritionPer100g": {
@@ -6298,7 +6366,10 @@
   },
   {
     "name": "szechuan pepper",
-    "aliases": [],
+    "aliases": [
+      "szechuanpippuri",
+      "sichuaninpippuri"
+    ],
     "category": "spice",
     "defaultUnit": "g",
     "nutritionPer100g": {
@@ -6610,7 +6681,9 @@
   },
   {
     "name": "avocado oil",
-    "aliases": [],
+    "aliases": [
+      "avokadoöljy"
+    ],
     "category": "condiment",
     "defaultUnit": "ml",
     "nutritionPer100g": {
@@ -6705,7 +6778,10 @@
   },
   {
     "name": "worcestershire sauce",
-    "aliases": [],
+    "aliases": [
+      "worcestershirekastike",
+      "worcestershire-kastike"
+    ],
     "category": "condiment",
     "defaultUnit": "ml",
     "nutritionPer100g": {
@@ -6751,7 +6827,10 @@
   },
   {
     "name": "sriracha",
-    "aliases": [],
+    "aliases": [
+      "sriracha",
+      "srirachakastike"
+    ],
     "category": "condiment",
     "defaultUnit": "ml",
     "nutritionPer100g": {
@@ -6774,7 +6853,10 @@
   },
   {
     "name": "tabasco",
-    "aliases": [],
+    "aliases": [
+      "tabasco",
+      "tabascokastike"
+    ],
     "category": "condiment",
     "defaultUnit": "ml",
     "nutritionPer100g": {
@@ -7318,7 +7400,10 @@
   },
   {
     "name": "hoisin sauce",
-    "aliases": [],
+    "aliases": [
+      "hoisinkastike",
+      "hoisin-kastike"
+    ],
     "category": "condiment",
     "defaultUnit": "ml",
     "nutritionPer100g": {
@@ -7341,7 +7426,10 @@
   },
   {
     "name": "teriyaki sauce",
-    "aliases": [],
+    "aliases": [
+      "teriyakikastike",
+      "teriyaki-kastike"
+    ],
     "category": "condiment",
     "defaultUnit": "ml",
     "nutritionPer100g": {
@@ -7414,7 +7502,9 @@
   },
   {
     "name": "harissa",
-    "aliases": [],
+    "aliases": [
+      "harissa"
+    ],
     "category": "condiment",
     "defaultUnit": "g",
     "nutritionPer100g": {
@@ -7438,7 +7528,9 @@
   },
   {
     "name": "sambal oelek",
-    "aliases": [],
+    "aliases": [
+      "sambal oelek"
+    ],
     "category": "condiment",
     "defaultUnit": "g",
     "nutritionPer100g": {
@@ -7486,7 +7578,9 @@
   },
   {
     "name": "coconut aminos",
-    "aliases": [],
+    "aliases": [
+      "kookosaminot"
+    ],
     "category": "condiment",
     "defaultUnit": "ml",
     "nutritionPer100g": {
@@ -7746,7 +7840,9 @@
   },
   {
     "name": "frozen green beans",
-    "aliases": [],
+    "aliases": [
+      "pakastetut vihreät pavut"
+    ],
     "category": "frozen",
     "defaultUnit": "g",
     "nutritionPer100g": {
@@ -7900,7 +7996,9 @@
   },
   {
     "name": "frozen banana",
-    "aliases": [],
+    "aliases": [
+      "pakastebanaani"
+    ],
     "category": "frozen",
     "defaultUnit": "g",
     "nutritionPer100g": {
@@ -7924,7 +8022,9 @@
   },
   {
     "name": "frozen edamame",
-    "aliases": [],
+    "aliases": [
+      "pakaste-edamame"
+    ],
     "category": "frozen",
     "defaultUnit": "g",
     "nutritionPer100g": {
@@ -8001,7 +8101,9 @@
   },
   {
     "name": "frozen pizza dough",
-    "aliases": [],
+    "aliases": [
+      "pizzataikina"
+    ],
     "category": "frozen",
     "defaultUnit": "g",
     "nutritionPer100g": {
@@ -8047,7 +8149,9 @@
   },
   {
     "name": "frozen pie crust",
-    "aliases": [],
+    "aliases": [
+      "piirakkapohja"
+    ],
     "category": "frozen",
     "defaultUnit": "g",
     "nutritionPer100g": {
@@ -8095,7 +8199,10 @@
   },
   {
     "name": "frozen bell peppers",
-    "aliases": [],
+    "aliases": [
+      "pakastepaprika",
+      "pakastettu paprika"
+    ],
     "category": "frozen",
     "defaultUnit": "g",
     "nutritionPer100g": {
@@ -8558,7 +8665,9 @@
   },
   {
     "name": "macadamia nuts",
-    "aliases": [],
+    "aliases": [
+      "macadamiapähkinät"
+    ],
     "category": "other",
     "defaultUnit": "g",
     "nutritionPer100g": {
@@ -9157,7 +9266,10 @@
   },
   {
     "name": "romanesco",
-    "aliases": [],
+    "aliases": [
+      "romanesco",
+      "romanescokaali"
+    ],
     "category": "produce",
     "defaultUnit": "g",
     "nutritionPer100g": {
@@ -9207,7 +9319,10 @@
   },
   {
     "name": "endive",
-    "aliases": [],
+    "aliases": [
+      "endiivi",
+      "salaattisikuri"
+    ],
     "category": "produce",
     "defaultUnit": "g",
     "nutritionPer100g": {
@@ -9231,7 +9346,10 @@
   },
   {
     "name": "radicchio",
-    "aliases": [],
+    "aliases": [
+      "radicchio",
+      "punasikuri"
+    ],
     "category": "produce",
     "defaultUnit": "g",
     "nutritionPer100g": {
@@ -9255,7 +9373,9 @@
   },
   {
     "name": "okra",
-    "aliases": [],
+    "aliases": [
+      "okra"
+    ],
     "category": "produce",
     "defaultUnit": "g",
     "nutritionPer100g": {
@@ -9331,7 +9451,10 @@
   },
   {
     "name": "daikon radish",
-    "aliases": [],
+    "aliases": [
+      "daikon",
+      "daikonretikka"
+    ],
     "category": "produce",
     "defaultUnit": "g",
     "nutritionPer100g": {
@@ -9355,7 +9478,10 @@
   },
   {
     "name": "taro",
-    "aliases": [],
+    "aliases": [
+      "taro",
+      "tarojuuri"
+    ],
     "category": "produce",
     "defaultUnit": "g",
     "nutritionPer100g": {
@@ -9379,7 +9505,10 @@
   },
   {
     "name": "plantain",
-    "aliases": [],
+    "aliases": [
+      "plantaani",
+      "ruokabanaani"
+    ],
     "category": "produce",
     "defaultUnit": "pieces",
     "nutritionPer100g": {
@@ -9507,7 +9636,10 @@
   },
   {
     "name": "dragon fruit",
-    "aliases": [],
+    "aliases": [
+      "pitaija",
+      "lohikäärmehedelmä"
+    ],
     "category": "produce",
     "defaultUnit": "g",
     "nutritionPer100g": {
@@ -9531,7 +9663,10 @@
   },
   {
     "name": "star fruit",
-    "aliases": [],
+    "aliases": [
+      "karambola",
+      "tähtihedelmä"
+    ],
     "category": "produce",
     "defaultUnit": "g",
     "nutritionPer100g": {
@@ -9555,7 +9690,10 @@
   },
   {
     "name": "guava",
-    "aliases": [],
+    "aliases": [
+      "guava",
+      "guajava"
+    ],
     "category": "produce",
     "defaultUnit": "g",
     "nutritionPer100g": {
@@ -9658,7 +9796,10 @@
   },
   {
     "name": "fresh oregano",
-    "aliases": [],
+    "aliases": [
+      "tuore oregano",
+      "oregano"
+    ],
     "category": "produce",
     "defaultUnit": "g",
     "nutritionPer100g": {
@@ -9787,7 +9928,10 @@
   },
   {
     "name": "prosciutto",
-    "aliases": [],
+    "aliases": [
+      "prosciutto",
+      "ilmakuivattu kinkku"
+    ],
     "category": "protein",
     "defaultUnit": "g",
     "nutritionPer100g": {
@@ -9811,7 +9955,10 @@
   },
   {
     "name": "chorizo",
-    "aliases": [],
+    "aliases": [
+      "chorizo",
+      "chorizomakkara"
+    ],
     "category": "protein",
     "defaultUnit": "g",
     "nutritionPer100g": {
@@ -9833,7 +9980,10 @@
   },
   {
     "name": "salami",
-    "aliases": [],
+    "aliases": [
+      "salami",
+      "salamimakkara"
+    ],
     "category": "protein",
     "defaultUnit": "g",
     "nutritionPer100g": {
@@ -9855,7 +10005,10 @@
   },
   {
     "name": "pepperoni",
-    "aliases": [],
+    "aliases": [
+      "pepperoni",
+      "pepperonimakkara"
+    ],
     "category": "protein",
     "defaultUnit": "g",
     "nutritionPer100g": {
@@ -9981,7 +10134,10 @@
   },
   {
     "name": "clam",
-    "aliases": [],
+    "aliases": [
+      "simpukka",
+      "venussimpukka"
+    ],
     "category": "protein",
     "defaultUnit": "g",
     "nutritionPer100g": {
@@ -10031,7 +10187,10 @@
   },
   {
     "name": "halibut",
-    "aliases": [],
+    "aliases": [
+      "ruijanpallas",
+      "pallas"
+    ],
     "category": "protein",
     "defaultUnit": "g",
     "nutritionPer100g": {
@@ -10055,7 +10214,9 @@
   },
   {
     "name": "tilapia",
-    "aliases": [],
+    "aliases": [
+      "tilapia"
+    ],
     "category": "protein",
     "defaultUnit": "g",
     "nutritionPer100g": {
@@ -10212,7 +10373,10 @@
   },
   {
     "name": "camembert",
-    "aliases": [],
+    "aliases": [
+      "camembert",
+      "camembertjuusto"
+    ],
     "category": "dairy",
     "defaultUnit": "g",
     "nutritionPer100g": {
@@ -10235,7 +10399,10 @@
   },
   {
     "name": "gruyere",
-    "aliases": [],
+    "aliases": [
+      "gruyère",
+      "gruyerejuusto"
+    ],
     "category": "dairy",
     "defaultUnit": "g",
     "nutritionPer100g": {
@@ -10259,7 +10426,10 @@
   },
   {
     "name": "provolone",
-    "aliases": [],
+    "aliases": [
+      "provolone",
+      "provolonejuusto"
+    ],
     "category": "dairy",
     "defaultUnit": "g",
     "nutritionPer100g": {
@@ -10307,7 +10477,10 @@
   },
   {
     "name": "creme fraiche",
-    "aliases": [],
+    "aliases": [
+      "creme fraiche",
+      "ranskankerma"
+    ],
     "category": "dairy",
     "defaultUnit": "ml",
     "nutritionPer100g": {
@@ -10330,7 +10503,9 @@
   },
   {
     "name": "skyr",
-    "aliases": [],
+    "aliases": [
+      "skyr"
+    ],
     "category": "dairy",
     "defaultUnit": "g",
     "nutritionPer100g": {
@@ -10380,7 +10555,10 @@
   },
   {
     "name": "orzo",
-    "aliases": [],
+    "aliases": [
+      "orzo",
+      "riisipasta"
+    ],
     "category": "grain",
     "defaultUnit": "g",
     "nutritionPer100g": {
@@ -10403,7 +10581,10 @@
   },
   {
     "name": "gnocchi",
-    "aliases": [],
+    "aliases": [
+      "gnocchi",
+      "perunanyytit"
+    ],
     "category": "grain",
     "defaultUnit": "g",
     "nutritionPer100g": {
@@ -10425,7 +10606,10 @@
   },
   {
     "name": "farro",
-    "aliases": [],
+    "aliases": [
+      "farro",
+      "emmervehnä"
+    ],
     "category": "grain",
     "defaultUnit": "g",
     "nutritionPer100g": {
@@ -10449,7 +10633,9 @@
   },
   {
     "name": "amaranth",
-    "aliases": [],
+    "aliases": [
+      "amarantti"
+    ],
     "category": "grain",
     "defaultUnit": "g",
     "nutritionPer100g": {
@@ -10474,7 +10660,10 @@
   },
   {
     "name": "teff",
-    "aliases": [],
+    "aliases": [
+      "teff",
+      "tef"
+    ],
     "category": "grain",
     "defaultUnit": "g",
     "nutritionPer100g": {
@@ -10549,7 +10738,10 @@
   },
   {
     "name": "bagel",
-    "aliases": [],
+    "aliases": [
+      "bagel",
+      "bageli"
+    ],
     "category": "grain",
     "defaultUnit": "pieces",
     "nutritionPer100g": {
@@ -10572,7 +10764,10 @@
   },
   {
     "name": "ciabatta",
-    "aliases": [],
+    "aliases": [
+      "ciabatta",
+      "ciabattaleipä"
+    ],
     "category": "grain",
     "defaultUnit": "g",
     "nutritionPer100g": {
@@ -10619,7 +10814,9 @@
   },
   {
     "name": "focaccia",
-    "aliases": [],
+    "aliases": [
+      "focaccia"
+    ],
     "category": "grain",
     "defaultUnit": "g",
     "nutritionPer100g": {
@@ -10847,7 +11044,10 @@
   },
   {
     "name": "herbes de provence",
-    "aliases": [],
+    "aliases": [
+      "herbes de provence",
+      "provencen yrtit"
+    ],
     "category": "spice",
     "defaultUnit": "g",
     "nutritionPer100g": {
@@ -10871,7 +11071,10 @@
   },
   {
     "name": "cajun seasoning",
-    "aliases": [],
+    "aliases": [
+      "cajun-mauste",
+      "cajunmauste"
+    ],
     "category": "spice",
     "defaultUnit": "g",
     "nutritionPer100g": {
@@ -10895,7 +11098,10 @@
   },
   {
     "name": "taco seasoning",
-    "aliases": [],
+    "aliases": [
+      "taco-mauste",
+      "tacomauste"
+    ],
     "category": "spice",
     "defaultUnit": "g",
     "nutritionPer100g": {
@@ -10918,7 +11124,9 @@
   },
   {
     "name": "wasabi",
-    "aliases": [],
+    "aliases": [
+      "wasabi"
+    ],
     "category": "spice",
     "defaultUnit": "g",
     "nutritionPer100g": {
@@ -10994,7 +11202,9 @@
   },
   {
     "name": "gochujang",
-    "aliases": [],
+    "aliases": [
+      "gochujang"
+    ],
     "category": "condiment",
     "defaultUnit": "g",
     "nutritionPer100g": {
@@ -11044,7 +11254,9 @@
   },
   {
     "name": "pomegranate molasses",
-    "aliases": [],
+    "aliases": [
+      "granaattiomenasiirappi"
+    ],
     "category": "condiment",
     "defaultUnit": "ml",
     "nutritionPer100g": {
@@ -11146,7 +11358,9 @@
   },
   {
     "name": "kimchi",
-    "aliases": [],
+    "aliases": [
+      "kimchi"
+    ],
     "category": "condiment",
     "defaultUnit": "g",
     "nutritionPer100g": {
@@ -11224,7 +11438,9 @@
   },
   {
     "name": "frozen artichoke hearts",
-    "aliases": [],
+    "aliases": [
+      "artisokansydämet"
+    ],
     "category": "frozen",
     "defaultUnit": "g",
     "nutritionPer100g": {
@@ -11248,7 +11464,9 @@
   },
   {
     "name": "frozen sweet potato fries",
-    "aliases": [],
+    "aliases": [
+      "bataattiranskalaiset"
+    ],
     "category": "frozen",
     "defaultUnit": "g",
     "nutritionPer100g": {
@@ -11272,7 +11490,10 @@
   },
   {
     "name": "frozen dumplings",
-    "aliases": [],
+    "aliases": [
+      "nyytit",
+      "dumplingit"
+    ],
     "category": "frozen",
     "defaultUnit": "g",
     "nutritionPer100g": {
@@ -11292,7 +11513,9 @@
   },
   {
     "name": "frozen spring rolls",
-    "aliases": [],
+    "aliases": [
+      "kevätrullat"
+    ],
     "category": "frozen",
     "defaultUnit": "g",
     "nutritionPer100g": {
@@ -11314,7 +11537,9 @@
   },
   {
     "name": "frozen waffles",
-    "aliases": [],
+    "aliases": [
+      "pakastevohvelit"
+    ],
     "category": "frozen",
     "defaultUnit": "pieces",
     "nutritionPer100g": {
@@ -11336,7 +11561,10 @@
   },
   {
     "name": "frozen hash browns",
-    "aliases": [],
+    "aliases": [
+      "perunarösti",
+      "röstiperuna"
+    ],
     "category": "frozen",
     "defaultUnit": "g",
     "nutritionPer100g": {
@@ -11386,7 +11614,10 @@
   },
   {
     "name": "frozen acai",
-    "aliases": [],
+    "aliases": [
+      "acai",
+      "acaimarja"
+    ],
     "category": "frozen",
     "defaultUnit": "g",
     "nutritionPer100g": {
@@ -11410,7 +11641,9 @@
   },
   {
     "name": "frozen cherries",
-    "aliases": [],
+    "aliases": [
+      "pakastekirsikat"
+    ],
     "category": "frozen",
     "defaultUnit": "g",
     "nutritionPer100g": {
@@ -11460,7 +11693,9 @@
   },
   {
     "name": "agave nectar",
-    "aliases": [],
+    "aliases": [
+      "agavesiirappi"
+    ],
     "category": "other",
     "defaultUnit": "ml",
     "nutritionPer100g": {
@@ -11588,7 +11823,10 @@
   },
   {
     "name": "paneer",
-    "aliases": [],
+    "aliases": [
+      "paneer",
+      "paneerjuusto"
+    ],
     "category": "other",
     "defaultUnit": "g",
     "nutritionPer100g": {

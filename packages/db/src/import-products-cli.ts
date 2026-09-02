@@ -9,7 +9,7 @@ import { resolveConnectionString } from './seed-core.js';
 import { importProducts, type ExportedProduct } from './import-products.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-config({ path: join(__dirname, '../../../.env') });
+config({ path: join(__dirname, '../../../.env'), quiet: true });
 
 const USAGE = `usage: pnpm --filter @diet-app/db import-products <export.json> <storeId>
 

@@ -65,18 +65,21 @@ describe('ingredients.json', () => {
     }
   });
 
-  test('a meaningful fraction of ingredients carry Finnish aliases', () => {
-    // Structural check rather than pinning specific alias strings: any item that
-    // has aliases should have a non-empty string array, and a clear majority of
-    // the catalogue should be aliased. This survives data edits (renames/expands)
-    // that would break point-in-time "chicken → kana" snapshot assertions.
-    const aliased = data.filter(
-      (i: any) =>
-        Array.isArray(i.aliases) &&
-        i.aliases.length > 0 &&
-        i.aliases.every((a: unknown) => typeof a === 'string' && a.length > 0)
-    );
-    expect(aliased.length / data.length).toBeGreaterThan(0.5);
+  test('every ingredient carries at least one Finnish alias', () => {
+    // Structural rather than pinning specific alias strings, so renames and
+    // expansions do not break it. Every row, not a fraction: matching in
+    // ingredient-match.ts is exact name-or-alias, so an English-only row is
+    // unreachable from a Finnish recipe line — the catalogue's own language is
+    // Finnish even though the canonical names are English. Idea #3391.
+    const unaliased = data
+      .filter(
+        (i: any) =>
+          !Array.isArray(i.aliases) ||
+          i.aliases.length === 0 ||
+          !i.aliases.every((a: unknown) => typeof a === 'string' && a.length > 0),
+      )
+      .map((i: any) => i.name);
+    expect(unaliased).toEqual([]);
   });
 
   test('shelf life has correct structure', () => {
