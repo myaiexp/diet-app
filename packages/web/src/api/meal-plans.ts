@@ -44,9 +44,17 @@ export function previewCook(id: string, servings?: number): Promise<CookPreview>
   );
 }
 
-/** Irreversible: deducts pantry stock and locks the entry. 409 if already cooked. */
-export function cook(id: string): Promise<CookResult> {
-  return apiSend<CookResult>('POST', `/meal-plans/${id}/cook`);
+/**
+ * Irreversible: deducts pantry stock and locks the entry. 409 if already cooked.
+ * `servings` is what is actually being cooked — it scales the deduction and is
+ * stored as the entry's `actualServings`, leaving planned `servings` alone.
+ */
+export function cook(id: string, servings?: number): Promise<CookResult> {
+  return apiSend<CookResult>(
+    'POST',
+    `/meal-plans/${id}/cook`,
+    servings !== undefined ? { servings } : undefined,
+  );
 }
 
 /** A note is required iff usedAsIs is false; sending one alongside true is a 400. */

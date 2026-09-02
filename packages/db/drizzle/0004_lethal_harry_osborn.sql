@@ -1,0 +1,1 @@
+ALTER TABLE "meal_plan_entries" ADD COLUMN "actual_servings" numeric;

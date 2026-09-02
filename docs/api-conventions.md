@@ -72,10 +72,13 @@ reaches Postgres as an unhandled `invalid input syntax for type uuid`.
   are 403 (unless `Origin` is in `CORS_ORIGINS`) — including `none`; a missing
   header is the curl/cron exception (401 at auth), not `none`. POST/PUT/PATCH without
   `application/json` are 415. Why: `docs/auth-deploy.md`.
-- **Write bodies**: `parseJsonBody(c, schema, { requireNonEmpty })`
+- **Write bodies**: `parseJsonBody(c, schema, { requireNonEmpty, allowEmptyBody })`
   (`json-body.ts`) folds the JSON read, the Zod `safeParse`, and the
   `Invalid JSON body` / `Validation failed` / `Empty patch body` 400s into one
   call — `const parsed = await parseJsonBody(...); if (!parsed.ok) return parsed.response;`.
+  A write route requires at least `{}`; the one exception is `POST /cook`, whose
+  whole body is an optional override, so it passes `allowEmptyBody` and reads
+  zero bytes as `{}`.
   Routes never re-inline those shapes and never import `z`. Schemas live under
   `schemas/`. Free-text, array, and URL fields share caps in
   `schemas/fields.ts` (title 200, notes 4k, steps 80×4k, http(s) URLs 2048,

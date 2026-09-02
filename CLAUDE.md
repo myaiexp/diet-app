@@ -47,7 +47,9 @@ paragraph of "why", the why belongs in the linked subdoc.
   `userRating`/`timesCooked` stay behind, `parentRecipeId` is the immediate
   source. Optional strict `{ title }` body. Rules: **`docs/api-conventions.md`**.
 - **Cook flow**: confirm loads `GET /meal-plans/:id/cook-preview` (read-only);
-  `cooked` is terminal via `POST /meal-plans/:id/cook`; PATCH cannot change the
+  `cooked` is terminal via `POST /meal-plans/:id/cook`, whose optional
+  `{ servings }` body scales the deduction and lands in `actual_servings`,
+  leaving `servings` as the planned figure; PATCH cannot change the
   inputs the deduction was computed from. Feedback invariant (`changesNote`
   iff `usedAsIs` is false) is resolved once by `mergeFeedback` and checked once
   by `feedbackPairError`. Rules:
@@ -69,7 +71,7 @@ them); web type-checks tests via its main no-emit `tsconfig.json`. One vitest
 entry at the repo root. Tests and type-check resolve `@diet-app/db` from
 source, so a fresh clone or worktree needs no build; root `pnpm build`
 (`pnpm -r build`, dependency-ordered) is for the api's Node-resolved paths —
-`build`, `start`, `dev`. Real-SQL suites (21 cases in `routes.test.ts`, 4 in
+`build`, `start`, `dev`. Real-SQL suites (22 cases in `routes.test.ts`, 4 in
 `import-products-sql.test.ts`) share the loud `TEST_DATABASE_URL` /
 `DIET_APP_SKIP_DB_TESTS` gate. Mocks, fixture-by-table (never call-order),
 demo seed, drizzle-kit override, schema-migration workflow:

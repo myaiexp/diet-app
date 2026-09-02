@@ -110,7 +110,6 @@ function deductionPlan(servings: number) {
 
 interface RouteOpts {
   cookStatus?: number;
-  patchServingsStatus?: number;
   feedbackStatus?: number;
   pantryStatus?: number;
   recipeStatus?: number;
@@ -118,6 +117,8 @@ interface RouteOpts {
 
 /** Routes the entry-e1 flow: recipe, pantry, preview, PATCH, cook, feedback. */
 function buildRouter(opts: RouteOpts = {}) {
+  // `servings` is the entry's planned figure and never moves: only POST /cook's
+  // body decides what is actually cooked, and it is recorded separately.
   const state = { servings: 4 };
   return routeFetch({
     'GET /api/recipes/:id': () => {
@@ -137,25 +138,27 @@ function buildRouter(opts: RouteOpts = {}) {
       return { ...deductionPlan(servings), servings };
     },
     'PATCH /api/meal-plans/:id': ({ json }) => {
-      const body = json<{ servings?: number; status?: MealPlanEntry['status'] }>();
-      if (typeof body.servings === 'number' && opts.patchServingsStatus) {
-        return jsonResponse(opts.patchServingsStatus, { error: 'could not patch servings' });
-      }
-      if (typeof body.servings === 'number') state.servings = body.servings;
+      const body = json<{ status?: MealPlanEntry['status'] }>();
       return {
         ...ENTRY,
         servings: String(state.servings),
         ...(body.status ? { status: body.status } : {}),
       };
     },
-    'POST /api/meal-plans/:id/cook': () => {
+    'POST /api/meal-plans/:id/cook': ({ json }) => {
       if (opts.cookStatus === 409) return jsonResponse(409, { error: 'Meal plan entry already cooked' });
       if (opts.cookStatus && opts.cookStatus >= 400) {
         return jsonResponse(opts.cookStatus, { error: 'cook failed' });
       }
+      const cooked = json<{ servings?: number }>().servings ?? state.servings;
       return {
-        entry: { ...ENTRY, status: 'cooked' as const, servings: String(state.servings) },
-        ...deductionPlan(state.servings),
+        entry: {
+          ...ENTRY,
+          status: 'cooked' as const,
+          servings: String(state.servings),
+          actualServings: String(cooked),
+        },
+        ...deductionPlan(cooked),
       };
     },
     'POST /api/meal-plans/:id/feedback': ({ json }) => {
@@ -350,7 +353,7 @@ describe('cook confirm', () => {
     }
   });
 
-  test('changing servings PATCHes the entry before committing the cook', async () => {
+  test('sends the chosen servings in the cook body and never PATCHes the entry', async () => {
     fetchMock.mockImplementation(buildRouter());
     openCookFlow({ entry: ENTRY });
 
@@ -361,15 +364,22 @@ describe('cook confirm', () => {
     click('.cook-commit');
     await vi.waitFor(() => expect(calledWith('/api/meal-plans/e1/cook', 'POST')).toBe(true));
 
-    const patchIndex = fetchMock.mock.calls.findIndex(
-      ([url, init]) => url === '/api/meal-plans/e1' && (init as RequestInit)?.method === 'PATCH',
-    );
-    const postIndex = fetchMock.mock.calls.findIndex(
-      ([url, init]) => url === '/api/meal-plans/e1/cook' && (init as RequestInit)?.method === 'POST',
-    );
-    expect(patchIndex).toBeGreaterThanOrEqual(0);
-    expect(postIndex).toBeGreaterThan(patchIndex);
-    expect(lastBody('/api/meal-plans/e1', 'PATCH')).toEqual({ servings: 5 });
+    // The stepper picks what is actually cooked; the entry's planned servings is
+    // the record of intent and must survive the cook untouched.
+    expect(lastBody('/api/meal-plans/e1/cook', 'POST')).toEqual({ servings: 5 });
+    expect(calledWith('/api/meal-plans/e1', 'PATCH')).toBe(false);
+  });
+
+  test('commits the entry servings when the stepper was never touched', async () => {
+    fetchMock.mockImplementation(buildRouter());
+    openCookFlow({ entry: ENTRY });
+
+    await vi.waitFor(() => expect(document.querySelector('.cook-commit')).not.toBeNull());
+    click('.cook-commit');
+    await vi.waitFor(() => expect(calledWith('/api/meal-plans/e1/cook', 'POST')).toBe(true));
+
+    expect(lastBody('/api/meal-plans/e1/cook', 'POST')).toEqual({ servings: 4 });
+    expect(calledWith('/api/meal-plans/e1', 'PATCH')).toBe(false);
   });
 
   test('a freeform entry previews as an empty plan without erroring', async () => {
@@ -459,7 +469,7 @@ describe('cook confirm', () => {
     expect(onCooked.mock.calls[0]![0]).toMatchObject({ entry: { status: 'cooked' } });
   });
 
-  test('a non-409 cook failure leaves the modal open and does not fire onCooked after a servings PATCH', async () => {
+  test('a failed cook at raised servings leaves the modal open and writes nothing', async () => {
     fetchMock.mockImplementation(buildRouter({ cookStatus: 500 }));
     const onCooked = vi.fn();
     openCookFlow({ entry: ENTRY, onCooked });
@@ -473,31 +483,25 @@ describe('cook confirm', () => {
       expect(document.querySelector('.toast')?.textContent).toMatch(/unexpected error|nothing was saved/i),
     );
 
-    expect(calledWith('/api/meal-plans/e1', 'PATCH')).toBe(true);
-    expect(lastBody('/api/meal-plans/e1', 'PATCH')).toEqual({ servings: 5 });
-    expect(calledWith('/api/meal-plans/e1/cook', 'POST')).toBe(true);
+    // One request, one outcome: a failed cook can no longer leave the entry
+    // half-written the way the old PATCH-then-cook pair could.
+    expect(lastBody('/api/meal-plans/e1/cook', 'POST')).toEqual({ servings: 5 });
+    expect(calledWith('/api/meal-plans/e1', 'PATCH')).toBe(false);
     expect(isModalOpen()).toBe(true);
     expect(document.querySelector('.cook-commit')).not.toBeNull();
     expect(document.querySelector('.cook-chip-row')).toBeNull();
     expect(onCooked).not.toHaveBeenCalled();
   });
 
-  test('a failed servings PATCH does not POST /cook', async () => {
-    fetchMock.mockImplementation(buildRouter({ patchServingsStatus: 500 }));
+  test('surfaces a 400 from an out-of-range cook servings without closing the modal', async () => {
+    fetchMock.mockImplementation(buildRouter({ cookStatus: 400 }));
     const onCooked = vi.fn();
     openCookFlow({ entry: ENTRY, onCooked });
 
     await vi.waitFor(() => expect(document.querySelector('.cook-commit')).not.toBeNull());
-    click('.cook-step-plus');
-    await vi.waitFor(() => expect(calledWith('cook-preview?servings=5')).toBe(true));
-
     click('.cook-commit');
-    await vi.waitFor(() =>
-      expect(document.querySelector('.toast')?.textContent).toMatch(/unexpected error|nothing was saved/i),
-    );
 
-    expect(calledWith('/api/meal-plans/e1', 'PATCH')).toBe(true);
-    expect(calledWith('/api/meal-plans/e1/cook', 'POST')).toBe(false);
+    await vi.waitFor(() => expect(document.querySelector('.toast')).not.toBeNull());
     expect(isModalOpen()).toBe(true);
     expect(onCooked).not.toHaveBeenCalled();
   });

@@ -59,6 +59,17 @@ export const mealPlanPatchSchema = z
   })
   .strict();
 
+/**
+ * POST /meal-plans/:id/cook. `servings` is what is actually being cooked: it
+ * scales the deduction and is stored as `actualServings`, leaving the entry's
+ * planned `servings` untouched. Absent means "cooked as planned".
+ */
+export const mealPlanCookSchema = z
+  .object({
+    servings: servingsCoerced.optional(),
+  })
+  .strict();
+
 export const NOTE_REQUIRED_MSG = 'changesNote is required when usedAsIs is false';
 export const NOTE_ABSENT_MSG = 'changesNote must be absent when usedAsIs is true';
 
@@ -107,5 +118,6 @@ export const feedbackPatchSchema = z
 
 export type MealPlanCreate = z.infer<typeof mealPlanCreateSchema>;
 export type MealPlanPatch = z.infer<typeof mealPlanPatchSchema>;
+export type MealPlanCook = z.infer<typeof mealPlanCookSchema>;
 export type FeedbackCreate = z.infer<typeof feedbackCreateSchema>;
 export type FeedbackPatch = z.infer<typeof feedbackPatchSchema>;

@@ -9,6 +9,10 @@ export const mealPlanEntries = pgTable('meal_plan_entries', {
   recipeId: uuid('recipe_id').references(() => recipes.id),
   freeformNote: text('freeform_note'),
   servings: numeric('servings').notNull().default('1'),
+  // What was actually cooked, written once by POST /:id/cook — `servings` stays
+  // the planned figure so roadmap #390 can learn from the planned/actual delta.
+  // Null on an entry that has not been cooked, or cooked before this column.
+  actualServings: numeric('actual_servings'),
   status: text('status').notNull().default('planned'),
   substituteRecipeId: uuid('substitute_recipe_id').references((): AnyPgColumn => recipes.id),
   notes: text('notes'),

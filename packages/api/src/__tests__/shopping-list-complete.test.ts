@@ -33,7 +33,8 @@ describe('shoppingListCompleteRoutes', () => {
 
   // Decision: overrides is optional in the schema, but c.req.json() throws on
   // a truly bodyless request. We don't special-case that into "no overrides" —
-  // callers must send at least `{}`, same as every other write route here.
+  // callers must send at least `{}`, same as every write route here but
+  // POST /cook, which shipped body-less and keeps accepting zero bytes.
   test('returns 400 for a request with no body at all', async () => {
     const { db } = makeCompleteMock();
     const res = await shoppingListCompleteRoutes(db).request(`/${LIST_ID}/complete`, {

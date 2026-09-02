@@ -102,6 +102,9 @@ const COLUMN_SPECS: Record<string, Record<string, ColumnSpec>> = {
     recipeId: { type: 'PgUUID' },
     freeformNote: { type: 'PgText' },
     servings: { type: 'PgNumeric', notNull: true, hasDefault: true },
+    // Nullable and defaultless on purpose: only a cook writes it, so null is
+    // "not cooked", not "cooked as planned".
+    actualServings: { type: 'PgNumeric' },
     status: { type: 'PgText', notNull: true, hasDefault: true },
     substituteRecipeId: { type: 'PgUUID' },
     notes: { type: 'PgText' },

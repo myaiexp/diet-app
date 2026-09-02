@@ -8,8 +8,7 @@ export type BodyResult<T> = { ok: true; data: T } | { ok: false; response: Respo
 
 // Private: 'Invalid JSON body' and 'Validation failed' are two halves of one
 // contract, so routes only ever see the folded parseJsonBody below.
-// Content-Type is gated by csrfGuard, not here: c.req.json() ignores it, and
-// body-less POST /cook never calls this.
+// Content-Type is gated by csrfGuard, not here: c.req.json() ignores it.
 async function readJsonBody(
   c: Context,
   allowEmptyBody: boolean,
@@ -42,8 +41,9 @@ export type ParseJsonBodyOpts = {
   /** PATCH bodies: reject `{}` — a patch with nothing to write is a client bug. */
   requireNonEmpty?: boolean;
   /**
-   * Routes whose whole body is optional (POST /recipes/:id/fork): an absent or
-   * blank body validates as `{}` instead of 400-ing as invalid JSON.
+   * Routes whose whole body is optional (POST /recipes/:id/fork, POST
+   * /meal-plans/:id/cook): an absent or blank body validates as `{}` instead of
+   * 400-ing as invalid JSON.
    */
   allowEmptyBody?: boolean;
 };

@@ -34,13 +34,31 @@ amounts, a visible degraded warning, and commit stays enabled — POST `/cook`
 re-plans server-side. The POST `/cook` response is the source of truth; the
 preview may be stale by then.
 
+## Planned servings and actual servings are two numbers
+
+`meal_plan_entries.servings` is what was *planned*. `actual_servings` is what
+was *cooked*: `POST /meal-plans/:id/cook` takes an optional `{ servings }` body
+(integer 1–12, same cap as everywhere else), plans the deduction at it, and
+writes it to `actual_servings` — always, even with no body, so a cooked row
+never has to be read as "null means the planned figure". `servings` is never
+rewritten by a cook, which is what makes the planned/actual delta recoverable
+for roadmap #390. Null `actual_servings` means the entry is not cooked (or was
+cooked before the column existed).
+
+The cook modal's stepper feeds that body. It must **not** PATCH `servings`
+first: that destroyed the planned figure, and a PATCH-then-cook pair could leave
+the entry re-planned but uncooked when the cook failed.
+
 ## `cooked` is terminal
 
 `cooked` is reachable only via `POST /meal-plans/:id/cook` (PATCH cannot set or
-leave it). The POST is body-less but still sends `Content-Type: application/json`
-so `csrfGuard` does not 415 it (finding #7991). PATCH also cannot *change* `recipeId`, `substituteRecipeId`, or
-`servings` on a cooked entry — those are the exact inputs the deduction was
-computed from, and cook 409s so it can't be re-run to reconcile; re-sending an
+leave it). Its body is optional — zero bytes parses as `{}` via
+`parseJsonBody`'s `allowEmptyBody`, the one write route here that accepts an
+absent body — but the request still sends `Content-Type: application/json`
+so `csrfGuard` does not 415 it (finding #7991). PATCH cannot *change* `recipeId`, `substituteRecipeId`, or
+`servings` on a cooked entry — the first two are inputs the deduction was
+computed from, the third is the planned record it is compared against, and cook
+409s so it can't be re-run to reconcile; re-sending an
 unchanged value passes, and `date`/`slot`/`notes`/`freeformNote` stay editable.
 
 Unit conversion lives in `units.ts` and never crosses dimensions. FEFO deduction

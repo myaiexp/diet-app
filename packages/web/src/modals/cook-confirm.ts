@@ -277,10 +277,10 @@ export function openCookConfirm(opts: CookConfirmOptions): void {
     setBusy(true);
     previewGen++;
     try {
-      if (servings !== initialServings) {
-        await patchEntry(entry.id, { servings });
-      }
-      const result = await cook(entry.id);
+      // One request, one outcome. The stepper says what is actually being
+      // cooked; the entry's planned `servings` is left as the record of intent,
+      // so a failed cook can't leave the entry re-planned but uncooked.
+      const result = await cook(entry.id, servings);
       closeModal();
       opts.onCooked(result);
     } catch (err) {

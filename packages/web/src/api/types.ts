@@ -147,8 +147,10 @@ export interface MealPlanEntry {
   slot: Slot;
   recipeId: string | null;
   freeformNote: string | null;
-  /** numeric column — a string. */
+  /** What was planned. numeric column — a string. Cooking never rewrites it. */
   servings: string;
+  /** What was actually cooked — written once by POST /cook, null until then. */
+  actualServings: string | null;
   status: EntryStatus;
   substituteRecipeId: string | null;
   notes: string | null;

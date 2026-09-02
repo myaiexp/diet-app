@@ -313,6 +313,27 @@ describe('planned and cooked cell clicks', () => {
     expect(root.querySelector('.plan-cell[data-status="planned"]')).toBeNull();
   });
 
+  test('a cooked cell shows what was cooked, a planned cell what was planned', async () => {
+    const planned = makeEntry({ id: 'e-planned', slot: 'dinner', status: 'planned', servings: '2' });
+    // Cooking no longer rewrites `servings`, so the cell has to read the actual
+    // figure or a cooked cell would silently show the wrong number.
+    const cooked = makeEntry({
+      id: 'e-cooked',
+      slot: 'lunch',
+      status: 'cooked',
+      servings: '2',
+      actualServings: '5',
+    });
+    fetchMock.mockImplementation(buildRouter({ entries: [planned, cooked] }));
+    const root = mountRoot();
+    await planScreen().mount(root, makeCtx());
+
+    const servOf = (status: string) =>
+      root.querySelector(`.plan-cell[data-status="${status}"] .plan-cell-serv`)?.textContent;
+    expect(servOf('cooked')).toBe('5 serv');
+    expect(servOf('planned')).toBe('2 serv');
+  });
+
   test('opens the cook modal from a planned cell', async () => {
     const entry = makeEntry({ id: 'e-planned', slot: 'dinner', status: 'planned', freeformNote: 'Lohikeitto' });
     fetchMock.mockImplementation(buildRouter({ entries: [entry] }));
