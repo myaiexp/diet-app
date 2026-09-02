@@ -13,6 +13,23 @@ tests — type-check with `pnpm --filter @diet-app/{api,db} typecheck`
 (`tsconfig.typecheck.json`, all of `src` including tests). `build` is
 `rm -rf dist && tsc` so stale artifacts can't survive a rebuild.
 
+**Neither tests nor type-check need a build first.** `@diet-app/db` publishes
+`main`/`types` as `dist/`, so a fresh clone or Helm worktree used to fail 23 api
+test files (`Failed to resolve entry for package "@diet-app/db"`) and ~20
+`Cannot find module '@diet-app/db'` type errors that read like broken code.
+Both now resolve db from source instead: `packages/api/vitest.config.ts` aliases
+the package to `../db/src/index.ts` (costs ~13 s on a ~90 s suite and can never
+assert against a stale build), and `packages/api/tsconfig.typecheck.json` does
+the same with `paths` plus a `rootDir` widened to `packages/` (TS6059 applies
+even under `noEmit`). The mapping is deliberately absent from the emitting
+`tsconfig.json` — pulling `../db` into a program with `rootDir: src` is an
+error, and the built artifact really does resolve through `dist/`.
+
+What still needs `dist/` is anything that runs the api through Node's own
+resolver — `pnpm --filter @diet-app/api build`, `start`, and `dev` (tsx). Root
+`pnpm build` covers it: `pnpm -r build` walks the workspace in dependency
+order, so db is built before api.
+
 **web does not emit.** `packages/web/tsconfig.json` includes all of `src`
 (tests included), has `noEmit: true`, and has no `tsconfig.typecheck.json`.
 Type-check tests via the main config: `pnpm --filter @diet-app/web typecheck`.
@@ -49,9 +66,7 @@ Two real-Postgres suites share one gate.
 
 Both need `TEST_DATABASE_URL` pointing at `dietapp_test` (name must end in
 `_test`). Provision with `pnpm --filter @diet-app/db setup:test-db` (create +
-migrate + seed + grant the `dietapp` role on mase-owned tables). The api suite
-also needs `@diet-app/db` built (`pnpm --filter @diet-app/db build`) — the
-package resolves via `dist/`.
+migrate + seed + grant the `dietapp` role on mase-owned tables).
 
 Without `TEST_DATABASE_URL` those tests would skip, so a **loud gate test fails
 the run** instead; set `DIET_APP_SKIP_DB_TESTS=1` to opt out deliberately.
