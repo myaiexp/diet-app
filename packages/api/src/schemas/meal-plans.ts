@@ -59,6 +59,29 @@ export const mealPlanPatchSchema = z
   })
   .strict();
 
+export const NOTE_REQUIRED_MSG = 'changesNote is required when usedAsIs is false';
+export const NOTE_ABSENT_MSG = 'changesNote must be absent when usedAsIs is true';
+
+/**
+ * The one encoding of the cook-feedback invariant: a note iff the cook changed
+ * something. Returns the violation message, or null when the pair is legal.
+ *
+ * POST validates the parsed body through this and PATCH validates the merged
+ * row through it, so the two entry points cannot drift on either the rule or
+ * its wording. `''` counts as no note — the column has no CHECK, so a stored
+ * empty string reaches the PATCH side even though `trimmedNote` keeps one out
+ * of a request body.
+ */
+export function feedbackPairError(
+  usedAsIs: boolean,
+  changesNote: string | null | undefined,
+): string | null {
+  if (usedAsIs === false) {
+    return changesNote == null || changesNote === '' ? NOTE_REQUIRED_MSG : null;
+  }
+  return changesNote != null ? NOTE_ABSENT_MSG : null;
+}
+
 export const feedbackCreateSchema = z
   .object({
     rating: z.enum(RATINGS),
@@ -68,21 +91,8 @@ export const feedbackCreateSchema = z
     changesNote: trimmedNote.nullable().optional(),
   })
   .superRefine((d, ctx) => {
-    if (d.usedAsIs === false) {
-      if (d.changesNote == null || d.changesNote === '') {
-        ctx.addIssue({
-          code: 'custom',
-          message: 'changesNote is required when usedAsIs is false',
-          path: ['changesNote'],
-        });
-      }
-    } else if (d.changesNote != null) {
-      ctx.addIssue({
-        code: 'custom',
-        message: 'changesNote must be absent when usedAsIs is true',
-        path: ['changesNote'],
-      });
-    }
+    const message = feedbackPairError(d.usedAsIs, d.changesNote);
+    if (message) ctx.addIssue({ code: 'custom', message, path: ['changesNote'] });
   });
 
 export const feedbackPatchSchema = z

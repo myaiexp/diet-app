@@ -43,7 +43,8 @@ paragraph of "why", the why belongs in the linked subdoc.
 - **Cook flow**: confirm loads `GET /meal-plans/:id/cook-preview` (read-only);
   `cooked` is terminal via `POST /meal-plans/:id/cook`; PATCH cannot change the
   inputs the deduction was computed from. Feedback invariant (`changesNote`
-  iff `usedAsIs` is false) is resolved once by `mergeFeedback`. Rules:
+  iff `usedAsIs` is false) is resolved once by `mergeFeedback` and checked once
+  by `feedbackPairError`. Rules:
   **`docs/cook-flow.md`**. Design: `docs/plans/2026-07-20-cook-flow-design.md`.
 - **Shopping lists**: generate merges, never rebuilds; netting is a per-day
   FEFO simulation (`quantityInPantry` = demand covered, not stock on hand);

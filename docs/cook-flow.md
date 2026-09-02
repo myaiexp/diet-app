@@ -65,3 +65,10 @@ once — flipping `usedAsIs` true drops a note the patch didn't mention, while a
 note sent *alongside* `usedAsIs: true` stays a 400 rather than being silently
 repaired. The handler validates that merged pair and writes that same pair;
 never re-derive either half at the write.
+
+The *rule* itself lives once, in `feedbackPairError(usedAsIs, changesNote)`
+(`schemas/meal-plans.ts`): POST runs the parsed body through it via
+`superRefine`, PATCH runs the merged pair through it, and both report the same
+`NOTE_REQUIRED_MSG` / `NOTE_ABSENT_MSG`. Add a caller rather than a second copy
+of the condition. The web modal's own inline message is deliberately separate —
+it is user-facing copy from the frontend design, not the wire contract.

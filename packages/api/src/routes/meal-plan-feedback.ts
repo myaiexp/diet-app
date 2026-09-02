@@ -12,6 +12,7 @@ import { isFkViolation, isUniqueViolation } from '../pg-errors.js';
 import {
   feedbackCreateSchema,
   feedbackPatchSchema,
+  feedbackPairError,
   type FeedbackPatch,
 } from '../schemas/meal-plans.js';
 
@@ -34,13 +35,6 @@ function mergeFeedback(existing: FeedbackPair, patch: FeedbackPatch): FeedbackPa
   const usedAsIs = patch.usedAsIs ?? existing.usedAsIs;
   if (patch.changesNote !== undefined) return { usedAsIs, changesNote: patch.changesNote };
   return { usedAsIs, changesNote: usedAsIs ? null : existing.changesNote };
-}
-
-function isValidFeedbackPair({ usedAsIs, changesNote }: FeedbackPair): boolean {
-  if (usedAsIs === false) {
-    return changesNote != null && changesNote !== '';
-  }
-  return changesNote == null;
 }
 
 export function mealPlanFeedbackRoutes(db: Db): Hono {
@@ -117,14 +111,9 @@ export function mealPlanFeedbackRoutes(db: Db): Hono {
     if (!existing) return notFound(c);
 
     const merged = mergeFeedback(existing, data);
-    if (!isValidFeedbackPair(merged)) {
-      return badRequest(c, 'Validation failed', {
-        formErrors: [
-          merged.usedAsIs
-            ? 'changesNote must be absent when usedAsIs is true'
-            : 'changesNote is required when usedAsIs is false',
-        ],
-      });
+    const violation = feedbackPairError(merged.usedAsIs, merged.changesNote);
+    if (violation) {
+      return badRequest(c, 'Validation failed', { formErrors: [violation] });
     }
 
     // usedAsIs/changesNote are route-owned (mergeFeedback) — omit them from
