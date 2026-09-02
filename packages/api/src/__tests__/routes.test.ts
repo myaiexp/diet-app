@@ -227,11 +227,11 @@ describe.skipIf(!hasDb)('matchIngredientNames SQL', () => {
     ]);
 
     const [chickenRow] = await db!
-      .select({ id: ingredients.id })
+      .select({ id: ingredients.id, name: ingredients.name })
       .from(ingredients)
       .where(eq(ingredients.name, 'chicken'));
     const [potatoRow] = await db!
-      .select({ id: ingredients.id })
+      .select({ id: ingredients.id, name: ingredients.name })
       .from(ingredients)
       .where(eq(ingredients.name, 'potato'));
     expect(chickenRow, 'seed should contain chicken').toBeDefined();
@@ -240,16 +240,21 @@ describe.skipIf(!hasDb)('matchIngredientNames SQL', () => {
     expect(chicken).toEqual({
       rawName: 'chicken',
       ingredientId: chickenRow!.id,
+      ingredientName: chickenRow!.name,
       match: 'exact',
     });
+    // An alias hit names the catalog row, not the alias that was searched for —
+    // 'peruna' resolves to 'potato', which is what the review screen shows.
     expect(peruna).toEqual({
       rawName: 'peruna',
       ingredientId: potatoRow!.id,
+      ingredientName: potatoRow!.name,
       match: 'alias',
     });
     expect(unicorn).toEqual({
       rawName: 'unicorn',
       ingredientId: null,
+      ingredientName: null,
       match: 'none',
     });
   });

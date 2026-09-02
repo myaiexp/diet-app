@@ -20,6 +20,8 @@ export type LineState = 'bound' | 'assumed' | 'unresolved';
 export interface EditableLine {
   raw: string;
   ingredientId: string | null;
+  /** Catalog name for `ingredientId`, so a bound row names its match. */
+  ingredientName: string | null;
   quantity: number | null;
   unit: string;
   optional: boolean;
@@ -52,6 +54,16 @@ export function classify(line: EditableLine): LineState {
   return line.quantityInferred ? 'assumed' : 'bound';
 }
 
+/**
+ * Names the catalog row a line bound to. The generic fallback only shows for a
+ * bound line whose name never arrived (an older draft response) — a reviewer
+ * who cannot see the match cannot review it.
+ */
+function bindLabel(line: EditableLine): string {
+  if (!line.ingredientId) return '→ no catalog match';
+  return line.ingredientName ? `→ ${line.ingredientName}` : '→ catalog match';
+}
+
 function tally(lines: EditableLine[]): Record<LineState, number> {
   const counts: Record<LineState, number> = { bound: 0, assumed: 0, unresolved: 0 };
   for (const line of lines) counts[classify(line)] += 1;
@@ -60,7 +72,8 @@ function tally(lines: EditableLine[]): Record<LineState, number> {
 
 function toEditable(l: DraftIngredientLine): EditableLine {
   return {
-    raw: l.rawName, ingredientId: l.ingredientId, quantity: l.quantity, unit: l.unit,
+    raw: l.rawName, ingredientId: l.ingredientId, ingredientName: l.ingredientName,
+    quantity: l.quantity, unit: l.unit,
     optional: l.optional, notes: l.notes, match: l.match, quantityInferred: l.quantityInferred,
     query: l.rawName,
   };
@@ -208,7 +221,7 @@ export function mountReview(root: HTMLElement, ctx: ScreenContext, draft: Recipe
         el('span', { class: 'import-line-raw' }, line.raw),
         el('span', { class: `label label-${tint}` }, state)),
       el('div', { class: 'import-line-bind' },
-        el('span', { class: 'label-muted' }, line.ingredientId ? '→ catalog match' : '→ no catalog match'),
+        el('span', { class: 'label-muted' }, bindLabel(line)),
         qty, unit),
     );
 
@@ -227,6 +240,7 @@ export function mountReview(root: HTMLElement, ctx: ScreenContext, draft: Recipe
     query.addEventListener('input', () => { line.query = query.value; });
     const detach = attachIngredientSearch(query, results, (ing) => {
       line.ingredientId = ing.id;
+      line.ingredientName = ing.name;
       line.match = 'exact';
       renderAll();
     }, {

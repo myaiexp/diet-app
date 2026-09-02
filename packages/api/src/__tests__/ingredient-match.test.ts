@@ -20,13 +20,21 @@ describe('matchIngredientName', () => {
     const m = matchIngredientName('EGG', [
       { id: 'id-egg', name: 'Egg', aliases: null },
     ]);
-    expect(m).toEqual({ rawName: 'EGG', ingredientId: 'id-egg', match: 'exact' });
+    expect(m).toEqual({
+      rawName: 'EGG',
+      ingredientId: 'id-egg',
+      ingredientName: 'Egg',
+      match: 'exact',
+    });
   });
 
   test('alias match when name misses', () => {
     const m = matchIngredientName('kananmuna', CANDIDATES);
     expect(m.match).toBe('alias');
     expect(m.ingredientId).toBe('id-egg');
+    // The review screen names the match it bound to, so the catalog name
+    // travels with the id rather than costing a second round trip (#3237).
+    expect(m.ingredientName).toBe('Egg');
   });
 
   test('name exact preferred over alias on another row', () => {
@@ -35,7 +43,12 @@ describe('matchIngredientName', () => {
       { id: 'id-b', name: 'Salt', aliases: null },
     ];
     const m = matchIngredientName('salt', candidates);
-    expect(m).toEqual({ rawName: 'salt', ingredientId: 'id-b', match: 'exact' });
+    expect(m).toEqual({
+      rawName: 'salt',
+      ingredientId: 'id-b',
+      ingredientName: 'Salt',
+      match: 'exact',
+    });
   });
 
   test('none when no match', () => {
@@ -43,6 +56,7 @@ describe('matchIngredientName', () => {
     expect(m).toEqual({
       rawName: 'unicorn dust',
       ingredientId: null,
+      ingredientName: null,
       match: 'none',
     });
   });
@@ -91,10 +105,10 @@ describe('matchIngredientNames SQL', () => {
 
     const result = await matchIngredientNames(db, ['Chicken', 'peruna', 'unicorn', injection]);
     expect(result).toEqual([
-      { rawName: 'Chicken', ingredientId: 'id-chicken', match: 'exact' },
-      { rawName: 'peruna', ingredientId: 'id-potato', match: 'alias' },
-      { rawName: 'unicorn', ingredientId: null, match: 'none' },
-      { rawName: injection, ingredientId: null, match: 'none' },
+      { rawName: 'Chicken', ingredientId: 'id-chicken', ingredientName: 'chicken', match: 'exact' },
+      { rawName: 'peruna', ingredientId: 'id-potato', ingredientName: 'potato', match: 'alias' },
+      { rawName: 'unicorn', ingredientId: null, ingredientName: null, match: 'none' },
+      { rawName: injection, ingredientId: null, ingredientName: null, match: 'none' },
     ]);
 
     const q = rendered();
@@ -118,8 +132,8 @@ describe('matchIngredientNames SQL', () => {
     };
     await expect(matchIngredientNames(db as never, [])).resolves.toEqual([]);
     await expect(matchIngredientNames(db as never, ['  ', ''])).resolves.toEqual([
-      { rawName: '  ', ingredientId: null, match: 'none' },
-      { rawName: '', ingredientId: null, match: 'none' },
+      { rawName: '  ', ingredientId: null, ingredientName: null, match: 'none' },
+      { rawName: '', ingredientId: null, ingredientName: null, match: 'none' },
     ]);
   });
 });

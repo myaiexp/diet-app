@@ -30,8 +30,13 @@ const EXTRACTED: ExtractedRecipe = {
 };
 
 const MATCHES: LineMatch[] = [
-  { rawName: 'Egg', ingredientId: '11111111-1111-4111-8111-111111111111', match: 'exact' },
-  { rawName: 'Unicorn dust', ingredientId: null, match: 'none' },
+  {
+    rawName: 'Egg',
+    ingredientId: '11111111-1111-4111-8111-111111111111',
+    ingredientName: 'Egg',
+    match: 'exact',
+  },
+  { rawName: 'Unicorn dust', ingredientId: null, ingredientName: null, match: 'none' },
 ];
 
 function makeDb() {
@@ -176,6 +181,9 @@ describe('POST /recipes/import', () => {
       {
         rawName: 'Egg',
         ingredientId: '11111111-1111-4111-8111-111111111111',
+        // The catalog name rides along with the id so the review screen can
+        // name the match instead of showing a generic label (#3237).
+        ingredientName: 'Egg',
         quantity: 2,
         unit: 'kpl',
         optional: false,
@@ -186,6 +194,7 @@ describe('POST /recipes/import', () => {
       {
         rawName: 'Unicorn dust',
         ingredientId: null,
+        ingredientName: null,
         quantity: 1,
         unit: 'g',
         optional: true,
@@ -289,8 +298,8 @@ describe('POST /recipes/import', () => {
   test('unmatchedCount counts none matches', async () => {
     const { app } = makeApp({
       matches: [
-        { rawName: 'Egg', ingredientId: null, match: 'none' },
-        { rawName: 'Unicorn dust', ingredientId: null, match: 'none' },
+        { rawName: 'Egg', ingredientId: null, ingredientName: null, match: 'none' },
+        { rawName: 'Unicorn dust', ingredientId: null, ingredientName: null, match: 'none' },
       ],
     });
     const res = await postImport(app, { text: 'x' });
@@ -311,6 +320,7 @@ describe('POST /recipes/import', () => {
         {
           rawName: 'Water',
           ingredientId: null,
+          ingredientName: null,
           match: 'none',
         },
       ],
@@ -344,11 +354,13 @@ describe('POST /recipes/import', () => {
         {
           rawName: 'Sipuli',
           ingredientId: '22222222-2222-4222-8222-222222222222',
+          ingredientName: 'Onion',
           match: 'alias',
         },
         {
           rawName: 'Voita',
           ingredientId: '33333333-3333-4333-8333-333333333333',
+          ingredientName: 'Butter',
           match: 'alias',
         },
       ],
@@ -374,6 +386,7 @@ describe('POST /recipes/import', () => {
         {
           rawName: 'Voita',
           ingredientId: '33333333-3333-4333-8333-333333333333',
+          ingredientName: 'Butter',
           match: 'alias',
         },
       ],

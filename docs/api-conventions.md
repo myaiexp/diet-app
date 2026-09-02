@@ -112,6 +112,9 @@ cook deduction. Rationale: `docs/plans/2026-07-21-phase1-closeout-design.md`.
   (hostname/DNS blocklist, ports 80/443 only, TCP connect pinned to the
   already-allowed DNS answers so undici cannot re-resolve at connect time);
   extract in `ai/import-recipe.ts`; exact catalog match in `ingredient-match.ts`.
+  A matched line carries `ingredientName` beside `ingredientId` — the matcher
+  already holds the candidate rows, so naming the binding costs no query and
+  saves the review screen a per-line lookup.
   Response is `{ draft, unmatchedCount, truncated }`. Paste over
   `IMPORT_TEXT_MAX_CHARS` is 400; URL fetch truncates instead and sets
   `truncated: true` so the review screen can warn — the model still runs on

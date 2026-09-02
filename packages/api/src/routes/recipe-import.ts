@@ -34,11 +34,15 @@ function buildDraft(
     const m = matches[i] ?? {
       rawName: ing.name,
       ingredientId: null,
+      ingredientName: null,
       match: 'none' as const,
     };
     return {
       rawName: ing.name,
       ingredientId: m.ingredientId,
+      // The review screen shows this instead of a generic "catalog match" —
+      // reviewing a binding you cannot see is the point of that screen (#3237).
+      ingredientName: m.ingredientName,
       quantity: ing.quantity,
       unit: ing.unit,
       optional: ing.optional ?? false,

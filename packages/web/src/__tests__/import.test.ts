@@ -180,6 +180,72 @@ describe('recipe import screen', () => {
     expect(root.querySelector('.import-line--assumed')).not.toBeNull();
   });
 
+  test('a bound line names the catalog ingredient it matched', async () => {
+    const draft = makeDraft({
+      ingredients: [
+        makeLine({
+          rawName: '3 dl ohrasuurimoita',
+          ingredientId: 'ing-barley',
+          ingredientName: 'Pearl barley',
+          quantity: 300,
+          match: 'exact',
+        }),
+        makeLine({ rawName: 'metsäsieniä', ingredientId: null, ingredientName: null, quantity: 250, match: 'none' }),
+      ],
+    });
+    fetchMock.mockImplementation(draftFetch(draft, 1));
+
+    const root = mountRoot();
+    await importScreen().mount(root, makeCtx());
+    submit(root);
+    await waitForReview(root);
+
+    const binds = [...root.querySelectorAll('.import-line-bind .label-muted')].map((s) => s.textContent);
+    expect(binds).toEqual(['→ Pearl barley', '→ no catalog match']);
+  });
+
+  test('a bound line with no resolved name falls back to the generic label', async () => {
+    const draft = makeDraft({
+      ingredients: [
+        makeLine({ rawName: 'mystery', ingredientId: 'ing-x', ingredientName: null, quantity: 10, match: 'exact' }),
+      ],
+    });
+    fetchMock.mockImplementation(draftFetch(draft, 0));
+
+    const root = mountRoot();
+    await importScreen().mount(root, makeCtx());
+    submit(root);
+    await waitForReview(root);
+
+    expect(root.querySelector('.import-line-bind .label-muted')!.textContent).toBe('→ catalog match');
+  });
+
+  test('picking a candidate names the ingredient the user chose', async () => {
+    const draft = makeDraft({
+      ingredients: [makeLine({ rawName: 'metsäsieniä', ingredientId: null, ingredientName: null, quantity: 250, unit: 'g', match: 'none' })],
+    });
+    const hit = makeIngredient({ id: 'ing-mush', name: 'Mushroom, button' });
+    fetchMock.mockImplementation(draftFetch(draft, 1, { '/api/ingredients': [hit] }));
+
+    const root = mountRoot();
+    await importScreen().mount(root, makeCtx());
+    submit(root);
+    await waitForReview(root);
+    await vi.waitFor(() => {
+      expect(
+        [...root.querySelectorAll('.import-candidate-results .btn-sm')].some(
+          (b) => b.textContent === 'Mushroom, button',
+        ),
+      ).toBe(true);
+    });
+
+    [...root.querySelectorAll<HTMLButtonElement>('.import-candidate-results .btn-sm')]
+      .find((b) => b.textContent === 'Mushroom, button')!
+      .click();
+
+    expect(root.querySelector('.import-line-bind .label-muted')!.textContent).toBe('→ Mushroom, button');
+  });
+
   test('expands an unresolved line into catalog candidates from searchIngredients', async () => {
     const draft = makeDraft({
       ingredients: [makeLine({ rawName: 'metsäsieniä', ingredientId: null, quantity: 250, unit: 'g', match: 'none' })],

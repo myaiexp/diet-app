@@ -167,9 +167,10 @@ export function makeProfile(overrides: Partial<UserProfile> = {}): UserProfile {
 }
 
 export function makeLine(overrides: Partial<DraftIngredientLine> = {}): DraftIngredientLine {
-  return {
+  const line: DraftIngredientLine = {
     rawName: '3 dl ohrasuurimoita',
     ingredientId: 'ing-barley',
+    ingredientName: 'Pearl barley',
     quantity: 300,
     unit: 'ml',
     optional: false,
@@ -178,6 +179,11 @@ export function makeLine(overrides: Partial<DraftIngredientLine> = {}): DraftIng
     quantityInferred: false,
     ...overrides,
   };
+  // The API never sends a name without an id. A caller that overrides the id to
+  // null and says nothing about the name gets the pair the server would send,
+  // not the default name stranded on an unmatched line.
+  if (line.ingredientId === null && !('ingredientName' in overrides)) line.ingredientName = null;
+  return line;
 }
 
 export function makeDraft(overrides: Partial<RecipeDraft> = {}): RecipeDraft {

@@ -263,6 +263,8 @@ export interface ProfilePatch {
 export interface DraftIngredientLine {
   rawName: string;
   ingredientId: string | null;
+  /** Name of the catalog row `ingredientId` points at — `null` when unmatched. */
+  ingredientName: string | null;
   quantity: number;
   unit: string;
   optional: boolean;

@@ -15,6 +15,13 @@ export type IngredientCandidate = {
 export type LineMatch = {
   rawName: string;
   ingredientId: string | null;
+  /**
+   * The matched catalog row's name, `null` when nothing matched. Carried
+   * alongside the id purely so the review screen can name what it bound to —
+   * the candidates are already loaded here, so this costs no extra query and
+   * saves the client a per-line lookup (#3237).
+   */
+  ingredientName: string | null;
   match: MatchKind;
 };
 
@@ -36,14 +43,19 @@ export function matchIngredientName(
 ): LineMatch {
   const needle = normalizeIngredientName(rawName);
   if (!needle) {
-    return { rawName, ingredientId: null, match: 'none' };
+    return { rawName, ingredientId: null, ingredientName: null, match: 'none' };
   }
 
   const nameHits = candidates
     .filter((c) => normalizeIngredientName(c.name) === needle)
     .sort(compareCandidates);
   if (nameHits.length > 0) {
-    return { rawName, ingredientId: nameHits[0].id, match: 'exact' };
+    return {
+      rawName,
+      ingredientId: nameHits[0].id,
+      ingredientName: nameHits[0].name,
+      match: 'exact',
+    };
   }
 
   const aliasHits = candidates
@@ -52,10 +64,15 @@ export function matchIngredientName(
     )
     .sort(compareCandidates);
   if (aliasHits.length > 0) {
-    return { rawName, ingredientId: aliasHits[0].id, match: 'alias' };
+    return {
+      rawName,
+      ingredientId: aliasHits[0].id,
+      ingredientName: aliasHits[0].name,
+      match: 'alias',
+    };
   }
 
-  return { rawName, ingredientId: null, match: 'none' };
+  return { rawName, ingredientId: null, ingredientName: null, match: 'none' };
 }
 
 /** Load catalog candidates and match many names (exact name or alias). */
@@ -67,7 +84,12 @@ export async function matchIngredientNames(
 
   const needles = [...new Set(names.map(normalizeIngredientName).filter(Boolean))];
   if (needles.length === 0) {
-    return names.map((rawName) => ({ rawName, ingredientId: null, match: 'none' as const }));
+    return names.map((rawName) => ({
+      rawName,
+      ingredientId: null,
+      ingredientName: null,
+      match: 'none' as const,
+    }));
   }
 
   // Case-insensitive exact name OR any alias exact match.
