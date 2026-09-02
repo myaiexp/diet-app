@@ -223,6 +223,9 @@ describe('fetchUrlAsText SSRF logging', () => {
     expect(logged[0]).toContain('[recipe-import] redirect target rejected');
     expect(logged[0]).toContain('hop=1');
     expect(logged[0]).toContain('invalid_url');
+    // The rejected hop is logged; its credentials must not reach journald.
+    expect(logged[0]).not.toContain('pass');
+    expect(logged[0]).toContain('url=https://***:***@example.com/recipe');
   });
 
   test('rejects a 302 Location whose userinfo wraps a blocked host', async () => {
@@ -247,6 +250,7 @@ describe('fetchUrlAsText SSRF logging', () => {
     expect(fetched.some((u) => u.includes('user:pass'))).toBe(false);
     expect(logged[0]).toContain('[recipe-import] redirect target rejected');
     expect(logged[0]).toContain('hop=1');
+    expect(logged[0]).not.toContain('pass');
   });
 
   test('stays silent when the user URL itself is rejected (expected 400)', async () => {

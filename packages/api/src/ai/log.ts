@@ -7,6 +7,30 @@ function truncate(s: string): string {
 }
 
 /**
+ * Strip userinfo from a URL-shaped context value before it reaches journald.
+ *
+ * Rejected redirect targets and raw `Location` headers are attacker-controlled:
+ * a 302 to `https://user:pass@host/` would otherwise print the password to the
+ * log. Redacting in the sink rather than at each call site keeps a future
+ * context field from reintroducing the leak. The `***` placeholders stay so an
+ * operator can still see that credentials were present — that is itself the
+ * diagnostic fact. Values that are not absolute URLs pass through untouched.
+ */
+function redactUserinfo(s: string): string {
+  if (!s.includes('@')) return s;
+  let url: URL;
+  try {
+    url = new URL(s);
+  } catch {
+    return s;
+  }
+  if (url.username === '' && url.password === '') return s;
+  if (url.username !== '') url.username = '***';
+  if (url.password !== '') url.password = '***';
+  return url.href;
+}
+
+/**
  * Compact one-line description of a thrown value.
  *
  * Unwrapping `cause` is the whole point for fetch: undici reports every
@@ -56,7 +80,7 @@ export function logImportFailure(
 ): void {
   const ctx = context
     ? Object.entries(context)
-        .map(([k, v]) => ` ${k}=${truncate(String(v))}`)
+        .map(([k, v]) => ` ${k}=${truncate(redactUserinfo(String(v)))}`)
         .join('')
     : '';
   const cause = detail === undefined ? '' : `: ${describeError(detail)}`;
