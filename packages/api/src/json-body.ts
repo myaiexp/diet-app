@@ -10,7 +10,23 @@ export type BodyResult<T> = { ok: true; data: T } | { ok: false; response: Respo
 // contract, so routes only ever see the folded parseJsonBody below.
 // Content-Type is gated by csrfGuard, not here: c.req.json() ignores it, and
 // body-less POST /cook never calls this.
-async function readJsonBody(c: Context): Promise<BodyResult<unknown>> {
+async function readJsonBody(
+  c: Context,
+  allowEmptyBody: boolean,
+): Promise<BodyResult<unknown>> {
+  if (allowEmptyBody) {
+    // c.req.json() throws on a zero-length body, which for these routes is the
+    // normal call. Read the text so an absent body and `{}` take the same path
+    // and a malformed one still 400s. csrfGuard already required the JSON
+    // Content-Type, so an empty body here is deliberate, not a form post.
+    const raw = await c.req.text();
+    if (raw.trim() === '') return { ok: true, data: {} };
+    try {
+      return { ok: true, data: JSON.parse(raw) };
+    } catch {
+      return { ok: false, response: badRequest(c, 'Invalid JSON body') };
+    }
+  }
   try {
     return { ok: true, data: await c.req.json() };
   } catch {
@@ -25,6 +41,11 @@ function isEmptyObject(value: unknown): boolean {
 export type ParseJsonBodyOpts = {
   /** PATCH bodies: reject `{}` — a patch with nothing to write is a client bug. */
   requireNonEmpty?: boolean;
+  /**
+   * Routes whose whole body is optional (POST /recipes/:id/fork): an absent or
+   * blank body validates as `{}` instead of 400-ing as invalid JSON.
+   */
+  allowEmptyBody?: boolean;
 };
 
 /**
@@ -39,7 +60,7 @@ export async function parseJsonBody<S extends ZodType>(
   schema: S,
   opts: ParseJsonBodyOpts = {},
 ): Promise<BodyResult<z.output<S>>> {
-  const body = await readJsonBody(c);
+  const body = await readJsonBody(c, opts.allowEmptyBody ?? false);
   if (!body.ok) return body;
 
   const parsed = schema.safeParse(body.data);

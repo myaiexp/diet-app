@@ -43,6 +43,9 @@ paragraph of "why", the why belongs in the linked subdoc.
 - **Recipe scaling**: scaled views are `GET /recipes/:id?servings=N`
   (`recipe-scale.ts`); the client must not reimplement `qty × target / base`.
   Design: `docs/plans/2026-07-21-phase1-closeout-design.md`.
+- **Recipe fork**: `POST /recipes/:id/fork` copies content, not history —
+  `userRating`/`timesCooked` stay behind, `parentRecipeId` is the immediate
+  source. Optional strict `{ title }` body. Rules: **`docs/api-conventions.md`**.
 - **Cook flow**: confirm loads `GET /meal-plans/:id/cook-preview` (read-only);
   `cooked` is terminal via `POST /meal-plans/:id/cook`; PATCH cannot change the
   inputs the deduction was computed from. Feedback invariant (`changesNote`
