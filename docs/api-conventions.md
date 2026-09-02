@@ -133,6 +133,15 @@ vanished mid-request, and that belongs in a 500, not a tidy 400.
   A matched line carries `ingredientName` beside `ingredientId` — the matcher
   already holds the candidate rows, so naming the binding costs no query and
   saves the review screen a per-line lookup.
+  Matching is exact on `ingredients.name` then exact on `aliases`, both
+  case-folded and whitespace-collapsed — so a Finnish recipe line only ever
+  reaches a row through its Finnish alias. **Every catalog row carries at least
+  one**, pinned by `seed-data.test.ts`; an English-only row is unreachable from
+  a Finnish recipe (idea #3391). Aliases do *not* connect the catalog to
+  `products`: product names are brand+descriptor+size strings
+  ("Kotimaista Creme fraiche 18 % 150g vähälaktoosinen"), and only 11 of 462
+  ingredients exact-match one — before or after the alias fill. That gap needs
+  fuzzy matching (#2658) or LLM resolution (#2659), not more aliases.
   Response is `{ draft, unmatchedCount, truncated, lowYield }`. Paste over
   `IMPORT_TEXT_MAX_CHARS` is 400; URL fetch truncates instead and sets
   `truncated: true` so the review screen can warn — the model still runs on
