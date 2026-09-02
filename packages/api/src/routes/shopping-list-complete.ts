@@ -77,8 +77,8 @@ export function shoppingListCompleteRoutes(db: Db): Hono {
     // genuinely empty request body (no bytes to parse) — parseJsonBody turns
     // that into 'Invalid JSON body'. We deliberately don't special-case a
     // bodyless request into "no overrides": callers must send at least `{}`,
-    // matching every other write route in this API (none accept an absent
-    // body either).
+    // matching every write route here but POST /cook, which was body-less
+    // before it grew an override and so opts into `allowEmptyBody`.
     const parsed = await parseJsonBody(c, completeSchema);
     if (!parsed.ok) return parsed.response;
     const overrides = new Map(

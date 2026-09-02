@@ -5,14 +5,16 @@ import { config } from 'dotenv';
 // which puts the whole suite back into silent-skip mode.
 config({ path: fileURLToPath(new URL('../../../../.env', import.meta.url)), quiet: true });
 
-import { describe, test, expect, afterAll } from 'vitest';
+import { describe, test, expect, afterAll, beforeAll } from 'vitest';
 import {
   createDb,
+  acquireDbTestLock,
   cookFeedback,
   shoppingLists,
   shoppingListItems,
   pantryItems,
   ingredients,
+  type DbTestLock,
 } from '@diet-app/db';
 import { eq, inArray } from 'drizzle-orm';
 import { createApp } from '../app.js';
@@ -46,7 +48,7 @@ const hasDb = Boolean(TEST_DB_URL);
 const db = hasDb ? createDb(TEST_DB_URL!) : null;
 const app = db ? createApp(db) : null;
 
-// LOUD GATE: `describe.skipIf` alone reports 21 quiet skips, which is how this
+// LOUD GATE: `describe.skipIf` alone reports 22 quiet skips, which is how this
 // suite went 4 commits without ever executing — the SQL it is the only cover
 // for (tags @>, unnest, ON CONFLICT, relational with:, numeric FEFO math) was
 // unverified the whole time. An unset TEST_DATABASE_URL now fails the run.
@@ -70,10 +72,24 @@ describe('integration DB gate', () => {
 // Write-path smokes mutate dietapp_test and clean up in try/finally so leftover
 // rows do not accumulate across runs. The DB is isolated from prod (guarded
 // above), so writes here are safe regardless.
+//
+// Isolated from *other sessions* by the advisory lock below: every worktree's
+// .env aims TEST_DATABASE_URL at the same dietapp_test, so two concurrent runs
+// delete each other's fixtures mid-test (#4088). The lock is held for the whole
+// file and Postgres drops it if this process dies.
+let suiteLock: DbTestLock | null = null;
+
+beforeAll(async () => {
+  if (hasDb) suiteLock = await acquireDbTestLock(TEST_DB_URL!);
+  // Above acquireDbTestLock's own 120s deadline, so a contended run reports the
+  // lock's message rather than vitest's generic hook timeout.
+}, 130_000);
 
 afterAll(async () => {
-  // Close the underlying pg pool so the test process exits cleanly.
+  // Close the underlying pg pool so the test process exits cleanly, then hand
+  // the database to whoever is queued behind us.
   await db?.$client.end();
+  await suiteLock?.release();
 });
 
 describe.skipIf(!hasDb)('GET /api/ingredients', () => {
@@ -829,6 +845,10 @@ describe.skipIf(!hasDb)('cook flow', () => {
       const cookBody = await cookRes.json();
       expect(cookBody.entry.status).toBe('cooked');
       expect(cookBody.shortfalls).toEqual([]);
+      // No body → cooked as planned, and the numeric column round-trips as a
+      // string like every other numeric in this API.
+      expect(cookBody.entry.servings).toBe('2');
+      expect(cookBody.entry.actualServings).toBe('2');
 
       // 6. Pantry quantity 1 kg → 0.5 kg (scale = 2/2 = 1; 500 g from 1 kg)
       const pantryGet = await app!.request(`/api/pantry/${pantryId}`);
@@ -955,6 +975,93 @@ describe.skipIf(!hasDb)('cook flow', () => {
         const delPantry = await app!.request(`/api/pantry/${pantryId}`, {
           method: 'DELETE',
         });
+        expect([204, 404]).toContain(delPantry.status);
+      }
+    }
+  });
+
+  test('a cook servings override scales the deduction and leaves planned servings alone', async () => {
+    const ingredientsRes = await app!.request('/api/ingredients?limit=1');
+    const ingredientId = (await ingredientsRes.json())[0].id as string;
+
+    let recipeId: string | undefined;
+    let pantryId: string | undefined;
+    let entryId: string | undefined;
+
+    try {
+      // Recipe serves 2 on a 500 g line; entry is planned for 2; cook 4.
+      const recipeRes = await app!.request('/api/recipes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: 'Cook-override smoke recipe',
+          servings: 2,
+          ingredients: [{ ingredientId, quantity: 500, unit: 'g' }],
+        }),
+      });
+      expect(recipeRes.status).toBe(201);
+      recipeId = (await recipeRes.json()).id as string;
+
+      const pantryRes = await app!.request('/api/pantry', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ingredientId,
+          quantity: 3,
+          unit: 'kg',
+          location: 'pantry',
+          expiresDate: '2099-12-31',
+        }),
+      });
+      expect(pantryRes.status).toBe(201);
+      pantryId = (await pantryRes.json()).id as string;
+
+      const entryRes = await app!.request('/api/meal-plans', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          date: '2026-07-21',
+          slot: 'lunch',
+          recipeId,
+          servings: 2,
+        }),
+      });
+      expect(entryRes.status).toBe(201);
+      entryId = (await entryRes.json()).id as string;
+
+      const cookRes = await app!.request(`/api/meal-plans/${entryId}/cook`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ servings: 4 }),
+      });
+      expect(cookRes.status).toBe(200);
+      const cooked = await cookRes.json();
+      // scale 4/2 = 2 → 1000 g off a 3 kg lot
+      expect(cooked.deductions[0].requested).toBe(1000);
+      expect(cooked.entry.actualServings).toBe('4');
+      expect(cooked.entry.servings).toBe('2');
+
+      const pantryGet = await app!.request(`/api/pantry/${pantryId}`);
+      expect((await pantryGet.json()).quantity).toBe('2');
+
+      // Re-read: the planned/actual split is what Postgres actually stored, not
+      // just what the cook response echoed back.
+      const week = await app!.request('/api/meal-plans/week/2026-07-21');
+      const stored = (await week.json()).find(
+        (e: { id: string }) => e.id === entryId,
+      );
+      expect(stored).toMatchObject({ servings: '2', actualServings: '4' });
+    } finally {
+      if (entryId) {
+        const delEntry = await app!.request(`/api/meal-plans/${entryId}`, { method: 'DELETE' });
+        expect([204, 404]).toContain(delEntry.status);
+      }
+      if (recipeId) {
+        const delRecipe = await app!.request(`/api/recipes/${recipeId}`, { method: 'DELETE' });
+        expect([204, 404]).toContain(delRecipe.status);
+      }
+      if (pantryId) {
+        const delPantry = await app!.request(`/api/pantry/${pantryId}`, { method: 'DELETE' });
         expect([204, 404]).toContain(delPantry.status);
       }
     }

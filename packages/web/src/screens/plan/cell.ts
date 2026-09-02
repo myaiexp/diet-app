@@ -42,7 +42,13 @@ function buildFilledCell(
     el('span', { class: 'plan-cell-slot' }, slot),
     el('span', { class: 'plan-cell-title text-pretty' }, entryTitle(entry, recipesById)),
     el('span', { class: `plan-cell-status ${status.cls}` }, status.text),
-    el('span', { class: 'plan-cell-serv' }, `${toNumber(entry.servings)} serv`),
+    // Once cooked, what was actually cooked is the interesting number; before
+    // that, `actualServings` is null and the planned figure is all there is.
+    el(
+      'span',
+      { class: 'plan-cell-serv' },
+      `${toNumber(entry.actualServings ?? entry.servings)} serv`,
+    ),
   );
   return cell;
 }

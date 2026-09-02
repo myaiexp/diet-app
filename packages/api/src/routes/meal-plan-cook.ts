@@ -7,6 +7,8 @@ import { mealPlanEntries, recipes, pantryItems } from '@diet-app/db';
 import { eq, sql } from 'drizzle-orm';
 import { isUuid, parseServings } from '../validation.js';
 import { notFound, badRequest, conflict } from '../responses.js';
+import { parseJsonBody } from '../json-body.js';
+import { mealPlanCookSchema } from '../schemas/meal-plans.js';
 import type { Deduction, Shortfall } from '../cook-deduct.js';
 import {
   loadCookPlan,
@@ -88,8 +90,17 @@ export function mealPlanCookRoutes(db: Db): Hono {
     const id = c.req.param('id');
     if (!isUuid(id)) return badRequest(c, 'Invalid id format');
 
+    // Body is optional: a client with nothing to override sends no bytes at all
+    // (still with a JSON Content-Type, so csrfGuard doesn't 415 it).
+    const parsed = await parseJsonBody(c, mealPlanCookSchema, { allowEmptyBody: true });
+    if (!parsed.ok) return parsed.response;
+    const override = parsed.data.servings;
+
     const result: CookOk | CookPlanError = await db.transaction(async (tx) => {
-      const planned = await loadCookPlan(tx, id, { lock: true });
+      const planned = await loadCookPlan(tx, id, {
+        lock: true,
+        ...(override !== undefined ? { servings: override } : {}),
+      });
       if (planned.kind !== 'ok') return planned;
 
       if (planned.resolvedRecipeId != null) {
@@ -101,9 +112,17 @@ export function mealPlanCookRoutes(db: Db): Hono {
           .where(eq(recipes.id, planned.resolvedRecipeId));
       }
 
+      // actualServings is what the deduction was actually computed from —
+      // always recorded, even with no override, so a cooked row never has to be
+      // read as "null means the planned figure". `servings` is left alone: it
+      // stays the record of what was planned.
       const [updated] = await tx
         .update(mealPlanEntries)
-        .set({ status: 'cooked', updatedAt: new Date() })
+        .set({
+          status: 'cooked',
+          actualServings: String(planned.servings),
+          updatedAt: new Date(),
+        })
         .where(eq(mealPlanEntries.id, id))
         .returning();
 

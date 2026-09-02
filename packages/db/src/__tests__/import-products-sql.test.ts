@@ -5,11 +5,12 @@
 // because that behaviour lives entirely in ON CONFLICT (store_id, ean) — a mock
 // would just record that .onConflictDoUpdate() was called.
 
-import { describe, test, expect, afterAll } from 'vitest';
+import { describe, test, expect, afterAll, beforeAll } from 'vitest';
 import { config } from 'dotenv';
 import { fileURLToPath } from 'url';
 import { and, eq, inArray } from 'drizzle-orm';
 import { createDb } from '../connection.js';
+import { acquireDbTestLock, type DbTestLock } from '../test-lock.js';
 import { products } from '../schema/index.js';
 import { importProducts, type ExportedProduct } from '../import-products.js';
 
@@ -58,10 +59,23 @@ describe('integration DB gate', () => {
   });
 });
 
+// The store ids above keep this file clear of the api suite's fixtures, but not
+// of a *second copy of this file* in another worktree — every .env aims at the
+// same dietapp_test (#4088). The shared lock covers that; see test-lock.ts.
+let suiteLock: DbTestLock | null = null;
+
+beforeAll(async () => {
+  if (hasDb) suiteLock = await acquireDbTestLock(TEST_DB_URL!);
+  // Above acquireDbTestLock's own 120s deadline, so a contended run reports the
+  // lock's message rather than vitest's generic hook timeout.
+}, 130_000);
+
 afterAll(async () => {
-  if (!db) return;
-  await db.delete(products).where(inArray(products.storeId, [STORE_A, STORE_B]));
-  await db.$client.end();
+  if (db) {
+    await db.delete(products).where(inArray(products.storeId, [STORE_A, STORE_B]));
+    await db.$client.end();
+  }
+  await suiteLock?.release();
 });
 
 describe.skipIf(!hasDb)('importProducts against real SQL', () => {

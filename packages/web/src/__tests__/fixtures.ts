@@ -87,6 +87,7 @@ export function makeEntry(overrides: Partial<MealPlanEntry> = {}): MealPlanEntry
     recipeId: null,
     freeformNote: 'Leftovers',
     servings: '2',
+    actualServings: null,
     status: 'planned',
     substituteRecipeId: null,
     notes: null,
