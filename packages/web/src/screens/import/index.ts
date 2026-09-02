@@ -22,6 +22,8 @@ export function importScreen(): Screen {
   let draft: RecipeDraft | null = null;
   /** URL fetch was capped — review must warn; paste never sets this. */
   let truncated = false;
+  /** URL fetch returned almost no text — the page needs JS; paste never sets this. */
+  let lowYield = false;
   let error: string | null = null;
   let errorDetails: string[] = [];
   /** Bumped on cancel so a stale extract response can't override the stage. */
@@ -41,6 +43,15 @@ export function importScreen(): Screen {
             'p',
             { class: 'helper-error import-truncated', role: 'status' },
             'The source page was truncated before extraction — later steps or ingredients may be missing.',
+          ),
+        );
+      }
+      if (lowYield) {
+        rootEl.appendChild(
+          el(
+            'p',
+            { class: 'helper-error import-low-yield', role: 'status' },
+            'The source page returned almost no text — it probably renders its recipe with JavaScript. Paste the recipe text instead.',
           ),
         );
       }
@@ -124,6 +135,7 @@ export function importScreen(): Screen {
       if (mine !== token) return; // cancelled or superseded
       draft = res.draft;
       truncated = res.truncated === true;
+      lowYield = res.lowYield === true;
       stage = 'review';
       render();
     } catch (err) {

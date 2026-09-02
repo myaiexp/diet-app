@@ -296,6 +296,12 @@ export interface RecipeImportResponse {
    * Always false on the paste path (oversize paste is 400, never truncated).
    */
   truncated: boolean;
+  /**
+   * The fetched page stripped to under IMPORT_TEXT_MIN_CHARS — a 200 that
+   * carried no recipe, i.e. the page renders with JavaScript. Also always false
+   * on the paste path.
+   */
+  lowYield: boolean;
 }
 
 export type ShoppingListStatus = 'draft' | 'shopping' | 'done';

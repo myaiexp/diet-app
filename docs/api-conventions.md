@@ -115,10 +115,18 @@ cook deduction. Rationale: `docs/plans/2026-07-21-phase1-closeout-design.md`.
   A matched line carries `ingredientName` beside `ingredientId` — the matcher
   already holds the candidate rows, so naming the binding costs no query and
   saves the review screen a per-line lookup.
-  Response is `{ draft, unmatchedCount, truncated }`. Paste over
+  Response is `{ draft, unmatchedCount, truncated, lowYield }`. Paste over
   `IMPORT_TEXT_MAX_CHARS` is 400; URL fetch truncates instead and sets
   `truncated: true` so the review screen can warn — the model still runs on
   the partial page (no 4xx). Paste always returns `truncated: false`.
+- **Low-yield fetch**: the same shape at the other end. A client-rendered page
+  answers 200 with a shell, so nothing in the chain fails and the model gets a
+  nav bar. Under `IMPORT_TEXT_MIN_CHARS` (600 — measured against live recipe
+  pages, see `ai/import-limits.ts`) the fetch sets `lowYield: true` and logs
+  `low-yield extraction` with the character count. Advisory only: the
+  extraction still runs, the review screen warns, and the log line is the
+  evidence for whether a headless-browser rung would earn its keep. Paste
+  always returns `lowYield: false` — a short paste is the user's own input.
 - **Import failure logging**: the import chain talks to two unreliable external
   services and collapses every failure into an opaque sentinel (`{ok:false}` /
   `fetch_failed`) behind a flat 502, so **every discarding site logs its cause

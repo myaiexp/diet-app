@@ -58,7 +58,7 @@ function makeApp(opts: {
   ai?: AiConfig | null;
   extractOk?: boolean;
   fetchResult?:
-    | { ok: true; text: string; finalUrl: string; truncated: boolean }
+    | { ok: true; text: string; finalUrl: string; truncated: boolean; lowYield?: boolean }
     | { ok: false; error: 'invalid_url' | 'blocked_url' | 'fetch_failed' };
   matches?: LineMatch[];
   extract?: ReturnType<typeof vi.fn>;
@@ -81,6 +81,7 @@ function makeApp(opts: {
         text: 'fetched recipe page',
         finalUrl: 'https://example.com/recipe',
         truncated: false,
+        lowYield: false,
       },
     );
   const matchIngredientNames =
@@ -250,6 +251,33 @@ describe('POST /recipes/import', () => {
     const body = await res.json();
     expect(body.truncated).toBe(true);
     expect(body.draft.sourceUrl).toBe('https://example.com/long');
+  });
+
+  test('url path surfaces lowYield:true on the import JSON (idea #4087)', async () => {
+    // A JS-hydrated page answers 200 with a near-empty shell, so nothing in the
+    // chain fails. Without this flag the extraction quietly returns near-garbage
+    // and the client has no way to say why.
+    const { app } = makeApp({
+      fetchResult: {
+        ok: true,
+        text: 'Resepti Enable JavaScript',
+        finalUrl: 'https://example.com/spa',
+        truncated: false,
+        lowYield: true,
+      },
+    });
+    const res = await postImport(app, { url: 'https://example.com/spa' });
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.lowYield).toBe(true);
+    expect(body.truncated).toBe(false);
+  });
+
+  test('paste path is never low-yield — a short paste is the user’s own input', async () => {
+    const { app } = makeApp();
+    const res = await postImport(app, { text: 'kaali, suola' });
+    expect(res.status).toBe(200);
+    expect((await res.json()).lowYield).toBe(false);
   });
 
   test('blocked url returns 400', async () => {
