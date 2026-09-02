@@ -74,8 +74,11 @@ describe('fetchUrlAsText timeout', () => {
   });
 
   test('a fast response is unaffected by the timer', async () => {
+    // Body padded past IMPORT_TEXT_MIN_CHARS: the claim here is that a prompt
+    // response logs NOTHING, and a two-character page would now legitimately
+    // log a low-yield line and make this assert the wrong thing.
     const pending = fetchUrlAsText('https://example.com/x', {
-      fetchImpl: async () => htmlResponse('<p>ok</p>'),
+      fetchImpl: async () => htmlResponse(`<p>${'ok '.repeat(400)}</p>`),
       dnsLookup: publicDns,
       timeoutMs: 20,
     });

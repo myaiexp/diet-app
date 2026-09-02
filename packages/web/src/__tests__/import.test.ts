@@ -95,6 +95,37 @@ describe('recipe import screen', () => {
     expect(warn!.textContent).toMatch(/truncated/i);
   });
 
+  test('warns on review when the page yielded almost no text (idea #4087)', async () => {
+    // The JS-hydrated case: the server answered 200, so the user sees a draft
+    // built from a nav bar. Without this the empty result looks like the AI
+    // failing, and the real cause — the page needs a browser — never surfaces.
+    const draft = makeDraft();
+    fetchMock.mockImplementation(
+      routeFetch(
+        {
+          '/api/recipes/import': {
+            draft,
+            unmatchedCount: 0,
+            truncated: false,
+            lowYield: true,
+          },
+          '/api/ingredients': [],
+        },
+        { unmatched: '404' },
+      ),
+    );
+
+    const root = mountRoot();
+    await importScreen().mount(root, makeCtx());
+    submit(root);
+    await waitForReview(root);
+
+    const warn = root.querySelector('.import-low-yield');
+    expect(warn).not.toBeNull();
+    expect(warn!.textContent).toMatch(/javascript/i);
+    expect(root.querySelector('.import-truncated')).toBeNull();
+  });
+
   test('classifies lines as bound / assumed / unresolved', async () => {
     const draft = makeDraft({
       ingredients: [

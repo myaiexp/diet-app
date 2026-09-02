@@ -26,13 +26,25 @@ import {
   truncateText,
 } from './fetch-body.js';
 
-import { IMPORT_TEXT_MAX_CHARS } from './import-limits.js';
+import { IMPORT_TEXT_MAX_CHARS, IMPORT_TEXT_MIN_CHARS } from './import-limits.js';
 import { logImportFailure } from './log.js';
 
-export { IMPORT_TEXT_MAX_CHARS, htmlToPlainText };
+export { IMPORT_TEXT_MAX_CHARS, IMPORT_TEXT_MIN_CHARS, htmlToPlainText };
 
 export type FetchUrlResult =
-  | { ok: true; text: string; finalUrl: string; truncated: boolean }
+  | {
+      ok: true;
+      text: string;
+      finalUrl: string;
+      truncated: boolean;
+      /**
+       * The page answered 200 but stripped to almost nothing — the signature of
+       * a client-rendered page whose recipe never reached us. Not an error (the
+       * extraction still runs), but the only evidence that this URL needs a
+       * browser rather than a fetch.
+       */
+      lowYield: boolean;
+    }
   | { ok: false; error: 'invalid_url' | 'blocked_url' | 'fetch_failed' };
 
 /** Injectable DNS (tests mock this — production uses node:dns/promises.lookup). */
@@ -275,7 +287,20 @@ export async function fetchUrlAsText(
 
         const plain = htmlToPlainText(body.text);
         const { text, truncated } = truncateText(plain);
-        return { ok: true, text, finalUrl: safe.url.href, truncated };
+        // Nothing above this point fails for a JS-hydrated page: the server
+        // answers 200 with a shell, the body reads fine, and the extraction
+        // goes on to hallucinate from a nav bar. Logging it is what lets the
+        // "does a headless-browser rung earn its keep?" question ever be
+        // answered from evidence instead of a guess.
+        const lowYield = text.length < IMPORT_TEXT_MIN_CHARS;
+        if (lowYield) {
+          logImportFailure('low-yield extraction', undefined, {
+            url: safe.url.href,
+            chars: text.length,
+            floor: IMPORT_TEXT_MIN_CHARS,
+          });
+        }
+        return { ok: true, text, finalUrl: safe.url.href, truncated, lowYield };
       } finally {
         await closeDispatcher(dispatcher);
       }

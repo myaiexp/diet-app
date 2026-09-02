@@ -8,7 +8,7 @@
     "build": "rm -rf dist && tsc",
     "typecheck": "tsc -p tsconfig.typecheck.json",
     "generate": "drizzle-kit generate",
-    "migrate": "drizzle-kit migrate",
+    "migrate": "tsx scripts/db-migrate.ts",
     "studio": "drizzle-kit studio",
     "seed": "tsx src/seed.ts",
     "import-products": "tsx src/import-products-cli.ts",

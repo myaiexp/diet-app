@@ -91,6 +91,10 @@ export function recipeImportRoutes(db: Db, opts: RecipeImportRoutesOpts): Hono {
     // instead — the caller cannot control page size — and that flag must
     // reach the client so the review screen can warn (finding #8019).
     let truncated = false;
+    // Same shape as `truncated`, at the other end: the fetched page stripped to
+    // almost nothing, which means it renders with JavaScript. Paste never sets
+    // it — a short paste is the user's own input, not a failed fetch.
+    let lowYield = false;
 
     if (parsed.data.url !== undefined) {
       const fetched = await doFetch(parsed.data.url);
@@ -103,6 +107,7 @@ export function recipeImportRoutes(db: Db, opts: RecipeImportRoutesOpts): Hono {
       text = fetched.text;
       sourceUrl = fetched.finalUrl;
       truncated = fetched.truncated;
+      lowYield = fetched.lowYield === true;
     } else {
       // XOR schema guarantees text is present when url is absent
       text = parsed.data.text!;
@@ -119,7 +124,7 @@ export function recipeImportRoutes(db: Db, opts: RecipeImportRoutesOpts): Hono {
     const draft = buildDraft(extracted.recipe, matches, sourceUrl);
     const unmatchedCount = draft.ingredients.filter((l) => l.match === 'none').length;
 
-    return c.json({ draft, unmatchedCount, truncated });
+    return c.json({ draft, unmatchedCount, truncated, lowYield });
   });
 
   return app;
