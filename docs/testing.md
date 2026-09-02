@@ -123,7 +123,11 @@ wrote, with `transaction` running the callback against those same builders;
 `writes` carries each statement's table (`{kind, table, values, where}`) for
 handlers that write to several. `mergedRow(fixture)` is the usual `.returning()`.
 Each suite keeps a thin local `makeWriteMock(opts)` wrapper holding only its
-fixtures and `db.query.X.findFirst` stubs.
+fixtures and `db.query.X.findFirst` stubs. When two suites drive the *same*
+route pair, the wrapper moves to a `*-mock.ts` sibling instead
+(`meal-plan-cook-mock.ts`, `shopping-list-complete-mock.ts`) — cook and
+cook-preview assert they plan identically, which only means anything if both
+sides read a literally shared fixture rather than a hand-copied lookalike.
 
 ### Testing Postgres error mapping
 
