@@ -82,6 +82,30 @@ confirmation and hangs in a Helm session, which has no TTY. After migrating
 prod (`DATABASE_URL` → `dietapp`), re-provision the test DB with
 `setup:test-db` above.
 
+### The migrate guard
+
+`migrate` is not `drizzle-kit migrate` directly — it is `scripts/db-migrate.ts`,
+which refuses when all three hold: the pending migrations contain destructive
+DDL, and the checkout is not the main one. There is ONE database and helm copies
+the `.env` naming it into every worktree, so a `DROP COLUMN` applied from a
+worktree takes the column out from under the API running on master and leaves it
+broken until that branch deploys.
+
+Nothing else changes: additive DDL still applies straight from a worktree (which
+is what developing against a new column needs), and the destructive half needs no
+new step — the push-to-deploy hook already runs `drizzle-kit migrate` from
+`~/Projects/diet-app/packages/db` right after landing the branch, so the drop
+ships with the code that stopped using the surface. Split expand from contract if
+you need the additive half now. `--force` overrides (already deployed, or
+catching up a migration the deploy failed to apply).
+
+Policy lives in two pure modules — `src/destructive-ddl.ts` classifies the DDL
+(comments, string literals and dollar-quoted bodies are blanked first, so a
+migration's own prose about a drop is not mistaken for one) and
+`src/migrate-guard.ts` returns the verdict and refusal text. Both are ported from
+helm, which took the incident this prevents: 2026-08-22, four columns dropped
+from a worktree, 25 minutes of HTTP 500.
+
 ## Demo data
 
 `pnpm --filter @diet-app/db seed:demo` writes the design prototype's fixtures

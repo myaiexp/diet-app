@@ -24,9 +24,12 @@ paragraph of "why", the why belongs in the linked subdoc.
   (same origin). Auth (two independent gates), CORS, deploy, secrets, and the
   DB pool: **`docs/auth-deploy.md`**. Password rotation: `docs/db-rotation.md`.
   Vhost reference (token redacted): `docs/nginx-diet.mase.fi.conf`.
-- **Database**: PostgreSQL `dietapp`. Schema changes: `pnpm --filter
-  @diet-app/db generate` then `migrate` — never `push` (it prompts and hangs
-  without a TTY). Test DB: `pnpm --filter @diet-app/db setup:test-db`.
+- **Database**: PostgreSQL `dietapp` — one database, and every worktree's `.env`
+  points at it. Schema changes: `pnpm --filter @diet-app/db generate` then
+  `migrate` — never `push` (it prompts and hangs without a TTY). `migrate` runs
+  through a guard that refuses **destructive** pending DDL from a worktree and
+  sends it to the deploy's own migrate step instead; additive DDL applies
+  normally. Test DB: `pnpm --filter @diet-app/db setup:test-db`.
   Details: **`docs/testing.md`**.
 - Core concepts: spoilage-first pantry, AI meal planning, constraint
   satisfaction, auto-deduct cooking.
