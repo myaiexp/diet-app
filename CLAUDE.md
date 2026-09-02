@@ -73,8 +73,10 @@ source, so a fresh clone or worktree needs no build; root `pnpm build`
 (`pnpm -r build`, dependency-ordered) is for the api's Node-resolved paths —
 `build`, `start`, `dev`. Real-SQL suites (22 cases in `routes.test.ts`, 4 in
 `import-products-sql.test.ts`) share the loud `TEST_DATABASE_URL` /
-`DIET_APP_SKIP_DB_TESTS` gate. Mocks, fixture-by-table (never call-order),
-demo seed, drizzle-kit override, schema-migration workflow:
+`DIET_APP_SKIP_DB_TESTS` gate, and hold one advisory lock
+(`packages/db/src/test-lock.ts`) so concurrent worktree sessions can't corrupt
+each other's fixtures in the single `dietapp_test`. Mocks, fixture-by-table
+(never call-order), demo seed, drizzle-kit override, schema-migration workflow:
 **`docs/testing.md`**.
 
 ## Plans

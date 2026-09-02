@@ -71,7 +71,31 @@ migrate + seed + grant the `dietapp` role on mase-owned tables).
 Without `TEST_DATABASE_URL` those tests would skip, so a **loud gate test fails
 the run** instead; set `DIET_APP_SKIP_DB_TESTS=1` to opt out deliberately.
 Silence has to be chosen — a silent skip is how the api suite went 4 commits
-without executing once.
+without executing once. Each of the three files below reads the repo-root `.env`
+itself (vitest does not), so none of them depends on the shell's environment.
+
+### One test DB, many sessions
+
+There is a single `dietapp_test`, and helm copies the same `.env` into every
+worktree — so two sessions running the DB-backed files at once delete each
+other's fixtures mid-test (idea #4088: five concurrent grind sessions produced
+23502 not-null violations that a lone re-run could not reproduce). `test-suite`
+serializes *full* runs per project, but the scoped `vitest run <path>` an
+implementer is told to use bypasses that.
+
+So both files take a Postgres advisory lock for their whole duration —
+`acquireDbTestLock` in `packages/db/src/test-lock.ts` (in `src`, not
+`__tests__`, because both consumers reach it through the package index, and
+`__tests__` is excluded from the build). It polls
+`pg_try_advisory_lock` with a 120s deadline, so a wedged holder fails the run
+with a message naming the cause instead of hanging it, and Postgres drops the
+lock by itself if a run dies. Its own three cases live in
+`src/__tests__/test-lock.test.ts` on a separate key, so testing the lock never
+queues behind the suites that use it.
+
+A database per worktree was the alternative; it was not taken because it would
+put a create+migrate+seed step in front of the DB tests in every fresh
+checkout, to fix a case the lock fixes with no provisioning at all.
 
 ## Schema migrations
 

@@ -5,14 +5,16 @@ import { config } from 'dotenv';
 // which puts the whole suite back into silent-skip mode.
 config({ path: fileURLToPath(new URL('../../../../.env', import.meta.url)), quiet: true });
 
-import { describe, test, expect, afterAll } from 'vitest';
+import { describe, test, expect, afterAll, beforeAll } from 'vitest';
 import {
   createDb,
+  acquireDbTestLock,
   cookFeedback,
   shoppingLists,
   shoppingListItems,
   pantryItems,
   ingredients,
+  type DbTestLock,
 } from '@diet-app/db';
 import { eq, inArray } from 'drizzle-orm';
 import { createApp } from '../app.js';
@@ -46,7 +48,7 @@ const hasDb = Boolean(TEST_DB_URL);
 const db = hasDb ? createDb(TEST_DB_URL!) : null;
 const app = db ? createApp(db) : null;
 
-// LOUD GATE: `describe.skipIf` alone reports 21 quiet skips, which is how this
+// LOUD GATE: `describe.skipIf` alone reports 22 quiet skips, which is how this
 // suite went 4 commits without ever executing — the SQL it is the only cover
 // for (tags @>, unnest, ON CONFLICT, relational with:, numeric FEFO math) was
 // unverified the whole time. An unset TEST_DATABASE_URL now fails the run.
@@ -70,10 +72,24 @@ describe('integration DB gate', () => {
 // Write-path smokes mutate dietapp_test and clean up in try/finally so leftover
 // rows do not accumulate across runs. The DB is isolated from prod (guarded
 // above), so writes here are safe regardless.
+//
+// Isolated from *other sessions* by the advisory lock below: every worktree's
+// .env aims TEST_DATABASE_URL at the same dietapp_test, so two concurrent runs
+// delete each other's fixtures mid-test (#4088). The lock is held for the whole
+// file and Postgres drops it if this process dies.
+let suiteLock: DbTestLock | null = null;
+
+beforeAll(async () => {
+  if (hasDb) suiteLock = await acquireDbTestLock(TEST_DB_URL!);
+  // Above acquireDbTestLock's own 120s deadline, so a contended run reports the
+  // lock's message rather than vitest's generic hook timeout.
+}, 130_000);
 
 afterAll(async () => {
-  // Close the underlying pg pool so the test process exits cleanly.
+  // Close the underlying pg pool so the test process exits cleanly, then hand
+  // the database to whoever is queued behind us.
   await db?.$client.end();
+  await suiteLock?.release();
 });
 
 describe.skipIf(!hasDb)('GET /api/ingredients', () => {
