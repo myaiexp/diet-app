@@ -9,8 +9,9 @@ export interface PageArgs {
 
 /**
  * Walk `load` until a page shorter than `limit` arrives. The API clamps
- * `limit` at 200 (`getPagination`); requesting more silently gets 200 and
- * would loop forever, so the default is that ceiling rather than a guess.
+ * `limit` at 200 (`getPagination`); requesting more silently gets 200, which
+ * reads as a short page and truncates after one fetch — so the default is
+ * that ceiling rather than a guess.
  */
 export async function fetchAllPages<T>(
   load: (page: PageArgs) => Promise<T[]>,

@@ -10,16 +10,11 @@ paragraph of "why", the why belongs in the linked subdoc.
 
 - **Central-hub conventions**: ESM, `.js` imports, UUID PKs, timezone timestamps.
 - **Workspaces**: `packages/db` (Drizzle schema + connection), `packages/api`
-  (Hono, port 3300), `packages/web` (Vite + vanilla TS, no framework; screens
-  grouped by feature under `src/screens/<feature>/` (index.ts is the Screen
-  factory; profile stays a single file at the top of `screens/`); modals in
-  `src/modals/` next to the cook flow; one thin API module per resource
-  under `src/api/`, `base.css` from mase.fi). Screen loads go through
-  `loadInto` (`packages/web/src/ui/async.ts`) and `ctx.isStale()` from the
-  router — never a module-local `destroyed` flag.
-- **Web client**: paginated collections drain through `fetchAllPages`
-  (`listAllRecipes` / `listAllPantry`) at the API max page (200); every fetch
-  uses `AbortSignal.timeout` (25s, 45s for recipe import).
+  (Hono, port 3300), `packages/web` (Vite + vanilla TS, no framework).
+- **Web**: screens by feature, `loadInto` + `ctx.isStale()` mounts (never a
+  `destroyed` flag), one API module per resource, `fetchAllPages` at the API
+  max page, 25s/45s timeouts, 401 → reload, CSS layered on mase.fi `base.css`:
+  **`docs/web-conventions.md`**.
 - **Public URL**: `https://diet.mase.fi` — the app at `/`, its API at `/api/`
   (same origin). Auth (two independent gates), CORS, deploy, secrets, and the
   DB pool: **`docs/auth-deploy.md`**. Password rotation: `docs/db-rotation.md`.
@@ -40,6 +35,11 @@ paragraph of "why", the why belongs in the linked subdoc.
   Drizzle `with:` vs core builder, pantry-always-joins-ingredient, list
   filter/page/order (id tie-break), shared 4xx helpers, JSON/PATCH, recipe
   import logging, and walking the PG `cause` chain: **`docs/api-conventions.md`**.
+- **Pantry**: `location` is a closed set (`pantry-location.ts`); POST derives
+  `expiresDate` from `shelfLife.<location>_days` and 400s when that key is
+  absent (always for `counter`); PATCH never recomputes it; `status` bands are
+  server-side, in whole UTC days. Rules: **`docs/pantry.md`**. Design:
+  `docs/plans/2026-07-20-pantry-recipe-writes-design.md`.
 - **Recipe scaling**: scaled views are `GET /recipes/:id?servings=N`
   (`recipe-scale.ts`); the client must not reimplement `qty × target / base`.
   Design: `docs/plans/2026-07-21-phase1-closeout-design.md`.
