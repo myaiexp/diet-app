@@ -275,7 +275,10 @@ describe('recipesRoutes', () => {
     });
     expect(res.status).toBe(400);
     expect(await res.json()).toEqual({ error: 'Invalid reference' });
-    // The recipe insert landed first; the lines insert is what failed.
+    // Statement order only: the recipes insert is issued first, the lines insert
+    // is what fails. The mock cannot roll back, so it says nothing about whether
+    // the recipes row survives — in Postgres it does not, which
+    // rollback-recipes-sql.test.ts asserts.
     expect(writes.map((w) => w.table)).toEqual(['recipes', 'recipe_ingredients']);
   });
 

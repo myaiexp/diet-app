@@ -237,6 +237,12 @@ export interface DbMock {
  * A db whose insert/update/delete record what the handler wrote, and whose
  * transaction runs the callback against those same builders — so a route that
  * writes inside tx and one that writes directly are asserted the same way.
+ *
+ * That also means `transaction` NEVER rolls back: a write recorded before a
+ * throw stays in `writes`, and a route whose db.transaction wrapper was deleted
+ * passes a mock suite unchanged. Mock suites are no evidence of atomicity —
+ * rollback is asserted against Postgres in the rollback-*-sql.test.ts suites
+ * (fault-db.ts injects the failure there).
  */
 export function makeDbMock(opts: DbMockOptions = {}): DbMock {
   const writes: WriteRecord[] = [];

@@ -1,20 +1,10 @@
-import { fileURLToPath } from 'node:url';
-import { config } from 'dotenv';
-// Resolved from this file, not the CWD: a CWD-relative path silently loads
-// nothing when vitest is invoked from the repo root instead of packages/api,
-// which puts the whole suite back into silent-skip mode.
-config({ path: fileURLToPath(new URL('../../../../.env', import.meta.url)), quiet: true });
-
-import { describe, test, expect, afterAll, beforeAll } from 'vitest';
+import { describe, test, expect } from 'vitest';
 import {
-  createDb,
-  acquireDbTestLock,
   cookFeedback,
   shoppingLists,
   shoppingListItems,
   pantryItems,
   ingredients,
-  type DbTestLock,
 } from '@diet-app/db';
 import { eq, inArray } from 'drizzle-orm';
 import { createApp } from '../app.js';
@@ -23,74 +13,20 @@ import { matchIngredientNames } from '../ingredient-match.js';
 // Drizzle wraps driver errors, and what matters is that the routes' own
 // mapping recognizes the violation — not which wrapper this version uses.
 import { isUniqueViolation } from '../pg-errors.js';
+import { useRealDb } from './real-db.js';
 
 // Integration suite — exercises every route against a REAL Postgres instance
-// (dietapp_test). It is GATED on TEST_DATABASE_URL: when that env var is absent
-// (e.g. CI with no provisioned Postgres) the whole suite is skipped rather than
-// crashing the process at import, so the mock-based unit suites in this dir
-// (ingredients/pantry/recipes/meal-plans/shopping-lists.test.ts) still run and
-// verify route logic Postgres-free. Deterministic 200-path and field-shape
-// coverage lives in those unit suites; this suite is a real-schema smoke check.
-const TEST_DB_URL = process.env.TEST_DATABASE_URL;
-
-// SAFETY: never let the integration suite point at production. If a URL is set
-// and it looks like the prod database — contains 'dietapp' without the '_test'
-// suffix — hard-fail before opening any connection. (The error intentionally
-// omits the URL, to avoid leaking any credentials embedded in a bad value.)
-if (TEST_DB_URL && TEST_DB_URL.includes('dietapp') && !TEST_DB_URL.includes('_test')) {
-  throw new Error(
-    "Refusing to run tests: TEST_DATABASE_URL looks like the production database " +
-      "(contains 'dietapp' but not '_test'). Point it at dietapp_test before running tests."
-  );
-}
-
-const hasDb = Boolean(TEST_DB_URL);
-const db = hasDb ? createDb(TEST_DB_URL!) : null;
+// (dietapp_test). Deterministic 200-path and field-shape coverage lives in the
+// mock-based unit suites (ingredients/pantry/recipes/meal-plans/
+// shopping-lists.test.ts); this suite is a real-schema smoke check, the only
+// cover for the SQL itself (tags @>, unnest, ON CONFLICT, relational with:,
+// numeric FEFO math). Rollback on a failed write is the rollback-*-sql suites'
+// job. useRealDb holds the prod guard, the loud gate, and the advisory lock.
+const { db, hasDb } = useRealDb();
 const app = db ? createApp(db) : null;
 
-// LOUD GATE: `describe.skipIf` alone reports 22 quiet skips, which is how this
-// suite went 4 commits without ever executing — the SQL it is the only cover
-// for (tags @>, unnest, ON CONFLICT, relational with:, numeric FEFO math) was
-// unverified the whole time. An unset TEST_DATABASE_URL now fails the run.
-// Opting out is possible but has to be deliberate: DIET_APP_SKIP_DB_TESTS=1.
-// The db package has the same gate over its 4 import-products-sql tests.
-const SKIP_DB_TESTS = process.env.DIET_APP_SKIP_DB_TESTS === '1';
-
-describe('integration DB gate', () => {
-  test.skipIf(SKIP_DB_TESTS)('TEST_DATABASE_URL is configured', () => {
-    expect(
-      hasDb,
-      'TEST_DATABASE_URL is not set, so the entire real-Postgres integration ' +
-        'suite would skip silently. Provision the DB with ' +
-        '`pnpm --filter @diet-app/db setup:test-db`, then add TEST_DATABASE_URL ' +
-        'to the repo-root .env (see .env.example). To run the mock suites ' +
-        'without Postgres on purpose, set DIET_APP_SKIP_DB_TESTS=1.',
-    ).toBe(true);
-  });
-});
-
 // Write-path smokes mutate dietapp_test and clean up in try/finally so leftover
-// rows do not accumulate across runs. The DB is isolated from prod (guarded
-// above), so writes here are safe regardless.
-//
-// Isolated from *other sessions* by the advisory lock below: every worktree's
-// .env aims TEST_DATABASE_URL at the same dietapp_test, so two concurrent runs
-// delete each other's fixtures mid-test (#4088). The lock is held for the whole
-// file and Postgres drops it if this process dies.
-let suiteLock: DbTestLock | null = null;
-
-beforeAll(async () => {
-  if (hasDb) suiteLock = await acquireDbTestLock(TEST_DB_URL!);
-  // Above acquireDbTestLock's own 120s deadline, so a contended run reports the
-  // lock's message rather than vitest's generic hook timeout.
-}, 130_000);
-
-afterAll(async () => {
-  // Close the underlying pg pool so the test process exits cleanly, then hand
-  // the database to whoever is queued behind us.
-  await db?.$client.end();
-  await suiteLock?.release();
-});
+// rows do not accumulate across runs.
 
 describe.skipIf(!hasDb)('GET /api/ingredients', () => {
   test('returns array', async () => {
