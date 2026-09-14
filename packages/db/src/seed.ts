@@ -1,17 +1,16 @@
 // CLI entry point: load ingredients.json and seed the database (`pnpm seed`).
 
-import { config } from 'dotenv';
-config({ path: '../../.env', quiet: true });
-
 import { readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { createDb } from './connection.js';
+import { loadRepoEnv } from './load-env.js';
 import { resolveConnectionString, seedDatabase, type IngredientSeedRow } from './seed-core.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 async function main() {
+  loadRepoEnv();
   const connectionString = resolveConnectionString(process.env);
 
   const dataPath = join(__dirname, '..', 'data', 'ingredients.json');

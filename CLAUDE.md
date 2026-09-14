@@ -71,8 +71,9 @@ them); web type-checks tests via its main no-emit `tsconfig.json`. One vitest
 entry at the repo root. Tests and type-check resolve `@diet-app/db` from
 source, so a fresh clone or worktree needs no build; root `pnpm build`
 (`pnpm -r build`, dependency-ordered) is for the api's Node-resolved paths —
-`build`, `start`, `dev`. Real-SQL suites (22 cases in `routes.test.ts`, 4 in
-`import-products-sql.test.ts`) share the loud `TEST_DATABASE_URL` /
+`build`, `start`, `dev`. Real-SQL suites (22 cases in `routes.test.ts`, 9 in
+the `rollback-*-sql.test.ts` files, 4 in `import-products-sql.test.ts`) share
+the loud `TEST_DATABASE_URL` /
 `DIET_APP_SKIP_DB_TESTS` gate, and hold one advisory lock
 (`packages/db/src/test-lock.ts`) so concurrent worktree sessions can't corrupt
 each other's fixtures in the single `dietapp_test`. Mocks, fixture-by-table

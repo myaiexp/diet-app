@@ -32,7 +32,9 @@ const dotenvSites = sourceFiles(join(repoRoot, 'packages')).filter((f) =>
 
 describe('dotenv quiet', () => {
   test('finds the dotenv call sites at all (guard would pass vacuously otherwise)', () => {
-    expect(dotenvSites.length).toBeGreaterThanOrEqual(6);
+    // A floor, not a census: the env loaders (api + db load-env.ts), the api
+    // real-DB gate, and the two db real-Postgres suites.
+    expect(dotenvSites.length).toBeGreaterThanOrEqual(5);
   });
 
   test('every config() call opts out of the tip line', () => {

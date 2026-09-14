@@ -1,15 +1,12 @@
 // CLI entry: loads an S-kaupat store export into the products table
 
-import { config } from 'dotenv';
 import { readFileSync } from 'fs';
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
 import { createDb } from './connection.js';
+import { loadRepoEnv } from './load-env.js';
 import { resolveConnectionString } from './seed-core.js';
 import { importProducts, type ExportedProduct } from './import-products.js';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
-config({ path: join(__dirname, '../../../.env'), quiet: true });
+loadRepoEnv();
 
 const USAGE = `usage: pnpm --filter @diet-app/db import-products <export.json> <storeId>
 

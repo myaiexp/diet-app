@@ -54,10 +54,22 @@ agent's turn boundary. Idea #3539.
 
 ## Test DB
 
-Two real-Postgres suites share one gate.
+The real-Postgres suites share one gate.
 
 - `packages/api` `routes.test.ts` — 22 `test()` cases under
   `describe.skipIf(!hasDb)`, plus the loud gate.
+- `packages/api` `rollback-{recipes,cook-profile,shopping}-sql.test.ts` — 9
+  cases, one per route that issues several writes in one `db.transaction`
+  (recipe POST/fork/PATCH/DELETE, cook, profile PATCH with dislikes, list
+  DELETE, generate, complete). Each fails the route after its earlier writes
+  have executed and asserts Postgres kept none of them; each fails if that
+  route's transaction wrapper is removed. The failure is either a natural FK
+  violation or `withWriteFault(db, op, table)` (`__tests__/fault-db.ts`), a
+  proxy over the real db that throws on one table's writes — inside the
+  transaction and on the bare db alike — and records every write the route
+  started (`issued`), so a case also pins which writes it expects rolled back.
+- The api files get the prod-URL guard, loud gate and advisory lock from one
+  call, `useRealDb()` (`__tests__/real-db.ts`).
 - `packages/db` `src/__tests__/import-products-sql.test.ts` — 4 real-Postgres
   tests (upsert-in-place, same EAN across two stores, jsonb round-trip,
   missing-ean skip), plus its own loud gate. Batching (500-row split) and
@@ -167,7 +179,10 @@ Mock-based route suites build their fake db from `__tests__/db-mock.ts` — neve
 hand-roll a chainable Drizzle builder.
 `makeDbMock({insertRows, updateRows, deleteRows, query, select, txSelect, beforeTransaction, throwOnWrite})`
 returns `{db, inserts, updates, deletes, writes}` recording what the handler
-wrote, with `transaction` running the callback against those same builders;
+wrote, with `transaction` running the callback against those same builders —
+so it **never rolls back**, and a route stripped of its `db.transaction` passes
+its mock suite unchanged. Mock suites are no evidence of atomicity; the
+rollback-*-sql suites (Test DB, above) are;
 `writes` carries each statement's table (`{kind, table, values, where}`) for
 handlers that write to several. `mergedRow(fixture)` is the usual `.returning()`.
 Each suite keeps a thin local `makeWriteMock(opts)` wrapper holding only its
