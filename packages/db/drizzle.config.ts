@@ -1,7 +1,9 @@
 import { defineConfig } from 'drizzle-kit';
-import { config } from 'dotenv';
+import { loadRepoEnv } from './src/load-env.js';
 
-config({ path: '../../.env', quiet: true });
+// drizzle-kit resolves schema/out against the CWD by design, but the .env load
+// need not be: scripts/db-migrate.ts imports this file too, from any CWD.
+loadRepoEnv();
 
 export default defineConfig({
   schema: './src/schema/index.ts',

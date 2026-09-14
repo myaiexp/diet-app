@@ -1,10 +1,10 @@
 // Maps an S-kaupat store export onto product rows and upserts them
 
-import { sql, type SQL } from 'drizzle-orm';
-import type { PgColumn } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
 import { products } from './schema/index.js';
 import type { Db } from './connection.js';
 import { parseNutrients, type RawNutrient } from './nutrients.js';
+import { excludedColumns } from './upsert.js';
 
 /** One item as `scripts/skaupat-export.py` writes it. */
 export interface ExportedProduct {
@@ -35,12 +35,6 @@ export interface ImportResult {
 }
 
 type ProductRow = typeof products.$inferInsert;
-
-function excludedColumns<T extends Record<string, PgColumn>>(cols: T): Record<keyof T, SQL> {
-  return Object.fromEntries(
-    Object.entries(cols).map(([key, col]) => [key, sql.raw(`excluded.${col.name}`)]),
-  ) as Record<keyof T, SQL>;
-}
 
 /**
  * hierarchyPath arrives innermost-first ("Limet", "Hedelmät", "Hedelmät ja

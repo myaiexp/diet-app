@@ -1,9 +1,9 @@
 // Idempotent database seeding: upserts ingredients, ensures a default profile.
 
-import { sql, type SQL } from 'drizzle-orm';
-import type { PgColumn } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
 import { ingredients, userProfile } from './schema/index.js';
 import type { Db } from './connection.js';
+import { excludedColumns } from './upsert.js';
 
 // Insert-row shape for the ingredients table; typing the seed rows makes
 // column-name typos a compile error instead of a silently-dropped column.
@@ -20,15 +20,6 @@ export function resolveConnectionString(env: NodeJS.ProcessEnv): string {
     throw new Error('DATABASE_URL not set');
   }
   return url;
-}
-
-// Build an `ON CONFLICT DO UPDATE SET` that copies each given column from the
-// proposed row (excluded.*). Column SQL names are read from the schema so a
-// rename can't silently desync the update list.
-function excludedColumns<T extends Record<string, PgColumn>>(cols: T): Record<keyof T, SQL> {
-  return Object.fromEntries(
-    Object.entries(cols).map(([key, col]) => [key, sql.raw(`excluded.${col.name}`)]),
-  ) as Record<keyof T, SQL>;
 }
 
 // Upsert on the unique `name` so re-running refreshes existing ingredients

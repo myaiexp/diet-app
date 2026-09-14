@@ -145,8 +145,8 @@ export function buildProfile(catalog) {
 async function main() {
   const force = process.argv.includes('--force');
 
-  const { config } = await import('dotenv');
-  config({ path: '../../.env', quiet: true });
+  const { loadRepoEnv } = await import('../dist/load-env.js');
+  loadRepoEnv();
 
   const { resolveConnectionString } = await import('../dist/seed-core.js');
   const connectionString = resolveConnectionString(process.env);
