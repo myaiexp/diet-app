@@ -1,6 +1,7 @@
 // fetch wrapper: base URL, JSON bodies, request timeout, one place status → ApiError
 
-import { ApiError, type ApiErrorBody } from './errors.js';
+import { ApiError, SessionRejectedError, type ApiErrorBody } from './errors.js';
+import { claimSessionReload, clearSessionReload } from './reload-guard.js';
 
 export type QueryParams = Record<string, string | number | boolean | undefined>;
 
@@ -18,9 +19,10 @@ interface ClientConfig {
   /** Injectable so tests don't have to monkey-patch a global. */
   fetch: typeof globalThis.fetch | null;
   /**
-   * A 401 means the central-hub session expired mid-session — the edge gate
-   * would have caught anything else. Reloading re-hits the gate, which
-   * redirects to login. It is never a message we show.
+   * A 401 usually means the central-hub session expired mid-session; reloading
+   * re-hits the edge gate, which redirects to login. `send` calls this at most
+   * once per reload window (reload-guard.ts): a 401 on the page that reload
+   * produced means the API itself rejects the bearer, and that gets shown.
    */
   onSessionExpired: () => void;
   /** Default AbortSignal.timeout bound. Tests shorten this. */
@@ -91,9 +93,11 @@ async function send<T>(
   const res = await doFetch(buildUrl(path, init.params), options);
 
   if (res.status === 401) {
+    if (!claimSessionReload()) throw new SessionRejectedError();
     config.onSessionExpired();
     throw new ApiError(401, null);
   }
+  clearSessionReload();
   if (res.status === 204) return undefined as T;
 
   const body = await readBody(res);

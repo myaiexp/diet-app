@@ -19,6 +19,18 @@ export class ApiError extends Error {
   }
 }
 
+/**
+ * A 401 the client chose not to reload on: a reload already happened moments
+ * ago and the API still refuses, so another one would loop. Still an ApiError
+ * with status 401 for anything that checks the status.
+ */
+export class SessionRejectedError extends ApiError {
+  constructor() {
+    super(401, null);
+    this.name = 'SessionRejectedError';
+  }
+}
+
 export function isApiError(e: unknown): e is ApiError {
   return e instanceof ApiError;
 }
@@ -31,6 +43,10 @@ const TIMEOUT =
 
 const PAGINATION =
   'The server kept returning more pages than any list here should have — stopped loading. Reload to try again.';
+
+const SESSION_REJECTED =
+  'The API still rejects this session right after a reload, so the app stopped reloading. ' +
+  'Reload by hand; if it keeps happening, API_TOKEN in .env and the nginx vhost disagree.';
 
 function isAbortLike(e: unknown): boolean {
   // AbortSignal.timeout throws DOMException TimeoutError. Some engines still
@@ -53,6 +69,7 @@ function isAbortLike(e: unknown): boolean {
 export function userMessage(e: unknown): string {
   if (isAbortLike(e)) return TIMEOUT;
   if (e instanceof PaginationLimitError) return PAGINATION;
+  if (e instanceof SessionRejectedError) return SESSION_REJECTED;
   if (!isApiError(e)) {
     // fetch rejects (offline, DNS, TLS) with a TypeError carrying no useful text.
     return NETWORK;

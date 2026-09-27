@@ -33,7 +33,8 @@ in `packages/web/index.html` (see the comment there) and CORS on the apex
 
 `location /` maps 401 → `302 https://db.mase.fi/login` (a raw 401 page is a dead
 end for a browser), while `/api/` keeps answering 401 — the frontend's fetch
-client reloads the page on a 401, and following a redirect there would hand it a
+client reloads the page on a 401 (once per 30s — a repeat 401 is shown as an
+API_TOKEN mismatch, `docs/web-conventions.md`), and following a redirect there would hand it a
 login page with status 200. No return URL is passed: central-hub's
 `/login?redirect=` takes an in-app path, not a cross-host URL.
 
