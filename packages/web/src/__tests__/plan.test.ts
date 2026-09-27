@@ -371,7 +371,7 @@ describe('planned and cooked cell clicks', () => {
     );
 
     // Confirm is gone; cook-flow opens feedback on success. Skip it so the
-    // grid is the only surface left — the cell already flipped via onCooked.
+    // grid is the only surface left — the cell already flipped via onEntryChanged.
     await vi.waitFor(() => expect(document.querySelector('.cook-chip-row')).not.toBeNull());
     expect(document.querySelector('.cook-commit')).toBeNull();
     expect(root.querySelector('.plan-cell[data-status="cooked"]')).not.toBeNull();

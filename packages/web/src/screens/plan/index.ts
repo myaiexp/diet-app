@@ -73,7 +73,7 @@ export function planScreen(): Screen {
 
   const handlers: CellHandlers = {
     onEmpty: (date, slot) => openAddEntry({ date, slot, onCreated: addCreatedEntry }),
-    onPlanned: (entry) => openCookFlow({ entry, onCooked: (result) => refreshEntry(result.entry) }),
+    onPlanned: (entry) => openCookFlow({ entry, onEntryChanged: refreshEntry }),
     onCooked: () => say(COOKED_LOCK_MESSAGE, 'error'),
     onReopen: (entry) => openEditEntry(entry, [...recipesById.values()], refreshEntry),
   };

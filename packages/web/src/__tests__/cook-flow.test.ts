@@ -400,22 +400,22 @@ describe('cook confirm', () => {
 
   test('opens the feedback modal after a successful cook', async () => {
     fetchMock.mockImplementation(buildRouter());
-    const onCooked = vi.fn();
-    openCookFlow({ entry: ENTRY, onCooked });
+    const onEntryChanged = vi.fn();
+    openCookFlow({ entry: ENTRY, onEntryChanged });
 
     await vi.waitFor(() => expect(document.querySelector('.cook-commit')).not.toBeNull());
     click('.cook-commit');
 
     await vi.waitFor(() => expect(document.querySelector('.cook-chip-row')).not.toBeNull());
     expect(document.querySelector('.modal-title')!.textContent).toMatch(/^Cooked\. \d+ items deducted\.$/);
-    expect(onCooked).toHaveBeenCalledOnce();
-    expect(onCooked.mock.calls[0]![0]).toMatchObject({ entry: { status: 'cooked' } });
+    expect(onEntryChanged).toHaveBeenCalledOnce();
+    expect(onEntryChanged.mock.calls[0]![0]).toMatchObject({ status: 'cooked' });
   });
 
   test('mark skipped PATCHes status and refreshes the caller with the skipped entry', async () => {
     fetchMock.mockImplementation(buildRouter());
-    const onCooked = vi.fn();
-    openCookFlow({ entry: ENTRY, onCooked });
+    const onEntryChanged = vi.fn();
+    openCookFlow({ entry: ENTRY, onEntryChanged });
 
     await vi.waitFor(() => expect(document.querySelector('.cook-skip')).not.toBeNull());
     click('.cook-skip');
@@ -426,15 +426,11 @@ describe('cook confirm', () => {
     expect(calledWith('/api/meal-plans/e1/cook', 'POST')).toBe(false);
     expect(document.querySelector('.cook-chip-row')).toBeNull();
     expect(document.querySelector('.toast')?.textContent).toMatch(/skipped/i);
-    expect(onCooked).toHaveBeenCalledOnce();
-    expect(onCooked.mock.calls[0]![0]).toMatchObject({
-      entry: { id: 'e1', status: 'skipped' },
-      deductions: [],
-      shortfalls: [],
-    });
+    expect(onEntryChanged).toHaveBeenCalledOnce();
+    expect(onEntryChanged.mock.calls[0]![0]).toMatchObject({ id: 'e1', status: 'skipped' });
   });
 
-  test('a failed skip leaves the modal up and does not fire onCooked', async () => {
+  test('a failed skip leaves the modal up and does not fire onEntryChanged', async () => {
     fetchMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
       const u = new URL(typeof input === 'string' ? input : input.toString(), 'http://localhost');
       const method = (init?.method ?? 'GET').toUpperCase();
@@ -443,36 +439,36 @@ describe('cook confirm', () => {
       }
       return buildRouter()(input, init);
     });
-    const onCooked = vi.fn();
-    openCookFlow({ entry: ENTRY, onCooked });
+    const onEntryChanged = vi.fn();
+    openCookFlow({ entry: ENTRY, onEntryChanged });
 
     await vi.waitFor(() => expect(document.querySelector('.cook-skip')).not.toBeNull());
     click('.cook-skip');
 
     await vi.waitFor(() => expect(document.querySelector('.toast')?.textContent).toMatch(/could not skip|unexpected error/i));
     expect(isModalOpen()).toBe(true);
-    expect(onCooked).not.toHaveBeenCalled();
+    expect(onEntryChanged).not.toHaveBeenCalled();
     expect(calledWith('/api/meal-plans/e1/cook', 'POST')).toBe(false);
   });
 
   test('surfaces a 409 from cook as "already cooked" and refreshes the entry', async () => {
     fetchMock.mockImplementation(buildRouter({ cookStatus: 409 }));
-    const onCooked = vi.fn();
-    openCookFlow({ entry: ENTRY, onCooked });
+    const onEntryChanged = vi.fn();
+    openCookFlow({ entry: ENTRY, onEntryChanged });
 
     await vi.waitFor(() => expect(document.querySelector('.cook-commit')).not.toBeNull());
     click('.cook-commit');
 
     await vi.waitFor(() => expect(isModalOpen()).toBe(false));
     expect(document.querySelector('.toast')?.textContent?.toLowerCase()).toContain('already cooked');
-    expect(onCooked).toHaveBeenCalledOnce();
-    expect(onCooked.mock.calls[0]![0]).toMatchObject({ entry: { status: 'cooked' } });
+    expect(onEntryChanged).toHaveBeenCalledOnce();
+    expect(onEntryChanged.mock.calls[0]![0]).toMatchObject({ status: 'cooked' });
   });
 
   test('a failed cook at raised servings leaves the modal open and writes nothing', async () => {
     fetchMock.mockImplementation(buildRouter({ cookStatus: 500 }));
-    const onCooked = vi.fn();
-    openCookFlow({ entry: ENTRY, onCooked });
+    const onEntryChanged = vi.fn();
+    openCookFlow({ entry: ENTRY, onEntryChanged });
 
     await vi.waitFor(() => expect(document.querySelector('.cook-commit')).not.toBeNull());
     click('.cook-step-plus');
@@ -490,20 +486,20 @@ describe('cook confirm', () => {
     expect(isModalOpen()).toBe(true);
     expect(document.querySelector('.cook-commit')).not.toBeNull();
     expect(document.querySelector('.cook-chip-row')).toBeNull();
-    expect(onCooked).not.toHaveBeenCalled();
+    expect(onEntryChanged).not.toHaveBeenCalled();
   });
 
   test('surfaces a 400 from an out-of-range cook servings without closing the modal', async () => {
     fetchMock.mockImplementation(buildRouter({ cookStatus: 400 }));
-    const onCooked = vi.fn();
-    openCookFlow({ entry: ENTRY, onCooked });
+    const onEntryChanged = vi.fn();
+    openCookFlow({ entry: ENTRY, onEntryChanged });
 
     await vi.waitFor(() => expect(document.querySelector('.cook-commit')).not.toBeNull());
     click('.cook-commit');
 
     await vi.waitFor(() => expect(document.querySelector('.toast')).not.toBeNull());
     expect(isModalOpen()).toBe(true);
-    expect(onCooked).not.toHaveBeenCalled();
+    expect(onEntryChanged).not.toHaveBeenCalled();
   });
 
   test('renders a unit_mismatch shortfall with dedicated copy', async () => {
@@ -599,14 +595,14 @@ describe('cook feedback', () => {
 
   test('a 409 on feedback save closes the modal, toasts, and still calls onDone', async () => {
     fetchMock.mockImplementation(buildRouter({ feedbackStatus: 409 }));
-    const onCooked = vi.fn();
-    openCookFlow({ entry: ENTRY, onCooked });
+    const onEntryChanged = vi.fn();
+    openCookFlow({ entry: ENTRY, onEntryChanged });
 
     await vi.waitFor(() => expect(document.querySelector('.cook-commit')).not.toBeNull());
     click('.cook-commit');
 
     await vi.waitFor(() => expect(document.querySelector('.cook-chip-row')).not.toBeNull());
-    expect(onCooked).toHaveBeenCalledOnce();
+    expect(onEntryChanged).toHaveBeenCalledOnce();
 
     selectBaseChips();
     click('.cook-chip[data-value="as_is"]');
@@ -619,6 +615,6 @@ describe('cook feedback', () => {
       expect(document.querySelector('.toast')?.textContent).toMatch(/already recorded/i),
     );
     expect(isModalOpen()).toBe(false);
-    expect(onCooked).toHaveBeenCalledTimes(2);
+    expect(onEntryChanged).toHaveBeenCalledTimes(2);
   });
 });

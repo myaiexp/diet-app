@@ -75,7 +75,7 @@ export function todayScreen(): Screen {
     const todaysEntries = entries.filter((e) => e.date === todayIso);
     const handlers: SlotHandlers = {
       onEmpty: (date, slot) => openAddEntry({ date, slot, onCreated: addCreatedEntry }),
-      onCook: (entry) => openCookFlow({ entry, onCooked: (result) => refreshEntry(result.entry) }),
+      onCook: (entry) => openCookFlow({ entry, onEntryChanged: refreshEntry }),
       onRate: (entry) => openFeedbackModal(entry),
     };
 

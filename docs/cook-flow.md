@@ -6,7 +6,7 @@
 ## Skip is not a cook
 
 `mark skipped` PATCHes `{ status: 'skipped' }` and hands the updated entry
-back through the same `onCooked` callback the plan/today grids use to
+back through the same `onEntryChanged` callback the plan/today grids use to
 refresh. It must not open the feedback modal, and it must not leave the
 cell showing `planned`. `cooked` stays terminal via POST `/cook` only.
 
