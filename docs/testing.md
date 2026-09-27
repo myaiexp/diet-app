@@ -52,6 +52,17 @@ entry point breaks on that — root-level `vitest run`, and helm's `test-suite`
 `pnpm -r test`, which no tooling knows about, so a full run never survived an
 agent's turn boundary. Idea #3539.
 
+### Coverage floor
+
+`pnpm test:coverage` (`vitest run --coverage`) runs the full suite with v8
+coverage merged across all three projects. The provider and the floor live in
+the root `vitest.config.ts`, the only place vitest merges coverage from
+`projects`. The thresholds are the measured totals rounded down, taken with
+the real-Postgres suites **on**, so a `DIET_APP_SKIP_DB_TESTS=1` run can fall
+below them. When coverage rises, raise the floor to the new rounded-down
+totals; don't lower it to make a run pass. Per-file detail is written to
+`coverage/` (gitignored, HTML report).
+
 ## Test DB
 
 The real-Postgres suites share one gate.

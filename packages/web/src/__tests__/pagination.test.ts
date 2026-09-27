@@ -2,7 +2,13 @@
 
 import { describe, test, expect, beforeEach, afterEach, vi, type Mock } from 'vitest';
 import { configureClient, resetClient } from '../api/client.js';
-import { fetchAllPages, PAGE_LIMIT } from '../api/pagination.js';
+import {
+  fetchAllPages,
+  MAX_PAGES,
+  PAGE_LIMIT,
+  PaginationLimitError,
+} from '../api/pagination.js';
+import { userMessage } from '../api/errors.js';
 import { listAllRecipes } from '../api/recipes.js';
 import { listAllPantry } from '../api/pantry.js';
 
@@ -65,6 +71,36 @@ describe('fetchAllPages', () => {
       throw new Error('page two failed');
     });
     await expect(fetchAllPages(load)).rejects.toThrow('page two failed');
+  });
+
+  test('rejects after MAX_PAGES full pages instead of looping forever', async () => {
+    // A server ignoring `offset` replays the same full page on every request.
+    const full = ids(PAGE_LIMIT, 'a');
+    const load = vi.fn(async () => full);
+    await expect(fetchAllPages(load)).rejects.toBeInstanceOf(PaginationLimitError);
+    expect(load).toHaveBeenCalledTimes(MAX_PAGES);
+    expect(load).toHaveBeenLastCalledWith({
+      limit: PAGE_LIMIT,
+      offset: (MAX_PAGES - 1) * PAGE_LIMIT,
+    });
+  });
+
+  test('a short page on the last allowed request still resolves', async () => {
+    const load = vi.fn(async ({ offset }: { offset: number }) =>
+      offset === (MAX_PAGES - 1) * 10 ? ids(3, 'z') : ids(10, 'a'),
+    );
+    await expect(fetchAllPages(load, 10)).resolves.toHaveLength((MAX_PAGES - 1) * 10 + 3);
+    expect(load).toHaveBeenCalledTimes(MAX_PAGES);
+  });
+
+  test('PAGE_LIMIT is pinned to the API max page size', () => {
+    // The API clamps limit; if its cap drops below PAGE_LIMIT every drain
+    // reads the first (capped) page as short and silently truncates.
+    expect(PAGE_LIMIT, 'must equal MAX_LIMIT in packages/api/src/pagination.ts').toBe(200);
+  });
+
+  test('userMessage names the runaway drain rather than blaming the network', () => {
+    expect(userMessage(new PaginationLimitError(MAX_PAGES))).toMatch(/more pages/);
   });
 });
 

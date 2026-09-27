@@ -1,5 +1,7 @@
 // ApiError + the one place a failure becomes a sentence a user can act on
 
+import { PaginationLimitError } from './pagination.js';
+
 export interface ApiErrorBody {
   error?: string;
   details?: unknown;
@@ -27,6 +29,9 @@ const NETWORK =
 const TIMEOUT =
   'The request timed out — check the connection and try again.';
 
+const PAGINATION =
+  'The server kept returning more pages than any list here should have — stopped loading. Reload to try again.';
+
 function isAbortLike(e: unknown): boolean {
   // AbortSignal.timeout throws DOMException TimeoutError. Some engines still
   // surface the abort as AbortError. Either way it's a bound firing, not a
@@ -47,6 +52,7 @@ function isAbortLike(e: unknown): boolean {
  */
 export function userMessage(e: unknown): string {
   if (isAbortLike(e)) return TIMEOUT;
+  if (e instanceof PaginationLimitError) return PAGINATION;
   if (!isApiError(e)) {
     // fetch rejects (offline, DNS, TLS) with a TypeError carrying no useful text.
     return NETWORK;

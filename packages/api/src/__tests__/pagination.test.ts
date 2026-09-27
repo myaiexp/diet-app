@@ -24,6 +24,12 @@ describe('getPagination', () => {
     expect(await paginate('?limit=10&offset=5')).toEqual({ limit: 10, offset: 5 });
   });
 
+  test('MAX_LIMIT is pinned to the web client page size', () => {
+    // The web drain stops on the first page shorter than its request, so a
+    // lower cap here silently truncates every listAll* to one page.
+    expect(MAX_LIMIT, 'must equal PAGE_LIMIT in packages/web/src/api/pagination.ts').toBe(200);
+  });
+
   test('clamps an over-large limit to MAX_LIMIT', async () => {
     expect(await paginate('?limit=9999')).toEqual({ limit: MAX_LIMIT, offset: 0 });
   });

@@ -5,9 +5,11 @@
   "scripts": {
     "dev:tunnel": "ssh -N -L 5433:localhost:5432 vps",
     "build": "pnpm -r build",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage"
   },
   "devDependencies": {
+    "@vitest/coverage-v8": "^4.1.10",
     "tsx": "^4.22.4",
     "typescript": "^5.9.3",
     "vitest": "^4.1.10"
