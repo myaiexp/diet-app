@@ -85,7 +85,10 @@ export function createRecipeDetail(container: HTMLElement, deps: DetailDeps): De
   let detail: RecipeWithIngredients | null = null;
   let servings = 1;
   let timer: ReturnType<typeof setTimeout> | null = null;
-  let token = 0;
+  // Bumped by every scale request and by show/showEmpty/destroy: only the
+  // newest ?servings=N response may paint, so an earlier one resolving late
+  // cannot put N-serving lines under M-serving chrome.
+  let scaleSeq = 0;
 
   function clearTimer(): void {
     if (timer !== null) {
@@ -97,11 +100,11 @@ export function createRecipeDetail(container: HTMLElement, deps: DetailDeps): De
   async function show(id: string): Promise<void> {
     clearTimer();
     currentId = id;
-    const myToken = ++token;
+    const mySeq = ++scaleSeq;
     await loadInto({
       container,
       label: 'loading recipe…',
-      isStale: () => myToken !== token,
+      isStale: () => mySeq !== scaleSeq,
       load: () => getRecipe(id),
       render: (data) => {
         detail = data;
@@ -115,7 +118,7 @@ export function createRecipeDetail(container: HTMLElement, deps: DetailDeps): De
     clearTimer();
     currentId = null;
     detail = null;
-    ++token;
+    ++scaleSeq;
     container.replaceChildren(el('p', { class: 'helper' }, message));
   }
 
@@ -127,17 +130,17 @@ export function createRecipeDetail(container: HTMLElement, deps: DetailDeps): De
     render();
     clearTimer();
     const id = currentId;
-    const myToken = token;
     timer = setTimeout(() => {
       timer = null;
+      const mySeq = ++scaleSeq;
       void getRecipe(id, next).then(
         (data) => {
-          if (myToken !== token || id !== currentId) return;
+          if (mySeq !== scaleSeq) return;
           detail = data;
           render();
         },
         (err: unknown) => {
-          if (myToken !== token || id !== currentId) return;
+          if (mySeq !== scaleSeq) return;
           say(userMessage(err), 'error');
           // Roll chrome back to the last successful recipe so a failed
           // ?servings=N cannot leave 6-serving chrome over 4-serving lines.
@@ -227,6 +230,9 @@ export function createRecipeDetail(container: HTMLElement, deps: DetailDeps): De
         const updated = await patchRecipe(id, patch);
         closeModal();
         say('Recipe saved.');
+        // A scale fetch still in flight would repaint the pre-edit recipe.
+        clearTimer();
+        ++scaleSeq;
         detail = updated;
         servings = updated.servings;
         render();
@@ -284,7 +290,7 @@ export function createRecipeDetail(container: HTMLElement, deps: DetailDeps): De
     showEmpty,
     destroy() {
       clearTimer();
-      ++token;
+      ++scaleSeq;
     },
   };
 }
