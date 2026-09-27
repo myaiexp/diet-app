@@ -3,7 +3,8 @@
 // After the hostname/DNS blocklist, hostname fetches pin TCP connect to the
 // addresses parseSafeUrl already allowed (undici Agent lookup). Host and TLS
 // SNI stay on the original name. IP literals skip the agent (nothing to rebind).
-// Only ports 80/443 are allowed.
+// Only ports 80/443 are allowed. This file owns the redirect loop and its
+// SSRF re-check per hop; one request is fetchHop (fetch-hop.ts).
 
 import { lookup as defaultDnsLookup } from 'node:dns/promises';
 import { isIP } from 'node:net';
@@ -16,20 +17,16 @@ import {
   createPinnedDispatcher,
   isAllowedImportPort,
   type CreateDispatcherFn,
-  type ImportDispatcher,
   type ResolvedAddress,
 } from './ssrf-pin.js';
-import {
-  cancelBody,
-  htmlToPlainText,
-  readBodyCapped,
-  truncateText,
-} from './fetch-body.js';
-
+import { htmlToPlainText, truncateText } from './fetch-body.js';
+import { fetchHop, type FetchImpl, type HopContext } from './fetch-hop.js';
 import { IMPORT_TEXT_MAX_CHARS, IMPORT_TEXT_MIN_CHARS } from './import-limits.js';
 import { logImportFailure } from './log.js';
+import { withSignal } from './with-signal.js';
 
 export { IMPORT_TEXT_MAX_CHARS, IMPORT_TEXT_MIN_CHARS, htmlToPlainText };
+export type { FetchImpl };
 
 export type FetchUrlResult =
   | {
@@ -53,11 +50,6 @@ export type DnsLookupFn = (
   options: { all: true; verbatim: true },
 ) => Promise<ReadonlyArray<ResolvedAddress>>;
 
-export type FetchImpl = (
-  input: string,
-  init?: RequestInit & { dispatcher?: ImportDispatcher },
-) => Promise<Response>;
-
 export type FetchUrlOpts = {
   fetchImpl?: FetchImpl;
   dnsLookup?: DnsLookupFn;
@@ -69,33 +61,6 @@ export type FetchUrlOpts = {
 const DEFAULT_TIMEOUT_MS = 10_000;
 const DEFAULT_MAX_BYTES = 1_500_000; // ~1.5 MiB
 const MAX_REDIRECTS = 5;
-const OK_STATUSES = new Set([200, 203]);
-const REDIRECT_STATUSES = new Set([301, 302, 303, 307, 308]);
-
-function abortedError(): Error {
-  const e = new Error('The operation was aborted');
-  e.name = 'AbortError';
-  return e;
-}
-
-/** Race a promise against AbortSignal so DNS and fetch share the overall timeout. */
-function withSignal<T>(p: Promise<T>, signal: AbortSignal): Promise<T> {
-  if (signal.aborted) return Promise.reject(abortedError());
-  return new Promise<T>((resolve, reject) => {
-    const onAbort = () => reject(abortedError());
-    signal.addEventListener('abort', onAbort, { once: true });
-    p.then(
-      (v) => {
-        signal.removeEventListener('abort', onAbort);
-        resolve(v);
-      },
-      (err: unknown) => {
-        signal.removeEventListener('abort', onAbort);
-        reject(err);
-      },
-    );
-  });
-}
 
 type SafeOk = { ok: true; url: URL; addresses: ResolvedAddress[] };
 type SafeErr = { ok: false; error: 'invalid_url' | 'blocked_url' | 'fetch_failed' };
@@ -151,13 +116,23 @@ async function parseSafeUrl(
   }
 }
 
-async function closeDispatcher(dispatcher: ImportDispatcher | undefined): Promise<void> {
-  if (!dispatcher) return;
-  try {
-    await dispatcher.close();
-  } catch {
-    /* ignore */
+/** An OK response's body as the extraction input: stripped, capped, and yield-checked. */
+function toTextResult(html: string, finalUrl: string): FetchUrlResult {
+  const { text, truncated } = truncateText(htmlToPlainText(html));
+  // Nothing above this point fails for a JS-hydrated page: the server
+  // answers 200 with a shell, the body reads fine, and the extraction
+  // goes on to hallucinate from a nav bar. Logging it is what lets the
+  // "does a headless-browser rung earn its keep?" question ever be
+  // answered from evidence instead of a guess.
+  const lowYield = text.length < IMPORT_TEXT_MIN_CHARS;
+  if (lowYield) {
+    logImportFailure('low-yield extraction', undefined, {
+      url: finalUrl,
+      chars: text.length,
+      floor: IMPORT_TEXT_MIN_CHARS,
+    });
   }
+  return { ok: true, text, finalUrl, truncated, lowYield };
 }
 
 const defaultLookup: DnsLookupFn = (hostname, options) =>
@@ -171,9 +146,7 @@ export async function fetchUrlAsText(
   // fetchImpl and never hit this default.
   const fetchImpl = opts?.fetchImpl ?? (globalThis.fetch as FetchImpl);
   const dnsLookup = opts?.dnsLookup ?? defaultLookup;
-  const createDispatcher = opts?.createDispatcher ?? createPinnedDispatcher;
   const timeoutMs = opts?.timeoutMs ?? DEFAULT_TIMEOUT_MS;
-  const maxBytes = opts?.maxBytes ?? DEFAULT_MAX_BYTES;
 
   if (typeof fetchImpl !== 'function') {
     logImportFailure('no fetch implementation available (node <18?)');
@@ -183,14 +156,24 @@ export async function fetchUrlAsText(
   let current = url;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
+  const ctx: HopContext = {
+    fetchImpl,
+    createDispatcher: opts?.createDispatcher ?? createPinnedDispatcher,
+    signal: controller.signal,
+    timeoutMs,
+    maxBytes: opts?.maxBytes ?? DEFAULT_MAX_BYTES,
+  };
 
   try {
+    // Hop 0 is the user's URL; hops 1..MAX_REDIRECTS are redirects followed.
     for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
       if (controller.signal.aborted) {
         logImportFailure('timed out', undefined, { url: current, timeoutMs, hop });
         return { ok: false, error: 'fetch_failed' };
       }
 
+      // Every hop, redirect targets included, passes the full SSRF check
+      // and gets its own pin before anything connects.
       const safe = await parseSafeUrl(current, dnsLookup, controller.signal);
       if (!safe.ok) {
         // A rejected redirect target answers the same 400 as a bad user URL —
@@ -202,113 +185,14 @@ export async function fetchUrlAsText(
         return safe;
       }
 
-      const host = normalizeHostname(safe.url.hostname);
-      const dispatcher =
-        isIP(host) === 0 ? createDispatcher(host, safe.addresses) : undefined;
-
-      try {
-        let res: Response;
-        try {
-          res = await withSignal(
-            fetchImpl(safe.url.href, {
-              method: 'GET',
-              redirect: 'manual',
-              signal: controller.signal,
-              dispatcher,
-              headers: {
-                Accept: 'text/html, text/plain, application/xhtml+xml;q=0.9, */*;q=0.1',
-                'User-Agent': 'diet-app-import/1.0',
-              },
-            }),
-            controller.signal,
-          );
-        } catch (err) {
-          if (controller.signal.aborted) {
-            logImportFailure('timed out', err, {
-              url: safe.url.href,
-              timeoutMs,
-              hop,
-            });
-          } else {
-            logImportFailure('transport error', err, { url: safe.url.href, hop });
-          }
-          return { ok: false, error: 'fetch_failed' };
-        }
-
-        if (REDIRECT_STATUSES.has(res.status)) {
-          if (hop === MAX_REDIRECTS) {
-            logImportFailure('too many redirects', undefined, {
-              url: safe.url.href,
-              max: MAX_REDIRECTS,
-            });
-            await cancelBody(res);
-            return { ok: false, error: 'fetch_failed' };
-          }
-          const location = res.headers.get('location');
-          if (!location) {
-            logImportFailure('redirect without location header', undefined, {
-              url: safe.url.href,
-              status: res.status,
-            });
-            await cancelBody(res);
-            return { ok: false, error: 'fetch_failed' };
-          }
-          let next: URL;
-          try {
-            next = new URL(location, safe.url);
-          } catch (err) {
-            logImportFailure('redirect location unparseable', err, {
-              url: safe.url.href,
-              location,
-            });
-            await cancelBody(res);
-            return { ok: false, error: 'invalid_url' };
-          }
-          await cancelBody(res);
-          current = next.href;
-          continue;
-        }
-
-        // Only success statuses that carry a body we want to parse (not 204/304).
-        if (!OK_STATUSES.has(res.status)) {
-          logImportFailure('non-success status', undefined, {
-            url: safe.url.href,
-            status: res.status,
-          });
-          await cancelBody(res);
-          return { ok: false, error: 'fetch_failed' };
-        }
-
-        const body = await readBodyCapped(res, maxBytes, controller.signal);
-        if (!body.ok) {
-          logImportFailure('body read failed', body.reason, { url: safe.url.href });
-          return { ok: false, error: 'fetch_failed' };
-        }
-
-        const plain = htmlToPlainText(body.text);
-        const { text, truncated } = truncateText(plain);
-        // Nothing above this point fails for a JS-hydrated page: the server
-        // answers 200 with a shell, the body reads fine, and the extraction
-        // goes on to hallucinate from a nav bar. Logging it is what lets the
-        // "does a headless-browser rung earn its keep?" question ever be
-        // answered from evidence instead of a guess.
-        const lowYield = text.length < IMPORT_TEXT_MIN_CHARS;
-        if (lowYield) {
-          logImportFailure('low-yield extraction', undefined, {
-            url: safe.url.href,
-            chars: text.length,
-            floor: IMPORT_TEXT_MIN_CHARS,
-          });
-        }
-        return { ok: true, text, finalUrl: safe.url.href, truncated, lowYield };
-      } finally {
-        await closeDispatcher(dispatcher);
-      }
+      const outcome = await fetchHop(safe.url, safe.addresses, hop, ctx);
+      if (outcome.kind === 'fail') return { ok: false, error: outcome.error };
+      if (outcome.kind === 'body') return toTextResult(outcome.text, safe.url.href);
+      current = outcome.next;
     }
 
-    // Unreachable: the hop === MAX_REDIRECTS branch returns first. Logged so a
-    // future edit to the loop bounds can't create a silent failure here.
-    logImportFailure('redirect loop exhausted', undefined, { url });
+    // The last allowed hop redirected too; `current` is the target not followed.
+    logImportFailure('too many redirects', undefined, { url: current, max: MAX_REDIRECTS });
     return { ok: false, error: 'fetch_failed' };
   } finally {
     clearTimeout(timer);

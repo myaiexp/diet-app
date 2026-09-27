@@ -1,4 +1,4 @@
-// Unit tests for shared write response helpers and safe JSON body parsing.
+// Unit tests for the shared HTTP JSON response helpers and safe JSON body parsing.
 
 import { describe, test, expect } from 'vitest';
 import { Hono } from 'hono';

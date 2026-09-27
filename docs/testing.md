@@ -86,15 +86,21 @@ The real-Postgres suites share one gate.
   missing-ean skip), plus its own loud gate. Batching (500-row split) and
   skip-without-insert are mocked in `import-products.test.ts` — a full-store
   dump is not required to pin the bind-param bound.
+- `packages/db` `src/__tests__/test-lock.test.ts` — 3 cases for the advisory
+  lock below, plus its own loud gate (a scoped `vitest run test-lock` never
+  reaches the other files' gates).
 
-Both need `TEST_DATABASE_URL` pointing at `dietapp_test` (name must end in
+These case counts are the only copy — CLAUDE.md and `.env.example` point here,
+so a new DB-backed case updates this list alone.
+
+All of them need `TEST_DATABASE_URL` pointing at `dietapp_test` (name must end in
 `_test`). Provision with `pnpm --filter @diet-app/db setup:test-db` (create +
 migrate + seed + grant the `dietapp` role on mase-owned tables).
 
 Without `TEST_DATABASE_URL` those tests would skip, so a **loud gate test fails
 the run** instead; set `DIET_APP_SKIP_DB_TESTS=1` to opt out deliberately.
 Silence has to be chosen — a silent skip is how the api suite went 4 commits
-without executing once. Each of the three files below reads the repo-root `.env`
+without executing once. Each of the files above reads the repo-root `.env`
 itself (vitest does not), so none of them depends on the shell's environment.
 
 ### One test DB, many sessions

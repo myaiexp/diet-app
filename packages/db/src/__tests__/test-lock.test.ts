@@ -11,12 +11,26 @@ config({ path: fileURLToPath(new URL('../../../../.env', import.meta.url)), quie
 
 const TEST_DB_URL = process.env.TEST_DATABASE_URL;
 const hasDb = Boolean(TEST_DB_URL);
+const SKIP_DB_TESTS = process.env.DIET_APP_SKIP_DB_TESTS === '1';
 
 // A key of this file's own, so contending here never queues behind (or delays)
 // the real suites holding DB_TEST_LOCK_KEY.
 const KEY = 5_150_902_777;
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+// The scoped `vitest run test-lock` never reaches the other files' gates, so
+// this one needs its own: an unset URL must fail here, not skip three cases.
+describe('test-lock DB gate', () => {
+  test.skipIf(SKIP_DB_TESTS)('TEST_DATABASE_URL is configured', () => {
+    expect(
+      hasDb,
+      'TEST_DATABASE_URL is not set, so the advisory-lock tests would skip ' +
+        'silently. Provision with `pnpm --filter @diet-app/db setup:test-db`. ' +
+        'To run without Postgres on purpose, set DIET_APP_SKIP_DB_TESTS=1.',
+    ).toBe(true);
+  });
+});
 
 describe.skipIf(!hasDb)('acquireDbTestLock', () => {
   test('a second acquire waits until the first releases', async () => {
