@@ -10,10 +10,10 @@ import type { Screen, ScreenContext } from '../screen.js';
 import type { UserProfile, ProfilePatch, CookingSkill } from '../api/types.js';
 import { getProfile, patchProfile } from '../api/profile.js';
 import { getIngredient } from '../api/ingredients.js';
-import { userMessage, fieldErrors, isApiError } from '../api/errors.js';
+import { userMessage, isApiError } from '../api/errors.js';
 import { el, button } from '../ui/dom.js';
 import { loadInto } from '../ui/async.js';
-import { field, errorBox, showError, hideError } from '../ui/form.js';
+import { field, errorBox, selectInput, submitForm } from '../ui/form.js';
 import { attachIngredientSearch } from '../ui/ingredient-picker.js';
 import { say } from '../ui/toast.js';
 import { COOKING_SKILLS } from '@diet-app/api/vocab';
@@ -100,8 +100,7 @@ function buildTargetsPanel(profile: UserProfile, onUpdated: (p: UserProfile) => 
   const carbs = numField(macroValue(profile.macroTargets, 'carbs'));
   const fat = numField(macroValue(profile.macroTargets, 'fat'));
   const householdSize = el('input', { class: 'input', type: 'number', min: '1', value: profile.householdSize }) as HTMLInputElement;
-  const cookingSkill = el('select', { class: 'select' }) as HTMLSelectElement;
-  for (const s of SKILLS) cookingSkill.appendChild(el('option', { value: s, selected: s === profile.cookingSkill }, s));
+  const cookingSkill = selectInput(SKILLS, profile.cookingSkill);
   const schedule = el('input', {
     class: 'input', type: 'text', value: scheduleNote(profile), placeholder: 'late shift tue+thu · long weekend cooking',
   }) as HTMLInputElement;
@@ -111,14 +110,7 @@ function buildTargetsPanel(profile: UserProfile, onUpdated: (p: UserProfile) => 
   async function save(): Promise<void> {
     const patch = buildTargetsPatch(profile, inputs);
     if (Object.keys(patch).length === 0) return;
-    try {
-      const updated = await patchProfile(patch);
-      say('Profile saved.');
-      hideError(errBox);
-      onUpdated(updated);
-    } catch (e) {
-      showError(errBox, userMessage(e), fieldErrors(e));
-    }
+    await submitForm(() => patchProfile(patch), { errorBox: errBox, success: 'Profile saved.', onDone: onUpdated });
   }
 
   return el(

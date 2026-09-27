@@ -1,8 +1,12 @@
-// Labeled-field + helper-error chrome: pantry-field stack and wrapping form-label.
+// Form chrome: field wrappers, helper-error box, text/select inputs, submitForm.
 
-import { describe, test, expect } from 'vitest';
+import { describe, test, expect, vi, afterEach } from 'vitest';
 import { el } from '../ui/dom.js';
-import { field, errorBox, showError, hideError, textInput } from '../ui/form.js';
+import { field, errorBox, showError, hideError, textInput, selectInput, submitForm } from '../ui/form.js';
+import { ApiError } from '../api/errors.js';
+import { clearToast } from '../ui/toast.js';
+
+afterEach(() => clearToast());
 
 describe('field', () => {
   test('wraps a control in pantry-field chrome with a form-label', () => {
@@ -87,5 +91,77 @@ describe('textInput', () => {
     const plain = textInput('a');
     plain.value = 'c';
     expect(() => plain.dispatchEvent(new Event('change'))).not.toThrow();
+  });
+});
+
+describe('selectInput', () => {
+  test('one option per value, current preselected, extra class composed', () => {
+    const sel = selectInput(['fridge', 'freezer', 'pantry'] as const, 'freezer', { class: 'plan-edit-status' });
+    expect(sel.className).toBe('select plan-edit-status');
+    expect([...sel.options].map((o) => o.value)).toEqual(['fridge', 'freezer', 'pantry']);
+    expect(sel.value).toBe('freezer');
+  });
+
+  test('no current value leaves the browser default (first option)', () => {
+    expect(selectInput(['a', 'b'], null).value).toBe('a');
+  });
+});
+
+describe('submitForm', () => {
+  test('success: toasts, hides a stale error, then hands the result to onDone', async () => {
+    const box = errorBox();
+    showError(box, 'old failure');
+    const onDone = vi.fn();
+    const ok = await submitForm(() => Promise.resolve({ id: 'x' }), {
+      errorBox: box,
+      success: (r) => `saved ${r.id}`,
+      onDone,
+    });
+    expect(ok).toBe(true);
+    expect(onDone).toHaveBeenCalledWith({ id: 'x' });
+    expect(box.classList.contains('hidden')).toBe(true);
+    expect(document.querySelector('.toast')?.textContent).toBe('saved x');
+  });
+
+  test('failure: onError first, then message + field errors in the box; onDone never runs', async () => {
+    const box = errorBox();
+    const order: string[] = [];
+    const ok = await submitForm(
+      () =>
+        Promise.reject(
+          new ApiError(400, { error: 'Validation failed', details: { fieldErrors: { unit: ['required'] } } }),
+        ),
+      {
+        errorBox: box,
+        success: 'nope',
+        onError: () => order.push(box.classList.contains('hidden') ? 'onError-before-show' : 'late'),
+        onDone: () => order.push('done'),
+      },
+    );
+    expect(ok).toBe(false);
+    expect(order).toEqual(['onError-before-show']);
+    expect(box.textContent).toContain('Validation failed');
+    expect(box.textContent).toContain('unit: required');
+    expect(document.querySelector('.toast')).toBeNull();
+  });
+
+  test('failure without an errorBox toasts the message as an error', async () => {
+    await submitForm(() => Promise.reject(new ApiError(409, { error: 'already completed' })), { onDone: () => {} });
+    const toast = document.querySelector('.toast');
+    expect(toast?.textContent).toBe('already completed');
+    expect(toast?.className).toContain('toast-error');
+  });
+
+  test('a throw in onDone propagates — never reported as a failed write', async () => {
+    const box = errorBox();
+    await expect(
+      submitForm(() => Promise.resolve(1), {
+        errorBox: box,
+        onDone: () => {
+          throw new Error('render bug');
+        },
+      }),
+    ).rejects.toThrow('render bug');
+    expect(box.classList.contains('hidden')).toBe(true);
   });
 });

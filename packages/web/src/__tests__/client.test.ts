@@ -8,7 +8,8 @@ import {
   resetClient,
   REQUEST_TIMEOUT_MS,
 } from '../api/client.js';
-import { ApiError, userMessage, fieldErrors } from '../api/errors.js';
+import { ApiError, SessionRejectedError, userMessage, fieldErrors } from '../api/errors.js';
+import { RELOAD_WINDOW_MS } from '../api/reload-guard.js';
 import { extractDraft, IMPORT_TIMEOUT_MS } from '../api/recipe-import.js';
 
 import { jsonResponse } from './harness.js';
@@ -17,6 +18,7 @@ let fetchMock: Mock;
 let expired: Mock<() => void>;
 
 beforeEach(() => {
+  sessionStorage.clear();
   fetchMock = vi.fn();
   expired = vi.fn(() => {});
   configureClient({ fetch: fetchMock as unknown as typeof fetch, onSessionExpired: expired });
@@ -61,6 +63,60 @@ describe('apiGet', () => {
     // edge gate, which redirects to login.
     await expect(apiGet('/pantry')).rejects.toBeInstanceOf(ApiError);
     expect(expired).toHaveBeenCalledOnce();
+  });
+
+  test('a second 401 right after the reload surfaces an error instead of reloading again', async () => {
+    fetchMock.mockResolvedValue(jsonResponse(401, { error: 'Unauthorized' }));
+    await expect(apiGet('/pantry')).rejects.toBeInstanceOf(ApiError);
+    // The page after the reload: the edge gate passed, the API still says no
+    // (API_TOKEN mismatch). Reloading again would loop forever.
+    const err = await apiGet('/pantry').catch((e: unknown) => e);
+    expect(err).toBeInstanceOf(SessionRejectedError);
+    expect((err as ApiError).status).toBe(401);
+    expect(userMessage(err)).toMatch(/API_TOKEN/);
+    expect(expired).toHaveBeenCalledOnce();
+  });
+
+  test('parallel 401s from one page load reload once', async () => {
+    fetchMock.mockResolvedValue(jsonResponse(401, { error: 'Unauthorized' }));
+    await Promise.allSettled([apiGet('/a'), apiGet('/b'), apiGet('/c')]);
+    expect(expired).toHaveBeenCalledOnce();
+  });
+
+  test('a 401 after the reload window has passed reloads again', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    try {
+      fetchMock.mockResolvedValue(jsonResponse(401, { error: 'Unauthorized' }));
+      await expect(apiGet('/pantry')).rejects.toBeInstanceOf(ApiError);
+      vi.setSystemTime(Date.now() + RELOAD_WINDOW_MS + 1);
+      await expect(apiGet('/pantry')).rejects.not.toBeInstanceOf(SessionRejectedError);
+      expect(expired).toHaveBeenCalledTimes(2);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  test('any non-401 response clears the stamp, so a later expiry reloads', async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse(401, {}));
+    await expect(apiGet('/pantry')).rejects.toBeInstanceOf(ApiError);
+    fetchMock.mockResolvedValueOnce(jsonResponse(200, []));
+    await apiGet('/pantry');
+    fetchMock.mockResolvedValueOnce(jsonResponse(401, {}));
+    await expect(apiGet('/pantry')).rejects.not.toBeInstanceOf(SessionRejectedError);
+    expect(expired).toHaveBeenCalledTimes(2);
+  });
+
+  test('does not reload when sessionStorage is unusable — it cannot bound the loop', async () => {
+    const spy = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => {
+      throw new DOMException('denied', 'SecurityError');
+    });
+    try {
+      fetchMock.mockResolvedValue(jsonResponse(401, {}));
+      await expect(apiGet('/pantry')).rejects.toBeInstanceOf(SessionRejectedError);
+      expect(expired).not.toHaveBeenCalled();
+    } finally {
+      spy.mockRestore();
+    }
   });
 
   test('passes AbortSignal.timeout at the default request bound', async () => {

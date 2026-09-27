@@ -57,9 +57,12 @@
   45s (fetch-url 10s + AI 30s). A new slow endpoint passes `timeoutMs` to
   `apiSend` rather than raising the default.
 - A 401 calls `onSessionExpired`, which reloads the page so the edge gate
-  redirects to login; the call still throws `ApiError(401)`. It is never shown
-  as a message. Why `/api/` answers 401 instead of redirecting:
-  `docs/auth-deploy.md`.
+  redirects to login; the call still throws `ApiError(401)`. At most one reload
+  per 30s (`api/reload-guard.ts`, a sessionStorage stamp cleared by any non-401
+  response): a 401 inside that window means the API rejects the bearer itself
+  (API_TOKEN mismatch), so it throws `SessionRejectedError` and the screen's
+  error panel says so instead of reloading in a loop. Why `/api/` answers 401
+  instead of redirecting: `docs/auth-deploy.md`.
 - Failures are `ApiError(status, body)`. `userMessage(e)` (`api/errors.ts`) is
   the one place a failure becomes user-facing copy (timeout, network, 5xx
   wording, else the API's `error` string); `fieldErrors(e)` flattens Zod
@@ -91,7 +94,8 @@
 | `dom.ts` | `el(tag, attrs, ...children)`, `button`, `append`, `errorPanel`, `loadingRow`. Strings become text nodes — never `innerHTML`. `false`/null children are dropped, so `cond && el(...)` works. |
 | `async.ts` | `loadInto` (above). |
 | `modal.ts` | `openModal({ title, meta?, body, footer?, width?, onClose? })` → handle; `closeModal()`. One modal at a time, Escape, focus trap. |
-| `form.ts` | `field`, `textInput`, `errorBox` / `showError` / `hideError`. Imports `form.css`. |
+| `form.ts` | `field`, `textInput`, `selectInput`, `errorBox` / `showError` / `hideError`, and `submitForm(run, { errorBox?, success?, onError?, onDone })` — every write's toast/error sequence (no `errorBox` → error toast). Imports `form.css`. |
+| `modal-form.ts` | `modalFooter(primary, leading?)` (cancel + primary) and `submitModal` (= `submitForm` that closes the modal before `onDone`). A new form modal uses both instead of hand-rolling them. |
 | `toast.ts` | `say(msg, kind)` — one toast, 2600ms; the previous timer is cleared at the call site. |
 | `shell.ts` | `mountShell` (sidebar / phone tab bar, header, badges, footer) and `activeShell()`, which is null in a test that mounts a screen bare. |
 | `placeholder.ts` | `placeholderScreen` — what is missing and which roadmap item blocks it. |

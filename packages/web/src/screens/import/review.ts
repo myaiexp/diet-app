@@ -2,11 +2,9 @@
 
 import type { ScreenContext } from '../../screen.js';
 import { el, button } from '../../ui/dom.js';
-import { field, textInput, errorBox, showError, hideError } from '../../ui/form.js';
+import { field, textInput, errorBox, showError, hideError, submitForm } from '../../ui/form.js';
 import { attachIngredientSearch } from '../../ui/ingredient-picker.js';
-import { say } from '../../ui/toast.js';
 import { confirmRecipe } from '../../api/recipe-import.js';
-import { userMessage, fieldErrors } from '../../api/errors.js';
 import type {
   RecipeDraft,
   DraftIngredientLine,
@@ -280,15 +278,15 @@ export function mountReview(root: HTMLElement, ctx: ScreenContext, draft: Recipe
       prepTime: meta.prepTime ?? undefined, totalTime: meta.totalTime ?? undefined,
       effortScore: meta.effortScore ?? undefined,
     };
-    try {
-      await confirmRecipe(body);
-      say('Recipe saved.', 'success');
-      ctx.navigate('/recipes');
-    } catch (err) {
-      saving = false;
-      showError(saveHelp, userMessage(err), fieldErrors(err));
-      saveBtn.disabled = false;
-    }
+    await submitForm(() => confirmRecipe(body), {
+      errorBox: saveHelp,
+      success: 'Recipe saved.',
+      onError: () => {
+        saving = false;
+        saveBtn.disabled = false;
+      },
+      onDone: () => ctx.navigate('/recipes'),
+    });
   }
 
   renderAll();
