@@ -59,6 +59,20 @@ function makeR1Scaled6(): RecipeWithIngredients {
   };
 }
 
+/** servings=5 counterpart of makeR1Scaled6, for the out-of-order scale test. */
+function makeR1Scaled5(): RecipeWithIngredients {
+  const base = makeR1();
+  return {
+    ...base,
+    servings: 5,
+    baseServings: 4,
+    recipeIngredients: [
+      { ...base.recipeIngredients[0]!, quantity: '503' },
+      { ...base.recipeIngredients[1]!, quantity: '26' },
+    ],
+  };
+}
+
 function makeR2(): RecipeWithIngredients {
   return {
     id: 'r2', title: 'Ohrarisotto', sourceType: 'imported', sourceUrl: 'https://example.com', parentRecipeId: null,
@@ -99,6 +113,8 @@ let pantryRequestCount: number;
 let idCounter: number;
 /** Override GET /recipes/r1?servings=6 — default returns the non-naive scaled fixture. */
 let scale6: () => RecipeWithIngredients | Response | Promise<RecipeWithIngredients | Response>;
+/** Override GET /recipes/r1?servings=5 — null serves the unscaled recipe. */
+let scale5: (() => Promise<RecipeWithIngredients>) | null;
 
 async function waitForScaledFetch(servings: string): Promise<void> {
   await vi.waitFor(() => {
@@ -120,6 +136,7 @@ function resetFixtures(): void {
   pantryRequestCount = 0;
   idCounter = 0;
   scale6 = () => makeR1Scaled6();
+  scale5 = null;
 }
 
 function appRouter() {
@@ -178,6 +195,7 @@ function appRouter() {
       const servings = url.searchParams.get('servings') ?? undefined;
       detailRequests.push({ id, servings });
       if (id === 'r1' && servings === '6') return scale6();
+      if (id === 'r1' && servings === '5' && scale5) return scale5();
       const found = recipesById.get(id);
       return found ?? jsonResponse(404, { error: 'Not found' });
     },
@@ -346,6 +364,31 @@ describe('recipes screen — list and scaler', () => {
     expect([...root.querySelectorAll<HTMLElement>('.ingredient-qty')].map((n) => n.textContent)).toEqual(
       baseQuantities,
     );
+  });
+
+  test('an earlier scale response landing after a later one never paints 5-serving lines under 6-serving chrome', async () => {
+    let release5!: (value: RecipeWithIngredients) => void;
+    scale5 = () =>
+      new Promise<RecipeWithIngredients>((resolve) => {
+        release5 = resolve;
+      });
+    const { root } = await mountScreen();
+
+    // Two clicks past the debounce: servings=5 is held in flight, then
+    // servings=6 is requested and resolves first.
+    root.querySelector<HTMLElement>('.scaler-plus')!.click();
+    await waitForScaledFetch('5');
+    root.querySelector<HTMLElement>('.scaler-plus')!.click();
+    await waitForScaledFetch('6');
+    const quantities = (): Array<string | null> =>
+      [...root.querySelectorAll<HTMLElement>('.ingredient-qty')].map((n) => n.textContent);
+    await vi.waitFor(() => expect(quantities()).toEqual(['605 g', '31 g']));
+
+    release5(makeR1Scaled5());
+    await flush(0);
+    expect(root.querySelector('.scaler-value')!.textContent).toBe('6');
+    expect(root.querySelector('.scaler-note')!.textContent).toBe('scaled ×1.5 from 4');
+    expect(quantities()).toEqual(['605 g', '31 g']);
   });
 
   test('switching recipes while a scale fetch is in flight never paints r1 scaled lines on r2', async () => {
