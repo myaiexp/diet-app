@@ -13,7 +13,7 @@ import { SLOTS } from '../../api/types.js';
 import { el, button } from '../../ui/dom.js';
 import { formatQuantity, toNumber } from '../../format/quantity.js';
 import { finnishWeekdayLong, finnishDate, daysUntil, daysRemainingLabel } from '../../format/date.js';
-import { entryTitle, STATUS_LABEL, isCookable } from '../../format/entry.js';
+import { entryTitle, servingsLabel, STATUS_LABEL, isCookable } from '../../format/entry.js';
 import { rampColor, statusLabel, applyRamp } from '../../format/expiry.js';
 
 const SPOIL_COUNT = 5;
@@ -71,10 +71,6 @@ export interface SlotHandlers {
   onRate(entry: MealPlanEntry): void;
 }
 
-function entryMeta(entry: MealPlanEntry): string {
-  return `${toNumber(entry.servings)} serv`;
-}
-
 function buildFilledSlot(
   slot: Slot,
   entry: MealPlanEntry,
@@ -92,7 +88,7 @@ function buildFilledSlot(
       'div',
       { class: 'row-main' },
       el('div', { class: 'row-title text-pretty' }, entryTitle(entry, recipesById)),
-      el('div', { class: 'row-meta' }, entryMeta(entry)),
+      el('div', { class: 'row-meta' }, servingsLabel(entry)),
     ),
     el('span', { class: status.cls }, status.text),
   );

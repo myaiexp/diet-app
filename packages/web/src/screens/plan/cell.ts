@@ -10,8 +10,7 @@ import type { MealPlanEntry, Recipe, Slot } from '../../api/types.js';
 import { SLOTS } from '../../api/types.js';
 import { el, button } from '../../ui/dom.js';
 import { finnishWeekday, finnishDate } from '../../format/date.js';
-import { entryTitle, STATUS_LABEL } from '../../format/entry.js';
-import { toNumber } from '../../format/quantity.js';
+import { entryTitle, servingsLabel, STATUS_LABEL } from '../../format/entry.js';
 
 export interface CellHandlers {
   onEmpty(date: string, slot: Slot): void;
@@ -42,13 +41,7 @@ function buildFilledCell(
     el('span', { class: 'plan-cell-slot' }, slot),
     el('span', { class: 'plan-cell-title text-pretty' }, entryTitle(entry, recipesById)),
     el('span', { class: `plan-cell-status ${status.cls}` }, status.text),
-    // Once cooked, what was actually cooked is the interesting number; before
-    // that, `actualServings` is null and the planned figure is all there is.
-    el(
-      'span',
-      { class: 'plan-cell-serv' },
-      `${toNumber(entry.actualServings ?? entry.servings)} serv`,
-    ),
+    el('span', { class: 'plan-cell-serv' }, servingsLabel(entry)),
   );
   return cell;
 }

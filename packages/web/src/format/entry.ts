@@ -1,6 +1,7 @@
-// Meal-plan entry titles, status pills, and which statuses still cook.
+// Meal-plan entry titles, servings label, status pills, and which statuses still cook.
 
 import type { EntryStatus, MealPlanEntry, Recipe } from '../api/types.js';
+import { toNumber } from './quantity.js';
 
 export const STATUS_LABEL: Record<EntryStatus, { text: string; cls: string }> = {
   planned: { text: 'planned', cls: 'label' },
@@ -27,4 +28,14 @@ export function entryTitle(entry: MealPlanEntry, recipesById: Map<string, Recipe
     return entry.notes ? `${title} · ${entry.notes}` : title;
   }
   return entry.freeformNote ?? '(untitled)';
+}
+
+/**
+ * Once cooked, what was actually cooked is the interesting number; before
+ * that, `actualServings` is null and the planned figure is all there is.
+ * Every screen that lists entries reads this, so the plan grid and Today
+ * can't disagree about the same row.
+ */
+export function servingsLabel(entry: MealPlanEntry): string {
+  return `${toNumber(entry.actualServings ?? entry.servings)} serv`;
 }

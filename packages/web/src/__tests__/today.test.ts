@@ -167,6 +167,24 @@ describe('today slots', () => {
     expect(ctx.navigate).not.toHaveBeenCalled();
   });
 
+  test('a cooked slot shows what was cooked, a planned slot what was planned', async () => {
+    // Same figure the plan grid shows for the same entry (plan.test.ts).
+    const entries = [
+      makeEntry({ id: 'e-cooked', slot: 'lunch', status: 'cooked', servings: '2', actualServings: '5' }),
+      makeEntry({ id: 'e-planned', slot: 'dinner', status: 'planned', servings: '2' }),
+    ];
+    fetchMock.mockImplementation(buildRouter({ entries }));
+    const root = mountRoot();
+    await todayScreen().mount(root, makeCtx());
+
+    const metaOf = (slot: string) =>
+      [...root.querySelectorAll('.today-slot-row')]
+        .find((r) => r.querySelector('.today-slot-name')?.textContent === slot)
+        ?.querySelector('.row-meta')?.textContent;
+    expect(metaOf('lunch')).toBe('5 serv');
+    expect(metaOf('dinner')).toBe('2 serv');
+  });
+
   test('a 404 from getFeedback means unrated, not an error banner', async () => {
     const entries = [makeEntry({ id: 'e-unrated', slot: 'breakfast', status: 'cooked', freeformNote: 'Bowl' })];
     fetchMock.mockImplementation(buildRouter({ entries, ratedEntryIds: [] }));
