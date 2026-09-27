@@ -2,18 +2,53 @@
 // Transcribed from docs/plans/assets/ruoka-prototype.dc.html (PANTRY) and
 // docs/plans/2026-08-04-frontend-design.md section 5 (the week, which the
 // prototype renders but does not carry as data). Recipes live in
-// seed-demo-recipes.mjs; see seed-demo-lib.mjs for the catalog-name
+// seed-demo-recipes.ts; see seed-demo-lib.ts for the catalog-name
 // resolution table these names were written against.
 
-// ---------------------------------------------------------------------------
-// Fixture data, transcribed from docs/plans/assets/ruoka-prototype.dc.html's
-// PANTRY/RECIPES arrays (see the resolution table above for name changes).
+import type { userProfile } from '../src/schema/index.js';
+
+export interface PantryFixtureItem {
+  /** Catalog lookup key, resolved by matchIngredient. */
+  name: string;
+  qty: number;
+  unit: string;
+  location: 'fridge' | 'freezer' | 'pantry' | 'counter';
+  dayOffset: number;
+  addedOffset: number;
+  opened: boolean;
+}
+
+/** One filled day×slot cell; a null cell is the design's "empty" state (no row). */
+export interface WeekCell {
+  title?: string;
+  /** For `substituted`: the recipe actually cooked, with `title` left unset. */
+  substituteTitle?: string;
+  freeformNote?: string;
+  status: 'planned' | 'cooked' | 'skipped' | 'substituted';
+  servings: number;
+  notes?: string;
+}
+
+export type MealSlot = 'breakfast' | 'lunch' | 'dinner' | 'snack';
+
+export interface WeekDay {
+  /** Days after the ISO week's Monday. */
+  offset: number;
+  slots: Record<MealSlot, WeekCell | null>;
+}
+
+type ProfileColumns = Omit<typeof userProfile.$inferInsert, 'id' | 'createdAt' | 'updatedAt'>;
+
+export interface ProfileFixture extends ProfileColumns {
+  /** Catalog lookup keys, resolved to ids like every other fixture name. */
+  dislikedIngredients: string[];
+}
 
 // Days-to-expiry (`dayOffset`) and days-since-added (`addedOffset`) are both
 // offsets from "today", derived once from the prototype's own absolute dates
 // (its implicit "today" was 2026-08-04) so the ramp — and the gap between
 // added and expires — reproduces the original design at any run date.
-export const PANTRY_FIXTURE = [
+export const PANTRY_FIXTURE: readonly PantryFixtureItem[] = [
   { name: 'Fresh dill', qty: 20, unit: 'g', location: 'fridge', dayOffset: -1, addedOffset: -9, opened: false },
   { name: 'Salmon', qty: 400, unit: 'g', location: 'fridge', dayOffset: 0, addedOffset: -2, opened: false },
   { name: 'Quark', qty: 500, unit: 'g', location: 'fridge', dayOffset: 1, addedOffset: -5, opened: true },
@@ -31,7 +66,7 @@ export const PANTRY_FIXTURE = [
   { name: 'Lingonberry', qty: 300, unit: 'g', location: 'freezer', dayOffset: 240, addedOffset: -326, opened: false },
 ];
 
-export const WEEK_TEMPLATE = [
+export const WEEK_TEMPLATE: readonly WeekDay[] = [
   {
     offset: 0, // monday
     slots: {
@@ -105,7 +140,7 @@ export const WEEK_TEMPLATE = [
 //
 // scheduleProfile is jsonb, so the design's free-text schedule line is stored
 // under `note` — the shape the API's schema and the frontend both expect.
-export const PROFILE_FIXTURE = {
+export const PROFILE_FIXTURE: ProfileFixture = {
   name: 'Mase',
   calorieTargetMin: 2100,
   calorieTargetMax: 2500,
@@ -119,6 +154,6 @@ export const PROFILE_FIXTURE = {
   // (the junction table stores ids, so an unmatched name must fail loudly like
   // every other fixture name rather than silently dropping a dislike).
   // 'Liver' is the design's word; the catalog models the cut, so 'Beef liver'
-  // is the lookup key (same class of rename as the table in seed-demo-lib.mjs).
+  // is the lookup key (same class of rename as the table in seed-demo-lib.ts).
   dislikedIngredients: ['Coriander', 'Beef liver', 'Blue cheese', 'Olives'],
 };

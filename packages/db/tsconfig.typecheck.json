@@ -1,17 +1,17 @@
 {
-  // Type-checks everything under src, tests included, plus the migrate shim (which
-  // lives outside src so the build never emits it); emits nothing.
+  // Type-checks everything under src, tests included, plus the scripts/ CLIs (which
+  // live outside src so the build never emits them); emits nothing.
   // The build config excludes src/__tests__ so tests stay out of dist.
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "noEmit": true,
-    // Widened past src because the shim and drizzle.config.ts sit beside it. Harmless
+    // Widened past src because scripts/ and drizzle.config.ts sit beside it. Harmless
     // here (nothing is emitted); the build config keeps rootDir at src.
     "rootDir": ".",
     "declaration": false,
     "declarationMap": false,
     "sourceMap": false
   },
-  "include": ["src", "scripts/db-migrate.ts", "drizzle.config.ts"],
+  "include": ["src", "scripts/**/*.ts", "drizzle.config.ts"],
   "exclude": []
 }

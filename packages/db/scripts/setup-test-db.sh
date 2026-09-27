@@ -69,7 +69,7 @@ echo "==> Migrating..."
 pnpm exec drizzle-kit migrate
 
 echo "==> Seeding ingredients + default profile..."
-pnpm exec tsx src/seed.ts
+pnpm exec tsx scripts/seed.ts
 
 # --- Grants for the app role (tables owned by mase after peer-auth migrate) ---
 echo "==> Granting $APP_ROLE on schema public..."

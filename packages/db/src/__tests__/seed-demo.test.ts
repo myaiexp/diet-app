@@ -1,10 +1,6 @@
 // Postgres-free unit tests for the demo seed's pure helpers: ingredient
 // matching, the db-name safety guard, and date math relative to a given
 // "today" (never the wall clock, so the test stays deterministic).
-//
-// Written as .mjs (not .ts) to import scripts/seed-demo.mjs directly without
-// fighting TypeScript's module resolution for a plain .mjs file — vitest picks
-// up .test.mjs the same as .test.ts.
 
 import { describe, test, expect } from 'vitest';
 import {
@@ -13,10 +9,14 @@ import {
   isGuardedDbName,
   relativeDate,
   mondayOfIsoWeek,
-  buildPantryRows,
-  buildRecipes,
-  buildWeekEntries,
-} from '../../scripts/seed-demo.mjs';
+} from '../../scripts/seed-demo-lib.js';
+import { buildPantryRows, buildRecipes, buildWeekEntries, type WeekRow } from '../../scripts/seed-demo-build.js';
+
+function entryAt(rows: WeekRow[], date: string, slot: string): WeekRow {
+  const row = rows.find((r) => r.date === date && r.slot === slot);
+  if (!row) throw new Error(`no ${slot} entry on ${date}`);
+  return row;
+}
 
 const FAKE_CATALOG = [
   { id: 'ing-1', name: 'fresh dill', aliases: ['tilli'] },
@@ -42,7 +42,7 @@ describe('matchIngredient', () => {
   test('every seeded recipe line binds to a real catalog ingredient', () => {
     // A minimal stand-in catalog covering every lookup key the real
     // RECIPES_FIXTURE uses post-resolution (see the substitution table at the
-    // top of seed-demo.mjs) — proves buildRecipes resolves every single line
+    // top of seed-demo-lib.ts) — proves buildRecipes resolves every single line
     // instead of silently skipping one, without needing the real 462-row catalog.
     const names = [
       'salmon', 'potato', 'carrot', 'leek', 'cream', 'vegetable stock', 'fresh dill', 'allspice',
@@ -181,7 +181,7 @@ describe('buildPantryRows', () => {
 
 describe('buildWeekEntries', () => {
   const today = new Date('2026-08-04T00:00:00Z'); // a Tuesday
-  const recipesByTitle = {
+  const recipesByTitle: Record<string, string> = {
     'Rahka & puolukka bowl': 'r-rahka',
     'Karjalanpaisti': 'r-karjalanpaisti',
     'Ruisleipä & graavilohi': 'r-graavilohi',
@@ -219,7 +219,7 @@ describe('buildWeekEntries', () => {
 
   test('the substituted friday dinner resolves substituteRecipeId, leaving recipeId null', () => {
     const rows = buildWeekEntries(today, recipesByTitle);
-    const fridayDinner = rows.find((r) => r.date === '2026-08-07' && r.slot === 'dinner');
+    const fridayDinner = entryAt(rows, '2026-08-07', 'dinner');
     expect(fridayDinner.status).toBe('substituted');
     expect(fridayDinner.substituteRecipeId).toBe('r-uunilohi');
     expect(fridayDinner.recipeId).toBeNull();
@@ -227,7 +227,7 @@ describe('buildWeekEntries', () => {
 
   test('freeform entries carry no recipeId', () => {
     const rows = buildWeekEntries(today, recipesByTitle);
-    const mondayLunch = rows.find((r) => r.date === '2026-08-03' && r.slot === 'lunch');
+    const mondayLunch = entryAt(rows, '2026-08-03', 'lunch');
     expect(mondayLunch.freeformNote).toBe('Työlounas — canteen');
     expect(mondayLunch.recipeId).toBeNull();
   });

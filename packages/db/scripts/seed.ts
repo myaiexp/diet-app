@@ -3,9 +3,9 @@
 import { readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { createDb } from './connection.js';
-import { loadRepoEnv } from './load-env.js';
-import { resolveConnectionString, seedDatabase, type IngredientSeedRow } from './seed-core.js';
+import { createDb } from '../src/connection.js';
+import { loadRepoEnv } from '../src/load-env.js';
+import { resolveConnectionString, seedDatabase, type IngredientSeedRow } from '../src/seed-core.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 

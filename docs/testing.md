@@ -166,7 +166,9 @@ run, so the spoilage ramp stays meaningful. Idempotent by explicit identity
 (recipe title; pantry `(ingredient_id, location)`; entry `(date, slot)`) because
 none of those tables has a unique key to conflict on. It **refuses a database
 whose name doesn't end in `_test`/`_dev`** unless `--force` — production is
-`dietapp`.
+`dietapp`. Like `migrate`, `seed` and `import-products`, it lives in
+`packages/db/scripts/` and runs through tsx against `src/`, so no db CLI needs a
+build and none can run a stale `dist/` schema.
 
 ## Web test harness
 
