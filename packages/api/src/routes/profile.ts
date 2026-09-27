@@ -23,17 +23,6 @@ async function profileResponse(db: Db, row: typeof userProfile.$inferSelect) {
   return { ...row, dislikedIngredientIds };
 }
 
-function dedupeIds(ids: string[]): string[] {
-  const seen = new Set<string>();
-  const out: string[] = [];
-  for (const id of ids) {
-    if (seen.has(id)) continue;
-    seen.add(id);
-    out.push(id);
-  }
-  return out;
-}
-
 export function profileRoutes(db: Db): Hono {
   const app = new Hono();
 
@@ -70,7 +59,7 @@ export function profileRoutes(db: Db): Hono {
 
     try {
       if (data.dislikedIngredientIds !== undefined) {
-        const uniqueIds = dedupeIds(data.dislikedIngredientIds);
+        const uniqueIds = [...new Set(data.dislikedIngredientIds)];
 
         if (uniqueIds.length > 0) {
           const found = await db

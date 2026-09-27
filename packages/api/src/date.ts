@@ -1,4 +1,10 @@
-// ISO week-bounds helper: Monday→Sunday (UTC) for a given YYYY-MM-DD date.
+// UTC calendar-date helpers: today, and the ISO week (Monday→Sunday) around a date.
+
+// Today's UTC calendar date as YYYY-MM-DD — the day every date column and
+// pantry status band is reckoned in.
+export function todayUtc(): string {
+  return new Date().toISOString().slice(0, 10);
+}
 
 // Returns the Monday and Sunday (inclusive, UTC) bounding the ISO week that
 // contains `dateStr`. A Sunday input maps back to the Monday six days earlier,

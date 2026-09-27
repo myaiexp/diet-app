@@ -8,15 +8,12 @@ import { isUuid } from '../validation.js';
 import { getPagination } from '../pagination.js';
 import { computeStatus } from '../pantry-status.js';
 import { resolveExpiresDate } from '../pantry-expiry.js';
+import { todayUtc } from '../date.js';
 import { notFound, badRequest } from '../responses.js';
 import { parseJsonBody } from '../json-body.js';
 import { buildPatch } from '../patch-builder.js';
 import { pantryCreateSchema, pantryPatchSchema } from '../schemas/pantry.js';
 import { isFkViolation } from '../pg-errors.js';
-
-function todayUtc(): string {
-  return new Date().toISOString().slice(0, 10);
-}
 
 function withStatus<T extends { expiresDate: string }>(row: T) {
   return { ...row, status: computeStatus(row.expiresDate) };

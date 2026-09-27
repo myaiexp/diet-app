@@ -2,7 +2,7 @@
 // GET /:id/cook-preview — the same plan, read-only, so the UI can show it first
 
 import { Hono, type Context } from 'hono';
-import type { Db } from '@diet-app/db';
+import type { Db, Tx } from '@diet-app/db';
 import { mealPlanEntries, recipes, pantryItems } from '@diet-app/db';
 import { eq, sql } from 'drizzle-orm';
 import { parseServings } from '../servings.js';
@@ -16,8 +16,6 @@ import {
   stringifyDeductions,
   type CookPlanError,
 } from '../cook-plan.js';
-
-type Tx = Parameters<Parameters<Db['transaction']>[0]>[0];
 
 async function applyDeductions(tx: Tx, deductions: Deduction[]): Promise<void> {
   const now = new Date();

@@ -1,7 +1,7 @@
 // POST /generate — derive a week's shopping list from the meal plan
 
 import { Hono } from 'hono';
-import type { Db } from '@diet-app/db';
+import type { Db, Tx } from '@diet-app/db';
 import {
   shoppingLists,
   shoppingListItems,
@@ -15,7 +15,7 @@ import { and, asc, eq, gte, inArray, lte, not, or, sql } from 'drizzle-orm';
 import { conflict } from '../responses.js';
 import { parseJsonBody } from '../json-body.js';
 import { generateSchema } from '../schemas/shopping-lists.js';
-import { getISOWeekBounds } from '../date.js';
+import { getISOWeekBounds, todayUtc } from '../date.js';
 import { sortListItems } from '../shopping-sort.js';
 import { isUniqueViolation } from '../pg-errors.js';
 import {
@@ -25,7 +25,6 @@ import {
   type SkippedLine,
 } from '../shopping-aggregate.js';
 
-type Tx = Parameters<Parameters<Db['transaction']>[0]>[0];
 type ListRow = typeof shoppingLists.$inferSelect;
 
 type GenerateResult =
@@ -187,7 +186,7 @@ export function shoppingListGenerateRoutes(db: Db): Hono {
     if (!parsed.ok) return parsed.response;
 
     const { monday, sunday } = getISOWeekBounds(parsed.data.weekStarting);
-    const today = new Date().toISOString().slice(0, 10);
+    const today = todayUtc();
 
     let result: GenerateResult;
     try {

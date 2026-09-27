@@ -11,6 +11,7 @@ import { parseJsonBody } from '../json-body.js';
 import { buildPatch } from '../patch-builder.js';
 import { listPatchSchema } from '../schemas/shopping-lists.js';
 import { sortListItems } from '../shopping-sort.js';
+import { todayUtc } from '../date.js';
 import { shoppingListGenerateRoutes } from './shopping-list-generate.js';
 import { shoppingListItemsRoutes } from './shopping-list-items.js';
 import { shoppingListCompleteRoutes } from './shopping-list-complete.js';
@@ -44,7 +45,7 @@ export function shoppingListsRoutes(db: Db): Hono {
     // row. Ordering by createdAt would let a list drafted in advance for a future
     // week shadow the one actually covering the current week. The <= today filter
     // also excludes future-week drafts entirely.
-    const today = new Date().toISOString().slice(0, 10);
+    const today = todayUtc();
     const row = await db.query.shoppingLists.findFirst({
       where: lte(shoppingLists.weekStarting, today),
       orderBy: desc(shoppingLists.weekStarting),
