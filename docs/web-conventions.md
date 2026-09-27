@@ -10,7 +10,7 @@
 
 | Dir | Holds |
 | --- | ----- |
-| `src/screens/<feature>/` | `index.ts` exports the `Screen` factory registered in `router.ts`; sibling files are that screen's row/panel builders. `screens/profile.ts` stays a single file. |
+| `src/screens/<feature>/` | `index.ts` exports the `Screen` factory registered in `router.ts`'s `SCREENS`; sibling files are that screen's row/panel builders. `screens/profile.ts` stays a single file. |
 | `src/modals/` | Modals, including the cook flow. `cook-flow.ts` is what other screens call (confirm → cook → feedback). |
 | `src/api/` | One thin module per resource over `client.ts`; wire types in `types.ts`. |
 | `src/format/` | Display-only formatting (dates, quantities, the expiry ramp, entry titles). A formatted value is never sent back. |
@@ -19,8 +19,11 @@
 
 ## Routing and the mount lifecycle
 
-- `ROUTES` in `router.ts` is the closed route set and `Route` is derived from
+- `ROUTES` in `screen.ts` is the closed route set and `Route` is derived from
   it. An unknown path renders `/today` and is replaced in the address bar too.
+- `screen.ts` holds the route and `Screen`/`ScreenContext` types and imports
+  nothing; screens, panels and the shell take their types from it. `router.ts`
+  imports every screen, so nothing it imports may import it back.
 - `/suggest`, `/nutrition`, `/waste` render `placeholderScreen` — no endpoint
   yet (#380, #385, #389) — so the nav stays complete. Swap the placeholder
   entry in `SCREENS` for a real factory when the endpoint lands.
@@ -32,6 +35,10 @@
   does nothing after the await if `isStale()`, and replaces the container with
   a retry panel on failure unless `onError` handles it. Pass `ctx.isStale`;
   never keep a module-local `destroyed` flag.
+- A screen's own awaited call outside `loadInto` (load-more, a row write)
+  checks `ctx.isStale()` in its `catch` as well as after the await — the
+  toast is global, so an error from a dead screen lands on the live one.
+  The `stale-*.test.ts` suites pin these per screen (`docs/testing.md`).
 - Anything a mount registers after an await (timers, handles) is torn down in
   `unmount()`. The router calls `unmount()` again when a superseded mount
   finishes late (`router-stale-mount.test.ts`).

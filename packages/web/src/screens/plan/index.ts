@@ -8,7 +8,7 @@
 // happen to arrive in.
 
 import '../../css/plan.css';
-import type { Screen, ScreenContext } from '../../router.js';
+import type { Screen, ScreenContext } from '../../screen.js';
 import type { MealPlanEntry, Recipe, Slot } from '../../api/types.js';
 import { SLOTS } from '../../api/types.js';
 import { getWeek } from '../../api/meal-plans.js';

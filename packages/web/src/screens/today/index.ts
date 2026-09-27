@@ -14,7 +14,7 @@
 // Panel rendering lives in panels.ts / whatnow.ts.
 
 import '../../css/today.css';
-import type { Screen, ScreenContext } from '../../router.js';
+import type { Screen, ScreenContext } from '../../screen.js';
 import type { MealPlanEntry, PantryItem, Recipe } from '../../api/types.js';
 import { getWeek, getFeedback } from '../../api/meal-plans.js';
 import { listAllPantry } from '../../api/pantry.js';

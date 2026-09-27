@@ -6,7 +6,7 @@
 // row.ts / header.ts for the split-out DOM builders.
 
 import '../../css/shopping.css';
-import type { Screen, ScreenContext } from '../../router.js';
+import type { Screen, ScreenContext } from '../../screen.js';
 import type {
   ShoppingList,
   ShoppingItem,
@@ -90,6 +90,7 @@ export function shoppingScreen(): Screen {
         say('Removed — regenerating the list will bring it back.', 'warning');
       }
     } catch (e) {
+      if (ctx.isStale()) return;
       say(userMessage(e), 'error');
     }
   }

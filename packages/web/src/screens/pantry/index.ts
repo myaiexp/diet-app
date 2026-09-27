@@ -6,7 +6,7 @@
 // add/edit modals.
 
 import '../../css/pantry.css';
-import type { Screen, ScreenContext } from '../../router.js';
+import type { Screen, ScreenContext } from '../../screen.js';
 import type { Ingredient, PantryItem, PantryLocation } from '../../api/types.js';
 import { LOCATIONS } from '../../api/types.js';
 import { listPantry } from '../../api/pantry.js';
@@ -135,7 +135,7 @@ export function pantryScreen(): Screen {
       items = [...items, ...rows];
       hasMore = rows.length === PAGE_SIZE;
     } catch (e) {
-      say(userMessage(e), 'error');
+      if (!ctx.isStale()) say(userMessage(e), 'error');
     } finally {
       loadingMore = false;
       if (!ctx.isStale()) {
@@ -158,6 +158,7 @@ export function pantryScreen(): Screen {
       renderList();
       updateSubtitle();
     } catch (e) {
+      if (ctx.isStale()) return;
       say(userMessage(e), 'error');
     }
   }

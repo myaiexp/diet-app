@@ -1,6 +1,6 @@
 // The reconciliation pane: draft fields + per-line ingredient binding.
 
-import type { ScreenContext } from '../../router.js';
+import type { ScreenContext } from '../../screen.js';
 import { el, button } from '../../ui/dom.js';
 import { field, textInput, errorBox, showError, hideError } from '../../ui/form.js';
 import { attachIngredientSearch } from '../../ui/ingredient-picker.js';

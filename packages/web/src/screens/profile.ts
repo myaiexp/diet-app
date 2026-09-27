@@ -6,7 +6,7 @@
 // every add/remove PATCHes the full next array.
 
 import '../css/profile.css';
-import type { Screen, ScreenContext } from '../router.js';
+import type { Screen, ScreenContext } from '../screen.js';
 import type { UserProfile, ProfilePatch, CookingSkill } from '../api/types.js';
 import { getProfile, patchProfile } from '../api/profile.js';
 import { getIngredient } from '../api/ingredients.js';

@@ -2,7 +2,8 @@
 
 import { describe, test, expect, beforeEach, afterEach } from 'vitest';
 import { mountShell, activeShell } from '../ui/shell.js';
-import { startRouter, navigate, currentRoute, ROUTES } from '../router.js';
+import { startRouter, navigate, currentRoute } from '../router.js';
+import { ROUTES } from '../screen.js';
 import { openModal, isModalOpen, closeModal } from '../ui/modal.js';
 import { el } from '../ui/dom.js';
 

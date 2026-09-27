@@ -2,7 +2,7 @@
 // pane — servings scaler, ingredients/steps, edit/fork — lives in detail.ts.
 
 import '../../css/recipes.css';
-import type { Screen, ScreenContext } from '../../router.js';
+import type { Screen, ScreenContext } from '../../screen.js';
 import { listAllRecipes } from '../../api/recipes.js';
 import { listAllPantry } from '../../api/pantry.js';
 import type { Recipe, PantryItem } from '../../api/types.js';

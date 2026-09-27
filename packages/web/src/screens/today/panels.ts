@@ -7,7 +7,7 @@
 // listAllRecipes() and formatted through entryTitle() so a recipe-backed
 // entry shows its real title here too, not an id.
 
-import type { Route } from '../../router.js';
+import type { Route } from '../../screen.js';
 import type { MealPlanEntry, PantryItem, Recipe, Slot } from '../../api/types.js';
 import { SLOTS } from '../../api/types.js';
 import { el, button } from '../../ui/dom.js';

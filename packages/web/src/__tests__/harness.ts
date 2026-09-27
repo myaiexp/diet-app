@@ -12,7 +12,7 @@
 // naming the method and path — a silent 404 is opt-in via `{ unmatched: '404' }`.
 
 import { vi, type Mock } from 'vitest';
-import type { ScreenContext } from '../router.js';
+import type { ScreenContext } from '../screen.js';
 
 const METHODS = new Set(['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS']);
 
@@ -71,12 +71,55 @@ export function mountRoot(): HTMLElement {
   return root;
 }
 
-export function makeCtx() {
+/** A screen context whose staleness a test can flip mid-flight — `setStale(true)`
+ * is "the user navigated away" — so each screen's `ctx.isStale()` guards can
+ * be driven true, not just assumed. */
+export function makeCtx({ stale = false }: { stale?: boolean } = {}) {
+  let isStaleNow = stale;
   return {
     setSubtitle: vi.fn<(text: string) => void>(),
     navigate: vi.fn<ScreenContext['navigate']>(),
-    isStale: () => false,
+    isStale: () => isStaleNow,
+    setStale: (value: boolean) => {
+      isStaleNow = value;
+    },
   };
+}
+
+/** Start recording every DOM mutation under `node`; the returned function stops
+ * and reports how many there were. Counts writes, not differences — a guard
+ * that let an identical re-render through still registers. */
+export function watchMutations(node: Node): () => number {
+  // Delivered records leave the queue, so the callback counts them too;
+  // takeRecords() picks up whatever has not been delivered yet.
+  let count = 0;
+  const observer = new MutationObserver((records) => {
+    count += records.length;
+  });
+  observer.observe(node, { subtree: true, childList: true, attributes: true, characterData: true });
+  return () => {
+    count += observer.takeRecords().length;
+    observer.disconnect();
+    return count;
+  };
+}
+
+export interface Deferred<T> {
+  promise: Promise<T>;
+  resolve(value: T): void;
+  reject(reason: unknown): void;
+}
+
+/** A promise settled from outside — hand `() => d.promise` to a `routeFetch`
+ * handler to hold a response until the test has set up what happens meanwhile. */
+export function deferred<T>(): Deferred<T> {
+  let resolve!: (value: T) => void;
+  let reject!: (reason: unknown) => void;
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return { promise, resolve, reject };
 }
 
 export function routeFetch(

@@ -1,6 +1,6 @@
 // "Not built yet" screen — honest about what is missing and why
 
-import type { Route, Screen } from '../router.js';
+import type { Route, Screen } from '../screen.js';
 import { el } from './dom.js';
 
 export interface PlaceholderSpec {

@@ -1,6 +1,6 @@
 // App shell: sidebar (desktop) / bottom tab bar (phone) + screen header bar
 
-import type { Route } from '../router.js';
+import type { Route } from '../screen.js';
 import { el, button } from './dom.js';
 import { finnishWeekdayLong, finnishDate, isoToday } from '../format/date.js';
 

@@ -1,6 +1,6 @@
 // Today screen: the "what now" action list and the first-run empty state.
 
-import type { Route } from '../../router.js';
+import type { Route } from '../../screen.js';
 import type { MealPlanEntry, PantryItem, Recipe } from '../../api/types.js';
 import { SLOTS } from '../../api/types.js';
 import { el, button } from '../../ui/dom.js';

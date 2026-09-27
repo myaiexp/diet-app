@@ -176,6 +176,13 @@ Screen and client suites compose `packages/web/src/__tests__/harness.ts` and
 `fixtures.ts` — they do not re-derive `jsonResponse` / `pathOf` / `flush` /
 `mountRoot` / `makeCtx`, or the per-resource `make*` builders.
 
+Screen `ctx.isStale()` guards are driven, not assumed: `makeCtx()` returns a
+`setStale` flip, and `stale-probe.ts` holds a request (`hold()`), flips the
+mount stale, releases it, and reports DOM mutation / subtitle / toast. Each
+`stale-*.test.ts` case runs fresh (the control that proves the path writes and
+the wait is long enough) and stale (writes nothing). A new awaited screen call
+outside `loadInto` gets a case there.
+
 Debounced UI (scaler, catalog search) waits with `vi.waitFor` on the
 fetch/DOM assertion, matching `cook-flow.test.ts` — never a hardcoded
 250ms sleep. Suites that pin the delay itself (`ingredient-picker`, and
