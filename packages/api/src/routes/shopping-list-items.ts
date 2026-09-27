@@ -45,15 +45,9 @@ export function shoppingListItemsRoutes(db: Db): Hono {
     if (!parsed.ok) return parsed.response;
     const data = parsed.data;
 
-    // quantityNeeded and netToBuy are numeric in Postgres — Drizzle wants the
-    // string form. unit/ingredientId aren't columns buildPatch would ever
-    // touch: itemPatchSchema.strict() already 400s an attempt to send them.
-    const patch: Partial<typeof shoppingListItems.$inferInsert> = buildPatch(data, shoppingListItems, [
-      'quantityNeeded',
-      'netToBuy',
-    ]);
-    if (data.quantityNeeded !== undefined) patch.quantityNeeded = String(data.quantityNeeded);
-    if (data.netToBuy !== undefined) patch.netToBuy = String(data.netToBuy);
+    // unit/ingredientId never reach buildPatch: itemPatchSchema.strict()
+    // already 400s an attempt to send them.
+    const patch: Partial<typeof shoppingListItems.$inferInsert> = buildPatch(data, shoppingListItems);
 
     const result = await db.transaction(async (tx) => {
       const [item] = await tx

@@ -3,8 +3,7 @@
 import { sql } from 'drizzle-orm';
 import type { Db } from '@diet-app/db';
 import { ingredients } from '@diet-app/db';
-
-export type MatchKind = 'exact' | 'alias' | 'none';
+import type { MatchKind } from './vocab.js';
 
 export type IngredientCandidate = {
   id: string;

@@ -2,6 +2,7 @@
 
 import { z } from 'zod';
 import { isUuid } from '../validation.js';
+import { SOURCE_TYPES } from '../vocab.js';
 import {
   LIMITS,
   shortText,
@@ -16,7 +17,7 @@ import {
 
 const uuidField = z.string().refine(isUuid, { message: 'Invalid UUID' });
 
-const sourceTypeEnum = z.enum(['manual', 'imported', 'ai', 'forked']);
+const sourceTypeEnum = z.enum(SOURCE_TYPES);
 
 export const recipeIngredientLineSchema = z.object({
   ingredientId: uuidField,

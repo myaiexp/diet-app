@@ -78,7 +78,11 @@
 - Server-computed values are rendered, not recomputed: pantry `status`
   (`docs/pantry.md`), scaled recipes via `GET /recipes/:id?servings=N`, the
   cook preview's FEFO lots (`docs/cook-flow.md`), and `expiresDate` on create.
-- `format/units.ts` `baseUnit` mirrors the API's `units.ts`; keep them equal.
+- Contract vocabularies — enum tuples (`SLOTS`, `LOCATIONS`, statuses…), the
+  servings cap and `clampServings`, `Dimension`/`baseUnit` — come from the
+  API's `packages/api/src/vocab.ts`, imported as `@diet-app/api/vocab` (Vite
+  alias + tsconfig `paths`). Never retype one; `api/types.ts` re-exports the
+  types. `vocab.ts` must stay import-free — it is compiled into the bundle.
 
 ## `ui/` primitives
 

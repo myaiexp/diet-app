@@ -7,14 +7,14 @@
 
 ## Locations are a closed set
 
-`LOCATIONS` in `packages/api/src/pantry-location.ts` — `fridge`, `freezer`,
+`LOCATIONS` in `packages/api/src/vocab.ts` — `fridge`, `freezer`,
 `pantry`, `counter` — is the single source. Pantry POST/PATCH
 (`schemas/pantry.ts`) and the `/complete` overrides validate against it, and
 `locationForCategory` (ingredient category → default location for
 `/complete`; unknown categories fall to `pantry`) returns a member of it. The
 `pantry_items.location` column is plain `text` with no CHECK, so those schemas
-are the only gate. The web client keeps its own copy in
-`packages/web/src/api/types.ts` `LOCATIONS`; adding a location means both.
+are the only gate. The web client imports the same tuple (`@diet-app/api/vocab`),
+so adding a location is one edit.
 
 ## Expiry is derived on create, and only on create
 

@@ -3,17 +3,17 @@
 import { z } from 'zod';
 import { isUuid, isIsoDate } from '../validation.js';
 import { trimmedNote, noteText, servingsCoerced } from './fields.js';
+import {
+  SLOTS,
+  STATUSES,
+  CREATE_STATUSES,
+  RATINGS,
+  EFFORT_CHECKS,
+  MAKE_AGAIN,
+} from '../vocab.js';
 
 const uuidField = z.string().refine(isUuid, { message: 'Invalid UUID' });
 const isoDateField = z.string().refine(isIsoDate, { message: 'Invalid date' });
-
-export const SLOTS = ['breakfast', 'lunch', 'dinner', 'snack'] as const;
-export const STATUSES = ['planned', 'cooked', 'skipped', 'substituted'] as const;
-// Create cannot set cooked — that status is owned exclusively by POST /:id/cook.
-export const CREATE_STATUSES = ['planned', 'skipped', 'substituted'] as const;
-export const RATINGS = ['thumbs_up', 'thumbs_down'] as const;
-export const EFFORT_CHECKS = ['felt_right', 'too_hard', 'too_easy'] as const;
-export const MAKE_AGAIN = ['yes', 'maybe', 'no'] as const;
 
 export const CONTENT_MSG = 'Either recipeId or freeformNote is required';
 

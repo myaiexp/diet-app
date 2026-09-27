@@ -2,7 +2,6 @@
 
 import { describe, test, expect } from 'vitest';
 import { formatQuantity, formatNumber, toNumber } from '../format/quantity.js';
-import { baseUnit } from '../format/units.js';
 import {
   finnishWeekday,
   finnishWeekdayLong,
@@ -39,14 +38,6 @@ describe('formatQuantity', () => {
     expect(toNumber('400')).toBe(400);
     expect(toNumber(null)).toBe(0);
     expect(toNumber('not a number')).toBe(0);
-  });
-});
-
-describe('baseUnit', () => {
-  test('maps each dimension to the canonical storage unit', () => {
-    expect(baseUnit('mass')).toBe('g');
-    expect(baseUnit('volume')).toBe('ml');
-    expect(baseUnit('count')).toBe('pieces');
   });
 });
 

@@ -13,8 +13,9 @@ paragraph of "why", the why belongs in the linked subdoc.
   (Hono, port 3300), `packages/web` (Vite + vanilla TS, no framework).
 - **Web**: screens by feature, `loadInto` + `ctx.isStale()` mounts (never a
   `destroyed` flag), one API module per resource, `fetchAllPages` at the API
-  max page, 25s/45s timeouts, 401 → reload, CSS layered on mase.fi `base.css`:
-  **`docs/web-conventions.md`**.
+  max page, 25s/45s timeouts, 401 → reload, CSS layered on mase.fi `base.css`,
+  enums/servings cap/`baseUnit` imported from `@diet-app/api/vocab` (never
+  retyped): **`docs/web-conventions.md`**.
 - **Public URL**: `https://diet.mase.fi` — the app at `/`, its API at `/api/`
   (same origin). Auth (two independent gates), CORS, deploy, secrets, and the
   DB pool: **`docs/auth-deploy.md`**. Password rotation: `docs/db-rotation.md`.
@@ -35,7 +36,7 @@ paragraph of "why", the why belongs in the linked subdoc.
   Drizzle `with:` vs core builder, pantry-always-joins-ingredient, list
   filter/page/order (id tie-break), shared 4xx helpers, JSON/PATCH, recipe
   import logging, and walking the PG `cause` chain: **`docs/api-conventions.md`**.
-- **Pantry**: `location` is a closed set (`pantry-location.ts`); POST derives
+- **Pantry**: `location` is a closed set (`LOCATIONS`, `vocab.ts`); POST derives
   `expiresDate` from `shelfLife.<location>_days` and 400s when that key is
   absent (always for `counter`); PATCH never recomputes it; `status` bands are
   server-side, in whole UTC days. Rules: **`docs/pantry.md`**. Design:

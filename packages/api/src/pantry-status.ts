@@ -1,6 +1,6 @@
 // Pantry spoilage-status classification (fresh / use_soon / use_today / expired)
 
-export type PantryStatus = 'fresh' | 'use_soon' | 'use_today' | 'expired';
+import type { PantryStatus } from './vocab.js';
 
 // Classifies a pantry item by how close its expiry is to "today".
 //

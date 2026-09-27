@@ -1,10 +1,9 @@
 // Ingredient category → default pantry storage location.
-// Single source for the closed location set: pantry create/patch and
-// /complete overrides both validate against this, and locationForCategory
+// The closed location set is LOCATIONS in vocab.ts: pantry create/patch and
+// /complete overrides both validate against it, and locationForCategory
 // returns a member of it so a generated insert cannot 400.
 
-export const LOCATIONS = ['fridge', 'freezer', 'pantry', 'counter'] as const;
-export type StorageLocation = (typeof LOCATIONS)[number];
+import type { StorageLocation } from './vocab.js';
 
 // The eight categories the seed data uses. Anything else falls through to
 // 'pantry' — the shelf-stable assumption, and the one location every

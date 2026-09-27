@@ -1,24 +1,40 @@
 // Shared request and response types for the web API client
 
-export type PantryLocation = 'fridge' | 'freezer' | 'pantry' | 'counter';
-export type PantryStatus = 'fresh' | 'use_soon' | 'use_today' | 'expired';
-export type Slot = 'breakfast' | 'lunch' | 'dinner' | 'snack';
-export type EntryStatus = 'planned' | 'cooked' | 'skipped' | 'substituted';
-export type SourceType = 'manual' | 'imported' | 'ai' | 'forked';
-export type Dimension = 'mass' | 'volume' | 'count';
-export type MatchKind = 'exact' | 'alias' | 'none';
-export type Rating = 'thumbs_up' | 'thumbs_down';
-export type EffortCheck = 'felt_right' | 'too_hard' | 'too_easy';
-export type MakeAgain = 'yes' | 'maybe' | 'no';
-export type CookingSkill = 'beginner' | 'competent' | 'advanced';
-
-export const SLOTS: readonly Slot[] = ['breakfast', 'lunch', 'dinner', 'snack'];
-export const LOCATIONS: readonly PantryLocation[] = [
-  'fridge',
-  'freezer',
-  'pantry',
-  'counter',
-];
+// The enum vocabularies are the API's own (packages/api/src/vocab.ts), not a
+// copy — re-exported so screens keep importing everything from this module.
+import type {
+  StorageLocation as PantryLocation,
+  PantryStatus,
+  Slot,
+  EntryStatus,
+  SourceType,
+  Dimension,
+  MatchKind,
+  Rating,
+  EffortCheck,
+  MakeAgain,
+  CookingSkill,
+  ShoppingListStatus,
+  ShoppingItemSource,
+  SkippedGenerateReason,
+} from '@diet-app/api/vocab';
+export type {
+  PantryLocation,
+  PantryStatus,
+  Slot,
+  EntryStatus,
+  SourceType,
+  Dimension,
+  MatchKind,
+  Rating,
+  EffortCheck,
+  MakeAgain,
+  CookingSkill,
+  ShoppingListStatus,
+  ShoppingItemSource,
+  SkippedGenerateReason,
+};
+export { SLOTS, LOCATIONS } from '@diet-app/api/vocab';
 
 export interface Ingredient {
   id: string;
@@ -305,10 +321,6 @@ export interface RecipeImportResponse {
    */
   lowYield: boolean;
 }
-
-export type ShoppingListStatus = 'draft' | 'shopping' | 'done';
-export type ShoppingItemSource = 'generated' | 'manual';
-export type SkippedGenerateReason = 'unknown_unit' | 'recipe_missing' | 'bad_scale';
 
 export interface ShoppingItem {
   id: string;

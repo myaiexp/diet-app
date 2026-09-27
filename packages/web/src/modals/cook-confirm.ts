@@ -12,21 +12,15 @@ import { openModal, closeModal } from '../ui/modal.js';
 import { say } from '../ui/toast.js';
 import { el, button, loadingRow } from '../ui/dom.js';
 import { loadInto } from '../ui/async.js';
-import { formatQuantity, toNumber } from '../format/quantity.js';
-import { baseUnit } from '../format/units.js';
-import { finnishDate, finnishWeekday, daysUntil } from '../format/date.js';
+import { toNumber } from '../format/quantity.js';
+import { clampServings } from '@diet-app/api/vocab';
+import { finnishDate, finnishWeekday } from '../format/date.js';
+import { nameOf, renderDeduction, shortfallText } from './cook-rows.js';
 import { previewCook, cook, patchEntry } from '../api/meal-plans.js';
 import { getRecipe } from '../api/recipes.js';
 import { listAllPantry } from '../api/pantry.js';
 import { isApiError, userMessage } from '../api/errors.js';
-import type {
-  MealPlanEntry,
-  CookPreview,
-  CookResult,
-  Deduction,
-  Shortfall,
-  PantryItem,
-} from '../api/types.js';
+import type { MealPlanEntry, CookPreview, CookResult, PantryItem } from '../api/types.js';
 
 export interface CookConfirmOptions {
   entry: MealPlanEntry;
@@ -39,55 +33,6 @@ export interface CookConfirmOptions {
 }
 
 export const DEBOUNCE_MS = 150;
-
-/** How urgent the lot is — the second half of the provenance line. */
-function expiryLabel(expiresDate: string): string {
-  const days = daysUntil(expiresDate);
-  if (days < 0) return `EXPIRED ${Math.abs(days)}d`;
-  if (days === 0) return 'expires today';
-  if (days === 1) return 'expires in 1 day';
-  return `expires in ${days} days`;
-}
-
-function nameOf(map: Map<string, string>, ingredientId: string): string {
-  return map.get(ingredientId) ?? ingredientId;
-}
-
-function shortfallText(s: Shortfall, name: string): string {
-  if (s.reason === 'not_in_pantry') return `${name} — not in pantry — buy first`;
-  if (s.reason === 'unit_mismatch') {
-    return `${name} — units don't convert (mass/volume/count only)`;
-  }
-  const unit = s.dimension ? baseUnit(s.dimension) : '';
-  return `${name} — short ${formatQuantity(s.requested - s.available, unit)}`;
-}
-
-function renderDeduction(
-  d: Deduction,
-  name: string,
-  pantryById: Map<string, PantryItem>,
-): HTMLElement {
-  const lots = d.pantryItems.map((p) => {
-    const item = pantryById.get(p.id);
-    const before = toNumber(p.before);
-    const after = toNumber(p.after);
-    // A lot is identified by when it came in, not when it goes off: the
-    // design's own "lot 2.8. · expires today" only reads as one thing if the
-    // two dates are different, and two lots of the same ingredient are told
-    // apart by their purchase date.
-    const provenance = item
-      ? `lot ${finnishDate(item.addedDate)} · ${expiryLabel(item.expiresDate)}${item.opened ? ' · opened' : ''}`
-      : 'lot ?';
-    return el(
-      'div',
-      { class: 'cook-lot-row' },
-      el('span', { class: 'cook-lot-info' }, provenance),
-      el('span', { class: 'cook-lot-amount' }, `−${formatQuantity(before - after, p.unit)}`),
-      el('span', { class: 'cook-lot-left' }, `${formatQuantity(after, p.unit)} left`),
-    );
-  });
-  return el('div', { class: 'cook-item' }, el('div', { class: 'cook-item-name' }, name), ...lots);
-}
 
 export function openCookConfirm(opts: CookConfirmOptions): void {
   const { entry } = opts;
@@ -190,8 +135,7 @@ export function openCookConfirm(opts: CookConfirmOptions): void {
   }
 
   function changeServings(delta: number): void {
-    // Same 1–12 clamp as the recipe detail scaler — one servings vocabulary.
-    servings = Math.min(12, Math.max(1, servings + delta));
+    servings = clampServings(servings + delta);
     stepValue.textContent = String(servings);
     updateMeta();
     updateWarning();
@@ -226,33 +170,39 @@ export function openCookConfirm(opts: CookConfirmOptions): void {
     });
   }
 
+  // Both loaders turn a failure into a flag: names and lot dates are
+  // display-only, so a failed fetch degrades the table, never the commit.
+  async function loadPantryLots(): Promise<void> {
+    try {
+      const rows = await listAllPantry();
+      pantryById = new Map(rows.map((r) => [r.id, r]));
+    } catch {
+      pantryFailed = true;
+    }
+  }
+
+  async function loadRecipeNames(): Promise<void> {
+    if (!resolvedRecipeId) {
+      updateTitle(entry.freeformNote ? `Cook · ${entry.freeformNote}` : 'Cook');
+      return;
+    }
+    try {
+      const recipe = await getRecipe(resolvedRecipeId);
+      nameById = new Map(
+        recipe.recipeIngredients.map((line) => [
+          line.ingredientId,
+          line.ingredient?.name ?? line.ingredientId,
+        ]),
+      );
+      updateTitle(`Cook · ${recipe.title}`);
+    } catch {
+      recipeFailed = true;
+    }
+  }
+
   async function init(): Promise<void> {
     updateWarning();
-    const pantryLoad = listAllPantry()
-      .then((rows) => {
-        pantryById = new Map(rows.map((r) => [r.id, r]));
-      })
-      .catch(() => {
-        pantryFailed = true;
-      });
-    const recipeLoad = resolvedRecipeId
-      ? getRecipe(resolvedRecipeId)
-          .then((recipe) => {
-            nameById = new Map(
-              recipe.recipeIngredients.map((line) => [
-                line.ingredientId,
-                line.ingredient?.name ?? line.ingredientId,
-              ]),
-            );
-            updateTitle(`Cook · ${recipe.title}`);
-          })
-          .catch(() => {
-            recipeFailed = true;
-          })
-      : Promise.resolve().then(() => {
-          updateTitle(entry.freeformNote ? `Cook · ${entry.freeformNote}` : 'Cook');
-        });
-    await Promise.all([pantryLoad, recipeLoad]);
+    await Promise.all([loadPantryLots(), loadRecipeNames()]);
     updateDegraded();
     await loadPreview();
   }

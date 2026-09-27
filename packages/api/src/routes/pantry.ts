@@ -122,12 +122,10 @@ export function pantryRoutes(db: Db): Hono {
     });
     if (!existing) return notFound(c);
 
-    // quantity is numeric in Postgres — Drizzle wants the string form.
     const patch: Partial<typeof pantryItems.$inferInsert> = {
-      ...buildPatch(data, pantryItems, ['quantity']),
+      ...buildPatch(data, pantryItems),
       updatedAt: new Date(),
     };
-    if (data.quantity !== undefined) patch.quantity = String(data.quantity);
 
     const [row] = await db
       .update(pantryItems)

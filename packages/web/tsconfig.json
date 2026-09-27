@@ -15,7 +15,11 @@
     "resolveJsonModule": true,
     "forceConsistentCasingInFileNames": true,
     "verbatimModuleSyntax": true,
-    "types": ["node"]
+    "types": ["node"],
+    // Type-side twin of the `@diet-app/api/vocab` alias in vite.config.ts.
+    "paths": {
+      "@diet-app/api/vocab": ["../api/src/vocab.ts"]
+    }
   },
   "include": ["src", "vite.config.ts"]
 }

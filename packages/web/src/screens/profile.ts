@@ -16,8 +16,9 @@ import { loadInto } from '../ui/async.js';
 import { field, errorBox, showError, hideError } from '../ui/form.js';
 import { attachIngredientSearch } from '../ui/ingredient-picker.js';
 import { say } from '../ui/toast.js';
+import { COOKING_SKILLS } from '@diet-app/api/vocab';
 
-const SKILLS: readonly CookingSkill[] = ['beginner', 'competent', 'advanced'];
+const SKILLS: readonly CookingSkill[] = COOKING_SKILLS;
 
 const profileField = (label: string, node: HTMLElement): HTMLElement =>
   field(label, node, { as: 'label', class: 'profile-field' });

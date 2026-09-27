@@ -141,12 +141,10 @@ export function mealPlansRoutes(db: Db): Hono {
           return { kind: 'no_content' as const };
         }
 
-        // servings is numeric in Postgres — Drizzle wants the string form.
         const patch: Partial<typeof mealPlanEntries.$inferInsert> = {
-          ...buildPatch(data, mealPlanEntries, ['servings']),
+          ...buildPatch(data, mealPlanEntries),
           updatedAt: new Date(),
         };
-        if (data.servings !== undefined) patch.servings = String(data.servings);
 
         const [row] = await tx
           .update(mealPlanEntries)

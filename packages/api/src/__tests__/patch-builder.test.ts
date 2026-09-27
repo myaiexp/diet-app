@@ -1,7 +1,7 @@
 // Unit tests for the table-driven PATCH payload builder.
 
 import { describe, test, expect } from 'vitest';
-import { recipes, pantryItems } from '@diet-app/db';
+import { recipes, pantryItems, mealPlanEntries } from '@diet-app/db';
 import { buildPatch } from '../patch-builder.js';
 
 describe('buildPatch', () => {
@@ -30,8 +30,24 @@ describe('buildPatch', () => {
   });
 
   test('omit leaves a column for the route to write itself', () => {
-    const patch = buildPatch({ quantity: 2, unit: 'kg' }, pantryItems, ['quantity']);
-    expect(patch).toEqual({ unit: 'kg' });
+    const patch = buildPatch({ quantity: 2, unit: 'kg' }, pantryItems, ['unit']);
+    expect(patch).toEqual({ quantity: '2' });
+  });
+
+  test('stringifies a number bound for a numeric column', () => {
+    // Drizzle types numeric columns as strings; Zod hands the route a number.
+    const patch = buildPatch({ quantity: 1.5, unit: 'kg' }, pantryItems);
+    expect(patch).toEqual({ quantity: '1.5', unit: 'kg' });
+    const text: string | undefined = patch.quantity;
+    expect(text).toBe('1.5');
+  });
+
+  test('leaves integer columns as numbers', () => {
+    expect(buildPatch({ servings: 4 }, recipes)).toEqual({ servings: 4 });
+  });
+
+  test('passes null through to a nullable numeric column', () => {
+    expect(buildPatch({ actualServings: null }, mealPlanEntries)).toEqual({ actualServings: null });
   });
 
   test('does not invent updatedAt — the route stamps it', () => {

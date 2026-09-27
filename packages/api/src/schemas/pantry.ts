@@ -2,7 +2,7 @@
 
 import { z } from 'zod';
 import { isUuid, isIsoDate } from '../validation.js';
-import { LOCATIONS } from '../pantry-location.js';
+import { LOCATIONS } from '../vocab.js';
 import { unitText } from './fields.js';
 
 const uuidField = z.string().refine(isUuid, { message: 'Invalid UUID' });

@@ -22,6 +22,7 @@ import {
 } from '../ui/recipe-or-note.js';
 import { userMessage, fieldErrors } from '../api/errors.js';
 import { finnishWeekday, finnishDate } from '../format/date.js';
+import { MIN_SERVINGS, MAX_SERVINGS } from '@diet-app/api/vocab';
 
 export interface AddEntryOptions {
   date: string;
@@ -36,8 +37,8 @@ export function openAddEntry(opts: AddEntryOptions): void {
   const servingsInput = el('input', {
     class: 'input',
     type: 'number',
-    min: '1',
-    max: '12',
+    min: String(MIN_SERVINGS),
+    max: String(MAX_SERVINGS),
     value: '1',
   }) as HTMLInputElement;
   const err = errorBox();

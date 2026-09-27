@@ -1,7 +1,8 @@
 // Category → storage location mapping coverage (incl. every seeded category)
 
 import { describe, test, expect } from 'vitest';
-import { locationForCategory, LOCATIONS } from '../pantry-location.js';
+import { locationForCategory } from '../pantry-location.js';
+import { LOCATIONS } from '../vocab.js';
 import { pantryCreateSchema } from '../schemas/pantry.js';
 import { completeSchema } from '../schemas/shopping-lists.js';
 

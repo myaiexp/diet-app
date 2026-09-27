@@ -2,6 +2,7 @@
 
 import { z } from 'zod';
 import { isUuid } from '../validation.js';
+import { COOKING_SKILLS } from '../vocab.js';
 import {
   LIMITS,
   nameText,
@@ -12,7 +13,7 @@ import {
 
 const uuidField = z.string().refine(isUuid, { message: 'Invalid UUID' });
 
-const cookingSkillEnum = z.enum(['beginner', 'competent', 'advanced']);
+const cookingSkillEnum = z.enum(COOKING_SKILLS);
 
 // Nullable columns accept JSON null to clear; NOT NULL columns reject null via
 // non-nullable Zod types (omit = unchanged).

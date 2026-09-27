@@ -1,10 +1,21 @@
 // Vite build + vitest config for the Ruoka frontend
 
+import { fileURLToPath } from 'node:url';
 import { defineConfig, configDefaults } from 'vitest/config';
 
 export default defineConfig({
   // The app owns its vhost root (diet.mase.fi/), so no path prefix.
   base: '/',
+  resolve: {
+    alias: {
+      // The API's contract vocabularies (enum tuples, servings cap, base
+      // units), compiled from source into the bundle so the client never keeps
+      // a hand-mirrored copy. vocab.ts is import-free by rule, so this pulls in
+      // that one file and nothing else of the API. Mirrored by `paths` in
+      // tsconfig.json.
+      '@diet-app/api/vocab': fileURLToPath(new URL('../api/src/vocab.ts', import.meta.url)),
+    },
+  },
   build: {
     outDir: 'dist',
     emptyOutDir: true,

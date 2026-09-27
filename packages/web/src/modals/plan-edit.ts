@@ -15,6 +15,7 @@ import { openModal, closeModal } from '../ui/modal.js';
 import { say } from '../ui/toast.js';
 import { userMessage, fieldErrors } from '../api/errors.js';
 import { finnishWeekday, finnishDate } from '../format/date.js';
+import { CREATE_STATUSES, MIN_SERVINGS, MAX_SERVINGS } from '@diet-app/api/vocab';
 import {
   createRecipeOrNoteField,
   RECIPE_OR_NOTE_REQUIRED,
@@ -22,7 +23,8 @@ import {
 } from '../ui/recipe-or-note.js';
 
 type EditableStatus = Exclude<EntryStatus, 'cooked'>;
-const EDITABLE_STATUSES: readonly EditableStatus[] = ['planned', 'skipped', 'substituted'];
+// The same non-cooked set create accepts — cooked is owned by POST /:id/cook.
+const EDITABLE_STATUSES: readonly EditableStatus[] = CREATE_STATUSES;
 
 /**
  * Map the picker onto the column cook/title/shopping resolve
@@ -61,8 +63,8 @@ export function openEditEntry(
   const servingsInput = el('input', {
     class: 'input',
     type: 'number',
-    min: '1',
-    max: '12',
+    min: String(MIN_SERVINGS),
+    max: String(MAX_SERVINGS),
     value: entry.servings,
   }) as HTMLInputElement;
   const notesInput = el('input', { class: 'input', type: 'text', value: entry.notes ?? '' }) as HTMLInputElement;

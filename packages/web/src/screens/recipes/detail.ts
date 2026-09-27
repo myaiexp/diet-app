@@ -18,9 +18,8 @@ import { userMessage, fieldErrors } from '../../api/errors.js';
 import { say } from '../../ui/toast.js';
 import { openModal, closeModal } from '../../ui/modal.js';
 import { formatQuantity, toNumber } from '../../format/quantity.js';
+import { MIN_SERVINGS, MAX_SERVINGS, clampServings } from '@diet-app/api/vocab';
 
-const MIN_SERVINGS = 1;
-const MAX_SERVINGS = 12;
 const DEBOUNCE_MS = 150;
 
 const SOURCE_LABEL: Record<SourceType, { text: string; cls: string }> = {
@@ -41,10 +40,6 @@ export interface DetailHandle {
   show(id: string): Promise<void>;
   showEmpty(message: string): void;
   destroy(): void;
-}
-
-function clamp(n: number): number {
-  return Math.min(MAX_SERVINGS, Math.max(MIN_SERVINGS, n));
 }
 
 /** '1.5' not '1,5' — a debug-style note, not a display quantity. */
@@ -190,7 +185,11 @@ export function createRecipeDetail(container: HTMLElement, deps: DetailDeps): De
       removed: false,
     }));
     const title = textInput(base.title);
-    const servingsInput = textInput(base.servings, { type: 'number', min: '1', max: '12' });
+    const servingsInput = textInput(base.servings, {
+      type: 'number',
+      min: String(MIN_SERVINGS),
+      max: String(MAX_SERVINGS),
+    });
     const cuisine = textInput(base.cuisineType ?? '');
     const tags = textInput((base.tags ?? []).join(', '));
     const steps = el('textarea', { class: 'textarea' }) as HTMLTextAreaElement; // value is child text, not an attribute
@@ -261,9 +260,9 @@ export function createRecipeDetail(container: HTMLElement, deps: DetailDeps): De
     const scaler = el('div', { class: 'scaler' },
       el('span', { class: 'scaler-label' }, 'servings'),
       el('div', { class: 'scaler-controls' },
-        button('btn scaler-btn scaler-minus', '−', () => rescale(clamp(servings - 1))),
+        button('btn scaler-btn scaler-minus', '−', () => rescale(clampServings(servings - 1))),
         el('span', { class: 'scaler-value' }, String(servings)),
-        button('btn scaler-btn scaler-plus', '+', () => rescale(clamp(servings + 1)))),
+        button('btn scaler-btn scaler-plus', '+', () => rescale(clampServings(servings + 1)))),
       el('span', { class: 'scaler-note' }, note));
     const ingredientsCol = el('div', { class: 'recipe-ingredients' }, el('div', { class: 'section-header' }, 'ingredients'),
       ...d.recipeIngredients.map((line) => ingredientRow(line, deps.pantryById)));

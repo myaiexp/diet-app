@@ -94,9 +94,10 @@ reaches Postgres as an unhandled `invalid input syntax for type uuid`.
   still type-checks the write. It copies every defined patch field naming a
   column of `table`, so a field added to a Zod patch schema is written
   automatically instead of silently dropped. Fields that aren't columns
-  (`ingredients`, `dislikedIngredientIds`) are skipped for the route to handle;
-  numeric columns whose Zod type is `number` (`servings`, `quantity`) go in
-  `omit` and get an explicit `String(...)` line after the spread.
+  (`ingredients`, `dislikedIngredientIds`) are skipped for the route to handle.
+  A number bound for a Postgres `numeric` column (`servings`, `quantity`) is
+  `String()`-ed by `buildPatch` itself, read off the column type — no `omit`
+  and no follow-up line. `omit` is only for values the route derives or merges.
 
 ## Recipe scaling
 

@@ -1,6 +1,9 @@
 // Unit → dimension/base conversion (mass/volume/count)
 
-export type Dimension = 'mass' | 'volume' | 'count';
+import type { Dimension } from './vocab.js';
+
+// Dimension and baseUnit live in vocab.ts, which the web client shares.
+export { baseUnit, type Dimension } from './vocab.js';
 
 interface UnitInfo {
   dimension: Dimension;
@@ -49,18 +52,6 @@ export function fromBase(value: number, unit: string): number | null {
   const info = resolveUnit(unit);
   if (!info) return null;
   return value / info.factor;
-}
-
-// The base unit label for a dimension: mass → g, volume → ml, count → pieces.
-export function baseUnit(dimension: Dimension): 'g' | 'ml' | 'pieces' {
-  switch (dimension) {
-    case 'mass':
-      return 'g';
-    case 'volume':
-      return 'ml';
-    case 'count':
-      return 'pieces';
-  }
 }
 
 // Shared by cook-deduct and shopping-aggregate so their rounding cannot drift.

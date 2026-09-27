@@ -2,6 +2,7 @@
 
 import { toBase, baseUnit, round6, type Dimension } from './units.js';
 import { parseServings } from './servings.js';
+import type { SkippedGenerateReason } from './vocab.js';
 
 export interface PlanEntry {
   id: string;
@@ -43,7 +44,7 @@ export interface GeneratedItem {
 export interface SkippedLine {
   ingredientId: string | null; // null when the whole entry was unusable
   entryId: string;
-  reason: 'unknown_unit' | 'recipe_missing' | 'bad_scale';
+  reason: SkippedGenerateReason;
 }
 
 // cooked is already made (and already deducted from the pantry); skipped never
