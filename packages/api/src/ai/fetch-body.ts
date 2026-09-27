@@ -14,7 +14,7 @@ export function htmlToPlainText(html: string): string {
   s = s.replace(/<style\b[\s\S]*?(?:<\/style>|$)/gi, ' ');
   s = s.replace(/<noscript\b[\s\S]*?(?:<\/noscript>|$)/gi, ' ');
   s = s.replace(/<!--[\s\S]*?(?:-->|$)/g, ' ');
-  s = s.replace(/<[^>]+>/g, ' ');
+  s = stripTags(s);
   s = s.replace(/&nbsp;/gi, ' ');
   s = s.replace(/&amp;/gi, '&');
   s = s.replace(/&lt;/gi, '<');
@@ -34,6 +34,32 @@ export function htmlToPlainText(html: string): string {
       : ' ';
   });
   return s.replace(/\s+/g, ' ').trim();
+}
+
+/**
+ * Replace every `<`…`>` span (at least one char between) with a space — the
+ * semantics of `/<[^>]+>/g`, without its O(n²) backtracking on a long run of
+ * `<` with no `>` (a remote page controls this input, up to the 1.5 MB read
+ * cap). Once no `>` is left, no later `<` can open a tag either, so the rest
+ * is copied as-is.
+ */
+export function stripTags(s: string): string {
+  let out = '';
+  let from = 0;
+  let lt = s.indexOf('<');
+  while (lt !== -1) {
+    const gt = s.indexOf('>', lt + 1);
+    if (gt === -1) break;
+    if (gt === lt + 1) {
+      // `<>` is not a tag; the `>` is ordinary text.
+      lt = s.indexOf('<', gt);
+      continue;
+    }
+    out += s.slice(from, lt) + ' ';
+    from = gt + 1;
+    lt = s.indexOf('<', from);
+  }
+  return out + s.slice(from);
 }
 
 export function truncateText(text: string): { text: string; truncated: boolean } {

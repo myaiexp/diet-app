@@ -19,7 +19,7 @@ paragraph of "why", the why belongs in the linked subdoc.
 - **Public URL**: `https://diet.mase.fi` — the app at `/`, its API at `/api/`
   (same origin). Auth (two independent gates), CORS, deploy, secrets, and the
   DB pool: **`docs/auth-deploy.md`**. Password rotation: `docs/db-rotation.md`.
-  Vhost reference (token redacted): `docs/nginx-diet.mase.fi.conf`.
+  Vhost reference (verbatim, no secret): `docs/nginx-diet.mase.fi.conf`.
 - **Database**: PostgreSQL `dietapp` — one database, and every worktree's `.env`
   points at it. Schema changes: `pnpm --filter @diet-app/db generate` then
   `migrate` — never `push` (it prompts and hangs without a TTY). `migrate` runs

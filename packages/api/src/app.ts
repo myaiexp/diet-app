@@ -48,6 +48,9 @@ export function createApp(db: Db, config: AppConfig = {}) {
     '*',
     cors({
       origin: config.corsOrigins ?? [],
+      // Keep this non-empty. Empty or omitted, hono echoes back whatever the
+      // unauthenticated preflight asks for in Access-Control-Request-Headers,
+      // and on hono < 4.12.34 that path was a ReDoS (CVE-2026-69207).
       allowHeaders: ['Content-Type', 'Authorization'],
       allowMethods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     })

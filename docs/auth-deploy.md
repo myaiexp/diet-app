@@ -21,7 +21,7 @@ Unit tests omit the token (`createApp(db)` with no config) to exercise route
 logic auth-free. Non-browser clients (cron, a future scanner #394) use the
 bearer directly — cookie SSO isn't available to them.
 
-Vhost reference copy (token redacted): `docs/nginx-diet.mase.fi.conf`.
+Vhost reference copy (verbatim; the token lives in a root-only include it names): `docs/nginx-diet.mase.fi.conf`.
 HTML locations send a strict CSP (`script-src 'self'`, so only the
 content-hashed `/assets/` bundle runs; `style-src`/`font-src` allow
 `https://mase.fi` for `base.css` and JetBrains Mono). The shell pins
@@ -94,7 +94,8 @@ never committed; `.gitignore` also ignores `.env.*` so editor swaps and
 backups (`.env.local`, `.env.save`) stay out of git. `.env.example` holds
 placeholders only and is tracked (`!.env.example`). Each Helm worktree keeps
 its own gitignored `.env` copy for dev. The nginx vhost also carries
-`API_TOKEN` (root-owned, mode 640); rotating the token means updating both.
+`API_TOKEN`, in `/etc/nginx/secrets/diet.conf` (root, mode 600) — rotating the
+token means updating both, then `nginx -t && systemctl reload nginx`.
 
 DB password rotation (superuser `ALTER ROLE` → update `DATABASE_URL` in every
 checkout's `.env` → restart service → verify): `docs/db-rotation.md`.

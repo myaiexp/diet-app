@@ -1,7 +1,7 @@
-// htmlToPlainText table — entities, comments, and tag stripping for untrusted URLs
+// htmlToPlainText table — entities, comments, tag stripping, and linear time on untrusted URLs
 
 import { describe, test, expect } from 'vitest';
-import { htmlToPlainText } from '../ai/fetch-body.js';
+import { htmlToPlainText, stripTags } from '../ai/fetch-body.js';
 
 describe('htmlToPlainText', () => {
   test.each([
@@ -37,7 +37,39 @@ describe('htmlToPlainText', () => {
     ['unclosed noscript does not leak', 'keep<noscript>hidden', 'keep'],
     ['unclosed comment does not leak', 'keep<!-- secret', 'keep'],
     ['unclosed ordinary tag keeps text', '<p>hello', 'hello'],
+    ['lone < in text is kept', 'a < b', 'a < b'],
+    ['<> is not a tag', 'a<>b', 'a<>b'],
+    ['< inside a quoted attribute stays inside the tag', '<img alt="1 < 2">x', 'x'],
   ] as const)('%s', (_name, html, expected) => {
     expect(htmlToPlainText(html)).toBe(expected);
+  });
+
+  // A remote page controls this input up to the 1.5 MB read cap; the regex
+  // `/<[^>]+>/g` took minutes on a `<` run with no `>`, blocking the event loop.
+  test.each([
+    ['all <', '<'.repeat(1_500_000)],
+    ['< with text, no >', '<a '.repeat(500_000)],
+  ])('strips a 1.5 MB %s run in linear time', (_name, html) => {
+    const start = performance.now();
+    htmlToPlainText(html);
+    expect(performance.now() - start).toBeLessThan(1000);
+  });
+});
+
+describe('stripTags', () => {
+  // The scan replaced `/<[^>]+>/g`; it must produce the same output on any input.
+  test('matches the regex it replaced on random markup', () => {
+    const alphabet = '<>a "/';
+    let seed = 1;
+    const rand = () => {
+      seed = (seed * 1103515245 + 12345) & 0x7fffffff;
+      return seed;
+    };
+    for (let i = 0; i < 20_000; i++) {
+      let s = '';
+      const len = rand() % 14;
+      for (let j = 0; j < len; j++) s += alphabet[rand() % alphabet.length];
+      expect(stripTags(s), JSON.stringify(s)).toBe(s.replace(/<[^>]+>/g, ' '));
+    }
   });
 });
