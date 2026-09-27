@@ -14,7 +14,8 @@ import { userMessage } from '../../api/errors.js';
 import { toNumber } from '../../format/quantity.js';
 import { isoWeekNumber } from '../../format/date.js';
 import { el, button } from '../../ui/dom.js';
-import { openModal, closeModal } from '../../ui/modal.js';
+import { openModal } from '../../ui/modal.js';
+import { modalFooter, submitModal } from '../../ui/modal-form.js';
 import { say } from '../../ui/toast.js';
 import { openAddShoppingItemModal } from '../../modals/shopping-add.js';
 
@@ -59,22 +60,14 @@ function openCompleteConfirm(list: ShoppingList, handlers: HeaderHandlers): void
     { class: 'text-pretty' },
     `${filing} item${filing === 1 ? '' : 's'} will be filed into the pantry. This can't be undone.`,
   );
-  const footer = el(
-    'div',
-    { class: 'flex gap-2' },
-    button('btn btn-ghost', 'cancel', () => closeModal()),
-    button('btn btn-primary', 'complete', () => void commit()),
-  );
+  const footer = modalFooter({ label: 'complete', onClick: () => void commit() });
 
+  // No errorBox: a failure toasts, and the confirm stays open to retry.
   async function commit(): Promise<void> {
-    try {
-      const result = await completeShoppingList(list.id);
-      closeModal();
-      say('Shopping list completed.', 'success');
-      handlers.onCompleted({ ...list, ...result.list }, result.skipped);
-    } catch (e) {
-      say(userMessage(e), 'error');
-    }
+    await submitModal(() => completeShoppingList(list.id), {
+      success: 'Shopping list completed.',
+      onDone: (result) => handlers.onCompleted({ ...list, ...result.list }, result.skipped),
+    });
   }
 
   openModal({ title: 'Complete shopping list', body, footer, width: 380 });

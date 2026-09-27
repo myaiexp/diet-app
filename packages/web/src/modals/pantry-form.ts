@@ -3,23 +3,15 @@
 import type { Ingredient, PantryItem, PantryLocation, PantryCreate } from '../api/types.js';
 import { LOCATIONS } from '../api/types.js';
 import { createPantryItem, patchPantryItem, deletePantryItem } from '../api/pantry.js';
-import { userMessage, fieldErrors, isApiError } from '../api/errors.js';
+import { isApiError } from '../api/errors.js';
 import { el, button } from '../ui/dom.js';
-import { field, errorBox, showError } from '../ui/form.js';
+import { field, errorBox, selectInput } from '../ui/form.js';
 import { createIngredientQuantityForm, readQuantityUnit } from '../ui/ingredient-picker.js';
-import { openModal, closeModal } from '../ui/modal.js';
-import { say } from '../ui/toast.js';
+import { openModal } from '../ui/modal.js';
+import { modalFooter, submitModal } from '../ui/modal-form.js';
 
 const NO_SHELF_LIFE =
   'expiresDate is required when ingredient has no shelf life for this location';
-
-function locationSelect(initial: PantryLocation): HTMLSelectElement {
-  const sel = el('select', { class: 'select' });
-  for (const loc of LOCATIONS) {
-    sel.appendChild(el('option', { value: loc, selected: loc === initial }, loc));
-  }
-  return sel as HTMLSelectElement;
-}
 
 export interface AddItemHandlers {
   onCreated: (row: PantryItem, ingredient: Ingredient) => void;
@@ -27,7 +19,7 @@ export interface AddItemHandlers {
 
 /** `preset` skips the search step — used when the sticky-bar picker already chose one. */
 export function openAddItemModal(handlers: AddItemHandlers, preset?: Ingredient): void {
-  const locSelect = locationSelect('fridge');
+  const locSelect = selectInput(LOCATIONS, 'fridge');
   const openedInput = el('input', { class: 'checkbox', type: 'checkbox' }) as HTMLInputElement;
   const expiresInput = el('input', { class: 'input', type: 'date' }) as HTMLInputElement;
   const expiresField = field('expires (no shelf life on file for this location)', expiresInput);
@@ -55,25 +47,20 @@ export function openAddItemModal(handlers: AddItemHandlers, preset?: Ingredient)
     if (!expiresField.classList.contains('hidden') && expiresInput.value) {
       payload.expiresDate = expiresInput.value;
     }
-    try {
-      const row = await createPantryItem(payload);
-      say(`${parsed.ingredient.name} added to pantry`, 'success');
-      closeModal();
-      handlers.onCreated(row, parsed.ingredient);
-    } catch (e) {
-      if (isApiError(e) && e.status === 400 && e.body?.error === NO_SHELF_LIFE) {
-        expiresField.classList.remove('hidden');
-      }
-      showError(form.err, userMessage(e), fieldErrors(e));
-    }
+    const { ingredient } = parsed;
+    await submitModal(() => createPantryItem(payload), {
+      errorBox: form.err,
+      success: `${ingredient.name} added to pantry`,
+      onError: (e) => {
+        if (isApiError(e) && e.status === 400 && e.body?.error === NO_SHELF_LIFE) {
+          expiresField.classList.remove('hidden');
+        }
+      },
+      onDone: (row) => handlers.onCreated(row, ingredient),
+    });
   }
 
-  const footer = el(
-    'div',
-    { class: 'flex gap-2' },
-    button('btn btn-ghost', 'cancel', () => closeModal()),
-    button('btn btn-primary', 'save', () => void submit()),
-  );
+  const footer = modalFooter({ label: 'save', onClick: () => void submit() });
 
   openModal({ title: 'Add pantry item', body: form.body, footer, width: 420, onClose: form.detach });
 }
@@ -96,7 +83,7 @@ export function openEditItemModal(
     value: item.quantity,
   }) as HTMLInputElement;
   const unitInput = el('input', { class: 'input', type: 'text', value: item.unit }) as HTMLInputElement;
-  const locSelect = locationSelect(item.location);
+  const locSelect = selectInput(LOCATIONS, item.location);
   const openedInput = el('input', {
     class: 'checkbox',
     type: 'checkbox',
@@ -123,40 +110,31 @@ export function openEditItemModal(
   async function submit(): Promise<void> {
     const parsed = readQuantityUnit(qtyInput, unitInput, err);
     if (!parsed) return;
-    try {
-      const row = await patchPantryItem(item.id, {
-        quantity: parsed.quantity,
-        unit: parsed.unit,
-        location: locSelect.value as PantryLocation,
-        opened: openedInput.checked,
-        expiresDate: expiresInput.value,
-      });
-      say('Pantry item updated', 'success');
-      closeModal();
-      handlers.onSaved(row);
-    } catch (e) {
-      showError(err, userMessage(e), fieldErrors(e));
-    }
+    const patch = {
+      quantity: parsed.quantity,
+      unit: parsed.unit,
+      location: locSelect.value as PantryLocation,
+      opened: openedInput.checked,
+      expiresDate: expiresInput.value,
+    };
+    await submitModal(() => patchPantryItem(item.id, patch), {
+      errorBox: err,
+      success: 'Pantry item updated',
+      onDone: handlers.onSaved,
+    });
   }
 
   async function remove(): Promise<void> {
-    try {
-      await deletePantryItem(item.id);
-      say('Pantry item removed', 'success');
-      closeModal();
-      handlers.onDeleted(item.id);
-    } catch (e) {
-      showError(err, userMessage(e));
-    }
+    await submitModal(() => deletePantryItem(item.id), {
+      errorBox: err,
+      success: 'Pantry item removed',
+      onDone: () => handlers.onDeleted(item.id),
+    });
   }
 
-  const footer = el(
-    'div',
-    { class: 'flex gap-2' },
+  const footer = modalFooter({ label: 'save', onClick: () => void submit() }, [
     button('btn btn-ghost', 'delete', () => void remove()),
-    button('btn btn-ghost', 'cancel', () => closeModal()),
-    button('btn btn-primary', 'save', () => void submit()),
-  );
+  ]);
 
   openModal({ title: `Edit ${ingredient?.name ?? 'pantry item'}`, body, footer, width: 380 });
 }

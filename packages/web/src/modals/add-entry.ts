@@ -12,15 +12,15 @@
 import type { MealPlanEntry, MealPlanCreate, Slot } from '../api/types.js';
 import { createEntry } from '../api/meal-plans.js';
 import { listAllRecipes } from '../api/recipes.js';
-import { el, button } from '../ui/dom.js';
+import { el } from '../ui/dom.js';
 import { field, errorBox, showError } from '../ui/form.js';
-import { openModal, closeModal } from '../ui/modal.js';
-import { say } from '../ui/toast.js';
+import { openModal } from '../ui/modal.js';
+import { modalFooter, submitModal } from '../ui/modal-form.js';
 import {
   createRecipeOrNoteField,
   RECIPE_OR_NOTE_REQUIRED,
 } from '../ui/recipe-or-note.js';
-import { userMessage, fieldErrors } from '../api/errors.js';
+import { userMessage } from '../api/errors.js';
 import { finnishWeekday, finnishDate } from '../format/date.js';
 import { MIN_SERVINGS, MAX_SERVINGS } from '@diet-app/api/vocab';
 
@@ -63,22 +63,14 @@ export function openAddEntry(opts: AddEntryOptions): void {
     const servings = Number(servingsInput.value);
     if (Number.isFinite(servings) && servings > 0) payload.servings = servings;
 
-    try {
-      const entry = await createEntry(payload);
-      say('Added to plan.');
-      closeModal();
-      onCreated(entry);
-    } catch (e) {
-      showError(err, userMessage(e), fieldErrors(e));
-    }
+    await submitModal(() => createEntry(payload), {
+      errorBox: err,
+      success: 'Added to plan.',
+      onDone: onCreated,
+    });
   }
 
-  const footer = el(
-    'div',
-    { class: 'flex gap-2' },
-    button('btn btn-ghost', 'cancel', () => closeModal()),
-    button('btn btn-primary add-entry-save', 'add', () => void submit()),
-  );
+  const footer = modalFooter({ label: 'add', class: 'add-entry-save', onClick: () => void submit() });
 
   openModal({
     title: 'Add to plan',

@@ -11,12 +11,13 @@ import { getRecipe, patchRecipe, forkRecipe } from '../../api/recipes.js';
 import type {
   Recipe, RecipeWithIngredients, RecipeIngredientLine, RecipeLineInput, RecipePatch, PantryItem, SourceType,
 } from '../../api/types.js';
-import { el, button, errorPanel } from '../../ui/dom.js';
+import { el, button } from '../../ui/dom.js';
 import { loadInto } from '../../ui/async.js';
-import { field, textInput } from '../../ui/form.js';
-import { userMessage, fieldErrors } from '../../api/errors.js';
+import { field, textInput, errorBox } from '../../ui/form.js';
+import { userMessage } from '../../api/errors.js';
 import { say } from '../../ui/toast.js';
-import { openModal, closeModal } from '../../ui/modal.js';
+import { openModal } from '../../ui/modal.js';
+import { modalFooter, submitModal } from '../../ui/modal-form.js';
 import { formatQuantity, toNumber } from '../../format/quantity.js';
 import { MIN_SERVINGS, MAX_SERVINGS, clampServings } from '@diet-app/api/vocab';
 
@@ -204,7 +205,7 @@ export function createRecipeDetail(container: HTMLElement, deps: DetailDeps): De
         button('btn btn-ghost btn-sm', 'remove', () => { line.removed = true; row.remove(); }));
       linesBox.appendChild(row);
     }
-    const saveErr = el('div', {});
+    const saveErr = errorBox();
     const body = el('div', { class: 'flex flex-col gap-3' },
       field('title', title, { as: 'label' }),
       el('div', { class: 'flex gap-3' }, field('servings', servingsInput, { as: 'label' }), field('cuisine', cuisine, { as: 'label' })),
@@ -226,22 +227,21 @@ export function createRecipeDetail(container: HTMLElement, deps: DetailDeps): De
         steps: steps.value.split('\n').map((s) => s.trim()).filter(Boolean),
         ingredients,
       };
-      try {
-        const updated = await patchRecipe(id, patch);
-        closeModal();
-        say('Recipe saved.');
-        // A scale fetch still in flight would repaint the pre-edit recipe.
-        clearTimer();
-        ++scaleSeq;
-        detail = updated;
-        servings = updated.servings;
-        render();
-      } catch (err) {
-        saveErr.replaceChildren(errorPanel([userMessage(err), ...fieldErrors(err)].join(' ')));
-      }
+      await submitModal(() => patchRecipe(id, patch), {
+        errorBox: saveErr,
+        success: 'Recipe saved.',
+        onDone: (updated) => {
+          // A scale fetch still in flight would repaint the pre-edit recipe.
+          clearTimer();
+          ++scaleSeq;
+          detail = updated;
+          servings = updated.servings;
+          render();
+        },
+      });
     }
 
-    const footer = el('div', { class: 'flex gap-2' }, button('btn btn-ghost', 'cancel', () => closeModal()), button('btn btn-primary', 'save', () => void submit()));
+    const footer = modalFooter({ label: 'save', onClick: () => void submit() });
     openModal({ title: `Edit ${base.title}`, body, footer, width: 560 });
   }
 

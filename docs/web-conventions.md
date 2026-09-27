@@ -94,7 +94,8 @@
 | `dom.ts` | `el(tag, attrs, ...children)`, `button`, `append`, `errorPanel`, `loadingRow`. Strings become text nodes — never `innerHTML`. `false`/null children are dropped, so `cond && el(...)` works. |
 | `async.ts` | `loadInto` (above). |
 | `modal.ts` | `openModal({ title, meta?, body, footer?, width?, onClose? })` → handle; `closeModal()`. One modal at a time, Escape, focus trap. |
-| `form.ts` | `field`, `textInput`, `errorBox` / `showError` / `hideError`. Imports `form.css`. |
+| `form.ts` | `field`, `textInput`, `selectInput`, `errorBox` / `showError` / `hideError`, and `submitForm(run, { errorBox?, success?, onError?, onDone })` — every write's toast/error sequence (no `errorBox` → error toast). Imports `form.css`. |
+| `modal-form.ts` | `modalFooter(primary, leading?)` (cancel + primary) and `submitModal` (= `submitForm` that closes the modal before `onDone`). A new form modal uses both instead of hand-rolling them. |
 | `toast.ts` | `say(msg, kind)` — one toast, 2600ms; the previous timer is cleared at the call site. |
 | `shell.ts` | `mountShell` (sidebar / phone tab bar, header, badges, footer) and `activeShell()`, which is null in a test that mounts a screen bare. |
 | `placeholder.ts` | `placeholderScreen` — what is missing and which roadmap item blocks it. |

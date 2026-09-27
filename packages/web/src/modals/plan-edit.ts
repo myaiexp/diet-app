@@ -9,11 +9,10 @@
 import type { MealPlanEntry, MealPlanPatch, Recipe, Slot, EntryStatus } from '../api/types.js';
 import { SLOTS } from '../api/types.js';
 import { patchEntry } from '../api/meal-plans.js';
-import { el, button } from '../ui/dom.js';
-import { field, errorBox, showError } from '../ui/form.js';
-import { openModal, closeModal } from '../ui/modal.js';
-import { say } from '../ui/toast.js';
-import { userMessage, fieldErrors } from '../api/errors.js';
+import { el } from '../ui/dom.js';
+import { field, errorBox, showError, selectInput } from '../ui/form.js';
+import { openModal } from '../ui/modal.js';
+import { modalFooter, submitModal } from '../ui/modal-form.js';
 import { finnishWeekday, finnishDate } from '../format/date.js';
 import { CREATE_STATUSES, MIN_SERVINGS, MAX_SERVINGS } from '@diet-app/api/vocab';
 import {
@@ -52,13 +51,8 @@ export function openEditEntry(
   onSaved: (updated: MealPlanEntry) => void,
 ): void {
   const dateInput = el('input', { class: 'input', type: 'date', value: entry.date.slice(0, 10) }) as HTMLInputElement;
-  const slotSelect = el('select', { class: 'select' }) as HTMLSelectElement;
-  for (const s of SLOTS) slotSelect.appendChild(el('option', { value: s, selected: s === entry.slot }, s));
-
-  const statusSelect = el('select', { class: 'select plan-edit-status' }) as HTMLSelectElement;
-  for (const s of EDITABLE_STATUSES) {
-    statusSelect.appendChild(el('option', { value: s, selected: s === entry.status }, s));
-  }
+  const slotSelect = selectInput(SLOTS, entry.slot);
+  const statusSelect = selectInput<EntryStatus>(EDITABLE_STATUSES, entry.status, { class: 'plan-edit-status' });
 
   const servingsInput = el('input', {
     class: 'input',
@@ -106,22 +100,14 @@ export function openEditEntry(
     const servings = Number(servingsInput.value);
     if (Number.isFinite(servings) && servings > 0) patch.servings = servings;
 
-    try {
-      const updated = await patchEntry(entry.id, patch);
-      say('Entry updated.');
-      closeModal();
-      onSaved(updated);
-    } catch (e) {
-      showError(err, userMessage(e), fieldErrors(e));
-    }
+    await submitModal(() => patchEntry(entry.id, patch), {
+      errorBox: err,
+      success: 'Entry updated.',
+      onDone: onSaved,
+    });
   }
 
-  const footer = el(
-    'div',
-    { class: 'flex gap-2' },
-    button('btn btn-ghost', 'cancel', () => closeModal()),
-    button('btn btn-primary plan-edit-save', 'save', () => void submit()),
-  );
+  const footer = modalFooter({ label: 'save', class: 'plan-edit-save', onClick: () => void submit() });
 
   openModal({
     title: 'Edit entry',

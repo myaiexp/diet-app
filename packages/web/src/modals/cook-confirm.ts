@@ -9,6 +9,7 @@
 
 import '../css/cook.css';
 import { openModal, closeModal } from '../ui/modal.js';
+import { submitModal } from '../ui/modal-form.js';
 import { say } from '../ui/toast.js';
 import { el, button, loadingRow } from '../ui/dom.js';
 import { loadInto } from '../ui/async.js';
@@ -211,15 +212,11 @@ export function openCookConfirm(opts: CookConfirmOptions): void {
     if (busy) return;
     setBusy(true);
     previewGen++;
-    try {
-      const updated = await patchEntry(entry.id, { status: 'skipped' });
-      closeModal();
-      say('Marked skipped.');
-      opts.onSkipped(updated);
-    } catch (err) {
-      say(userMessage(err), 'error');
-      setBusy(false);
-    }
+    await submitModal(() => patchEntry(entry.id, { status: 'skipped' }), {
+      success: 'Marked skipped.',
+      onError: () => setBusy(false),
+      onDone: opts.onSkipped,
+    });
   }
 
   async function handleCommit(): Promise<void> {
