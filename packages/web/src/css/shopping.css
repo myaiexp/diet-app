@@ -97,7 +97,7 @@
 
 .shopping-qty { font-size: var(--text-md); color: var(--accent-text); }
 
-.shopping-more-btn {
+.shopping-remove-btn {
   width: 30px;
   height: 30px;
   padding: 0;

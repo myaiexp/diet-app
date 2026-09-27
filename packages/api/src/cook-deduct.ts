@@ -131,21 +131,10 @@ export function planDeduction(
       const takeBase = Math.min(remainingNeed, rowBase.value);
       const leftBase = rowBase.value - takeBase;
 
-      let after: number;
-      let deleted: boolean;
-      if (leftBase < EPSILON) {
-        after = 0;
-        deleted = true;
-      } else {
-        const converted = fromBase(leftBase, row.unit);
-        after = converted === null ? 0 : round6(converted);
-        if (after < EPSILON) {
-          after = 0;
-          deleted = true;
-        } else {
-          deleted = false;
-        }
-      }
+      // fromBase cannot be null: toBase resolved this same row.unit above.
+      const converted = leftBase < EPSILON ? 0 : round6(fromBase(leftBase, row.unit)!);
+      const after = converted < EPSILON ? 0 : converted;
+      const deleted = after === 0;
 
       remainingQty.set(row.id, after);
       pantryItems.push({

@@ -1,7 +1,9 @@
 // Mock-based route tests for recipesRoutes — deterministic, Postgres-free.
-// Covers the :id 200 path (including the recipeIngredients relation shape), the
-// 404 path, and the GET / list-filter wiring for ?tags=/?cuisine= (which the
-// integration suite cannot exercise — nothing is seeded). The filter tests
+// Covers the full route surface: list and :id reads (including the
+// recipeIngredients relation shape and ?servings= scaling), create/update/delete
+// with their 4xx mappings, and POST /:id/fork. The GET / ?tags=/?cuisine= filter
+// wiring lives here because the integration suite cannot exercise it (nothing
+// is seeded). The filter tests
 // render the WHERE clause the handler builds (renderWhere) to prove each query
 // param is actually applied; buildTagsCondition's own SQL shape is unit-tested
 // in recipe-filters.test.ts.

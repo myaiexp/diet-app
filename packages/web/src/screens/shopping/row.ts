@@ -73,7 +73,7 @@ export function buildShoppingRow(
   const children: HTMLElement[] = [toggle];
   if (!readOnly) {
     children.push(
-      button('btn btn-ghost shopping-more-btn', '⋯', () => handlers.onDelete(item), {
+      button('btn btn-ghost shopping-remove-btn', '×', () => handlers.onDelete(item), {
         'aria-label': `remove ${name}`,
       }),
     );

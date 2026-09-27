@@ -1,4 +1,4 @@
-// Recipe CRUD routes (list/get + create/update/delete with ingredients)
+// Recipe routes: list/get (with ?servings= scaling), create/update/delete with ingredients, fork, and the mounted /import subroute
 
 import { Hono } from 'hono';
 import type { Db } from '@diet-app/db';

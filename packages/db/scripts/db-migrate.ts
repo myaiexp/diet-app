@@ -56,7 +56,6 @@ async function main(): Promise<void> {
       '   drizzle-kit would fail on the same connection. Fix it, or bypass with --force.',
     );
     process.exit(1);
-    return;
   }
 
   const pending: PendingMigration[] = journal.entries

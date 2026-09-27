@@ -62,7 +62,7 @@ export function pantryScreen(): Screen {
     );
   }
 
-  function openRowMenu(item: PantryItem): void {
+  function openEditModal(item: PantryItem): void {
     openEditItemModal(item, item.ingredient, {
       onSaved: (row) => {
         items = items.map((i) => (i.id === row.id ? row : i));
@@ -108,7 +108,7 @@ export function pantryScreen(): Screen {
       );
     } else {
       for (const item of visible) {
-        listEl.appendChild(buildPantryRow(item, item.ingredient, () => openRowMenu(item)));
+        listEl.appendChild(buildPantryRow(item, item.ingredient, () => openEditModal(item)));
       }
     }
 

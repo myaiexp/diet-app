@@ -201,7 +201,7 @@ export function mountReview(root: HTMLElement, ctx: ScreenContext, draft: Recipe
       { class: 'import-qty', 'aria-label': `quantity for ${line.raw}` },
       (v) => {
         const n = v.trim() === '' ? NaN : Number(v);
-        line.quantity = v.trim() === '' || Number.isNaN(n) ? null : n;
+        line.quantity = Number.isNaN(n) ? null : n;
         line.quantityInferred = false; // the user has now stated the amount
         renderAll();
       },

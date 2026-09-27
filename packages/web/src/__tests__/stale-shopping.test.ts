@@ -81,7 +81,7 @@ describe.each(FRESH_THEN_STALE)('shopping screen, $mode when the call settles', 
       }),
       'DELETE /api/shopping-lists/items/:id': del.handler,
     });
-    root.querySelector<HTMLElement>('.shopping-more-btn')!.click();
+    root.querySelector<HTMLElement>('.shopping-remove-btn')!.click();
     await del.requested();
 
     const wrote = await settleWith(root, ctx, stale, () =>
@@ -97,7 +97,7 @@ describe.each(FRESH_THEN_STALE)('shopping screen, $mode when the call settles', 
       'GET /api/shopping-lists/current': makeShoppingList({ items: [makeShoppingItem()] }),
       'DELETE /api/shopping-lists/items/:id': del.handler,
     });
-    root.querySelector<HTMLElement>('.shopping-more-btn')!.click();
+    root.querySelector<HTMLElement>('.shopping-remove-btn')!.click();
     await del.requested();
 
     const wrote = await settleWith(root, ctx, stale, () =>

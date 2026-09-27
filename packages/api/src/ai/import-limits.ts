@@ -1,4 +1,4 @@
-// Shared import input size budget (paste reject + URL truncate)
+// Shared import text bounds: the size budget (paste reject + URL truncate) and the low-yield floor
 
 /** Max characters of recipe text accepted into the extraction model. */
 export const IMPORT_TEXT_MAX_CHARS = 100_000;

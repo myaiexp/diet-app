@@ -34,7 +34,7 @@
 
 .pantry-status-line { font-size: var(--text-xs); }
 
-.pantry-more-btn {
+.pantry-edit-btn {
   width: 30px;
   height: 30px;
   padding: 0;

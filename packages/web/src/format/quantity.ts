@@ -30,10 +30,9 @@ export function formatNumber(value: number): string {
   const rounded = abs > 100 ? roundTo5(value) : Math.round(value * 10) / 10;
   const fixed = abs > 100 ? rounded.toFixed(0) : rounded.toFixed(1);
   const [intPart = '0', decimals = ''] = fixed.split('.');
-  const sign = intPart.startsWith('-') ? '' : '';
   const grouped = groupThousands(intPart);
-  if (!decimals || decimals === '0') return `${sign}${grouped}`;
-  return `${sign}${grouped},${decimals}`;
+  if (!decimals || decimals === '0') return grouped;
+  return `${grouped},${decimals}`;
 }
 
 /**

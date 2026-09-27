@@ -174,7 +174,7 @@ describe('shopping screen', () => {
     // Read-only: the toggle surface is a plain div, not a button, and there
     // is no delete control.
     expect(root.querySelector('.shopping-row-toggle')?.tagName).toBe('DIV');
-    expect(root.querySelector('.shopping-more-btn')).toBeNull();
+    expect(root.querySelector('.shopping-remove-btn')).toBeNull();
 
     const before = fetchMock.mock.calls.length;
     root.querySelector<HTMLElement>('.shopping-row-toggle')!.click();
@@ -273,7 +273,7 @@ describe('shopping screen', () => {
     const root = mountRoot();
     await shoppingScreen().mount(root, makeCtx());
 
-    root.querySelector<HTMLElement>('.shopping-more-btn')!.click();
+    root.querySelector<HTMLElement>('.shopping-remove-btn')!.click();
 
     // The reappearance is deliberate API behaviour (#3232, dismissed): the
     // toast is the only place the user could learn it.
@@ -421,7 +421,7 @@ describe('shopping complete', () => {
       false,
     );
     expect(root.querySelector('.shopping-row-toggle')?.tagName).toBe('DIV');
-    expect(root.querySelector('.shopping-more-btn')).toBeNull();
+    expect(root.querySelector('.shopping-remove-btn')).toBeNull();
 
     const completeCall = fetchMock.mock.calls.find(
       (c) =>

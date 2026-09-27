@@ -17,7 +17,7 @@ function expiryStatusLine(status: PantryStatus, days: number): string {
 export function buildPantryRow(
   item: PantryItem,
   ingredient: Ingredient | undefined,
-  onOpenMenu: () => void,
+  onEdit: () => void,
 ): HTMLElement {
   const name = ingredient?.name ?? 'Unknown ingredient';
   const alias = ingredient?.aliases?.[0];
@@ -45,7 +45,7 @@ export function buildPantryRow(
   const statusLineEl = el('div', { class: 'pantry-status-line' }, expiryStatusLine(item.status, days));
   statusLineEl.style.color = ramp.text;
 
-  const moreBtn = button('btn btn-ghost pantry-more-btn', '⋯', onOpenMenu, {
+  const editBtn = button('btn btn-ghost pantry-edit-btn', '⋯', onEdit, {
     'aria-label': `edit ${name}`,
   });
 
@@ -54,7 +54,7 @@ export function buildPantryRow(
     { class: 'row pantry-row' },
     el('div', { class: 'row-main' }, titleLine, metaLine),
     el('div', { class: 'row-right pantry-row-right' }, qtyLine, statusLineEl),
-    moreBtn,
+    editBtn,
   );
   applyRamp(row, item.status);
   return row;

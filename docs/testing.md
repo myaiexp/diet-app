@@ -164,6 +164,19 @@ answer as main, and `lastAppliedWhen` reads only `42P01`/`3F000` as a fresh
 database and rethrows every other error. Either failing the other way would make
 the guard report `run` without looking.
 
+## Catalog seed
+
+`pnpm --filter @diet-app/db db:seed` regenerates `packages/db/data/ingredients.json`
+from `scripts/generate-ingredients.mjs`, then upserts every row into
+`ingredients` on the unique `name` and creates the default `user_profile` if
+none exists (`seed` alone skips the regenerate step). It is idempotent and never
+deletes, since `recipe_ingredients` / `pantry_items` reference the rows without
+cascade. `isPantryStaple` is written on insert but deliberately left out of the
+`ON CONFLICT DO UPDATE` set: it is user-curated through
+`PATCH /api/ingredients/:id`, so a re-seed must not reset it
+(`seed-core.test.ts` pins this). The catalog source is also where the
+"every row has a Finnish alias" rule lives (`seed-data.test.ts`).
+
 ## Demo data
 
 `pnpm --filter @diet-app/db seed:demo` writes the design prototype's fixtures
@@ -251,7 +264,8 @@ names and bound params come from `drizzle-introspect.ts` (`tableNameOf`,
 
 ## drizzle-kit override
 
-Root `pnpm-workspace.yaml` (`packageManager: pnpm@10.33.0`): `drizzle-kit` still
+Root `pnpm-workspace.yaml` (pnpm 10.33.0, pinned by `packageManager` in the
+root `package.json`): `drizzle-kit` still
 declares the deprecated `@esbuild-kit/esm-loader` (predecessor of tsx) in its
 `dependencies` but never imports it — at runtime it loads `drizzle.config.ts`
 via `tsx/cjs/api`. The live override is
