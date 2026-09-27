@@ -151,7 +151,12 @@ Policy lives in two pure modules — `src/destructive-ddl.ts` classifies the DDL
 migration's own prose about a drop is not mistaken for one) and
 `src/migrate-guard.ts` returns the verdict and refusal text. Both are ported from
 helm, which took the incident this prevents: 2026-08-22, four columns dropped
-from a worktree, 25 minutes of HTTP 500.
+from a worktree, 25 minutes of HTTP 500. The two reads that feed them live in
+`src/migrate-guard-io.ts` (tested, unlike the script): `isMainCheckout` strips
+inherited `GIT_*` location vars so a hook's `GIT_DIR` can't make a worktree
+answer as main, and `lastAppliedWhen` reads only `42P01`/`3F000` as a fresh
+database and rethrows every other error. Either failing the other way would make
+the guard report `run` without looking.
 
 ## Demo data
 

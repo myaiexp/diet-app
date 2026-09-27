@@ -1,7 +1,7 @@
 // Pure recipe view scaling for GET /recipes/:id?servings=N (no DB write)
 
 import { round6 } from './units.js';
-import { parseServings } from './validation.js';
+import { parseServings } from './servings.js';
 
 export type RecipeIngredientLineView = {
   id: string;

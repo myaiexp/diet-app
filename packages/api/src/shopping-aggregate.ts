@@ -1,7 +1,7 @@
 // Pure meal-plan demand vs pantry supply aggregation for shopping lists
 
 import { toBase, baseUnit, round6, type Dimension } from './units.js';
-import { parseServings } from './validation.js';
+import { parseServings } from './servings.js';
 
 export interface PlanEntry {
   id: string;

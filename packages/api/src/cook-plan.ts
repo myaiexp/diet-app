@@ -3,7 +3,7 @@
 import type { Db } from '@diet-app/db';
 import { mealPlanEntries, recipes, recipeIngredients, pantryItems } from '@diet-app/db';
 import { asc, eq, inArray } from 'drizzle-orm';
-import { parseServings } from './validation.js';
+import { parseServings } from './servings.js';
 import {
   planDeduction,
   type Deduction,
