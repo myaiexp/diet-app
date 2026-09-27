@@ -1,7 +1,7 @@
 // Shopping list item writes: hand-add, edit, delete a single line
 
 import { Hono } from 'hono';
-import type { Db } from '@diet-app/db';
+import type { Db, Tx } from '@diet-app/db';
 import { shoppingLists, shoppingListItems, ingredients } from '@diet-app/db';
 import { eq } from 'drizzle-orm';
 import { isUuid } from '../validation.js';
@@ -11,8 +11,6 @@ import { buildPatch } from '../patch-builder.js';
 import { itemCreateSchema, itemPatchSchema } from '../schemas/shopping-lists.js';
 import { isFkViolation, isUniqueViolation } from '../pg-errors.js';
 import { toBase, baseUnit, round6 } from '../units.js';
-
-type Tx = Parameters<Parameters<Db['transaction']>[0]>[0];
 
 type ListLock =
   | { kind: 'ok' }

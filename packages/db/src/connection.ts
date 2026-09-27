@@ -57,3 +57,6 @@ export function createDb(connectionString: string, overrides: PoolOverrides = {}
 }
 
 export type Db = ReturnType<typeof createDb>;
+
+/** The handle `db.transaction(async (tx) => …)` passes its callback. */
+export type Tx = Parameters<Parameters<Db['transaction']>[0]>[0];

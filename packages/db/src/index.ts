@@ -3,6 +3,7 @@ export {
   createPool,
   POOL_DEFAULTS,
   type Db,
+  type Tx,
   type PoolOverrides,
 } from './connection.js';
 export * from './schema/index.js';

@@ -1,7 +1,7 @@
 // POST /:id/complete — mark a shopping list done, file bought items to pantry
 
 import { Hono } from 'hono';
-import type { Db } from '@diet-app/db';
+import type { Db, Tx } from '@diet-app/db';
 import { shoppingLists, shoppingListItems, pantryItems, ingredients } from '@diet-app/db';
 import { asc, eq, inArray } from 'drizzle-orm';
 import { isUuid } from '../validation.js';
@@ -10,8 +10,7 @@ import { parseJsonBody } from '../json-body.js';
 import { completeSchema } from '../schemas/shopping-lists.js';
 import { locationForCategory } from '../pantry-location.js';
 import { resolveExpiresDate } from '../pantry-expiry.js';
-
-type Tx = Parameters<Parameters<Db['transaction']>[0]>[0];
+import { todayUtc } from '../date.js';
 
 type SkippedItem = { itemId: string; reason: 'no_shelf_life' };
 
@@ -85,7 +84,7 @@ export function shoppingListCompleteRoutes(db: Db): Hono {
       (parsed.data.overrides ?? []).map((o) => [o.itemId, o.location] as const),
     );
 
-    const today = new Date().toISOString().slice(0, 10);
+    const today = todayUtc();
 
     const result: CompleteOk | CompleteErr = await db.transaction(async (tx) => {
       // 1. Lock the list — a concurrent complete must not double-file.

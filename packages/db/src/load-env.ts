@@ -1,8 +1,8 @@
 // Load the repo-root .env for the db CLIs, independent of the CWD
 //
-// Resolved relative to THIS module: src/ (tsx: seed, import-products) and
-// dist/ (node: seed-demo.mjs imports the built copy) sit at the same depth
-// under packages/db, so one relative path reaches the repo root from either.
+// Resolved relative to THIS module: the scripts/ CLIs import it from src/
+// through tsx, and a built dist/ copy sits at the same depth under
+// packages/db, so one relative path reaches the repo root from either.
 // A CWD-relative '../../.env' loads nothing when the CLI is started from
 // anywhere but packages/db, and DATABASE_URL then reads as unset. Mirrors
 // packages/api/src/load-env.ts, which does the same for the API server.

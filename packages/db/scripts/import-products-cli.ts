@@ -1,10 +1,10 @@
 // CLI entry: loads an S-kaupat store export into the products table
 
 import { readFileSync } from 'fs';
-import { createDb } from './connection.js';
-import { loadRepoEnv } from './load-env.js';
-import { resolveConnectionString } from './seed-core.js';
-import { importProducts, type ExportedProduct } from './import-products.js';
+import { createDb } from '../src/connection.js';
+import { loadRepoEnv } from '../src/load-env.js';
+import { resolveConnectionString } from '../src/seed-core.js';
+import { importProducts, type ExportedProduct } from '../src/import-products.js';
 
 loadRepoEnv();
 

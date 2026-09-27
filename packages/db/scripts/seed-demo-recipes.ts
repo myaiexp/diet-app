@@ -1,9 +1,33 @@
 // Demo fixture data: the seven recipes, with their ingredient lines and steps.
 // Transcribed from docs/plans/assets/ruoka-prototype.dc.html's RECIPES array;
-// ingredient names are catalog lookup keys (see seed-demo-lib.mjs's resolution
+// ingredient names are catalog lookup keys (see seed-demo-lib.ts's resolution
 // table for the four renames and seven substitutions).
 
-export const RECIPES_FIXTURE = [
+export interface RecipeFixtureLine {
+  /** Catalog lookup key, resolved by matchIngredient. */
+  name: string;
+  qty: number;
+  unit: string;
+  optional?: boolean;
+  notes?: string;
+}
+
+export interface RecipeFixture {
+  title: string;
+  sourceType: string;
+  prepTime: number;
+  totalTime: number;
+  servings: number;
+  effortScore: number;
+  userRating: number;
+  timesCooked: number;
+  cuisineType: string;
+  tags: string[];
+  ingredients: RecipeFixtureLine[];
+  steps: string[];
+}
+
+export const RECIPES_FIXTURE: readonly RecipeFixture[] = [
   {
     title: 'Lohikeitto',
     sourceType: 'manual',

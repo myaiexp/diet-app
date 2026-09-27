@@ -27,7 +27,6 @@ export default defineConfig({
         '**/*.d.ts',
         '**/*.config.ts',
         'packages/db/src/schema/**',
-        'packages/db/src/seed.ts',
       ],
       // Measured with the real-Postgres suites on, rounded down. Raise these
       // when coverage climbs; never lower them to make a run pass.

@@ -1,24 +1,47 @@
 // The demo seed's write steps, one per table.
 //
-// Each takes the transaction plus a `ctx` carrying the schema tables and the
-// drizzle operators main() already imported from ../dist — so this module
-// stays importable (and the seed's pure parts testable) without a build.
-//
 // Identity is explicit everywhere because none of these tables has a unique
 // key to conflict on: a recipe is its title, a pantry item is
 // (ingredient_id, location), a plan entry is (date, slot), and the profile is
 // the singleton row. Update-or-insert, never delete-and-recreate, so a rerun
 // refreshes rows instead of churning ids that other rows reference.
 
+import { and, eq, sql } from 'drizzle-orm';
+import type { Tx } from '../src/connection.js';
+import {
+  recipes,
+  recipeIngredients,
+  pantryItems,
+  mealPlanEntries,
+  userProfile,
+  userDislikedIngredients,
+} from '../src/schema/index.js';
+import type { PantryRow, ProfileSeed, RecipeSeed, WeekRow } from './seed-demo-build.js';
+
+/** Per-table counts main() prints once the transaction commits. */
+export interface SeedSummary {
+  recipesInserted: number;
+  recipesUpdated: number;
+  recipeIngredientLines: number;
+  pantryInserted: number;
+  pantryUpdated: number;
+  weekEntriesInserted: number;
+  weekEntriesUpdated: number;
+  profileUpdated: boolean;
+  dislikes: number;
+}
+
 /** Upsert the recipes and replace their ingredient lines. Returns id-by-title. */
-export async function writeRecipes(tx, ctx, recipeSeeds, summary) {
-  const { recipes, recipeIngredients } = ctx.tables;
-  const { eq, sql } = ctx.ops;
-  const recipesByTitle = {};
+export async function writeRecipes(
+  tx: Tx,
+  recipeSeeds: readonly RecipeSeed[],
+  summary: SeedSummary,
+): Promise<Record<string, string>> {
+  const recipesByTitle: Record<string, string> = {};
 
   for (const recipe of recipeSeeds) {
     const existing = await tx.select().from(recipes).where(eq(recipes.title, recipe.title)).limit(1);
-    let recipeId;
+    let recipeId: string;
     if (existing.length > 0) {
       recipeId = existing[0].id;
       await tx
@@ -74,9 +97,7 @@ export async function writeRecipes(tx, ctx, recipeSeeds, summary) {
 }
 
 /** Upsert the pantry rows, keyed on (ingredient_id, location). */
-export async function writePantry(tx, ctx, pantryRows, summary) {
-  const { pantryItems } = ctx.tables;
-  const { eq, and, sql } = ctx.ops;
+export async function writePantry(tx: Tx, pantryRows: readonly PantryRow[], summary: SeedSummary): Promise<void> {
   for (const row of pantryRows) {
     const existing = await tx
       .select()
@@ -104,9 +125,7 @@ export async function writePantry(tx, ctx, pantryRows, summary) {
 }
 
 /** Upsert the seed week's entries, keyed on (date, slot). */
-export async function writeWeek(tx, ctx, weekRows, summary) {
-  const { mealPlanEntries } = ctx.tables;
-  const { eq, and, sql } = ctx.ops;
+export async function writeWeek(tx: Tx, weekRows: readonly WeekRow[], summary: SeedSummary): Promise<void> {
   for (const row of weekRows) {
     const existing = await tx
       .select()
@@ -135,9 +154,7 @@ export async function writeWeek(tx, ctx, weekRows, summary) {
 }
 
 /** Update the singleton profile row and replace its disliked-ingredient set. */
-export async function writeProfile(tx, ctx, profile, summary) {
-  const { userProfile, userDislikedIngredients } = ctx.tables;
-  const { eq, sql } = ctx.ops;
+export async function writeProfile(tx: Tx, profile: ProfileSeed, summary: SeedSummary): Promise<void> {
   // The singleton profile row already exists (seed-core.ts creates a
   // "Default User" with empty targets), so this updates it in place —
   // idempotent without needing an identity rule of its own. Without it the
