@@ -20,7 +20,9 @@ These three roadmap items are one flow, not three features: `cook_feedback.meal_
 ## Non-goals
 
 - `POST /meal-plans/generate` (AI week generation — #387, Phase 3)
-- Any schema migration or new column (`actual_servings`, waste log, unit preferences)
+- Any schema migration or new column (`actual_servings`, waste log, unit preferences).
+  Superseded for `actual_servings`: `POST /cook` now takes `{ servings }` and
+  writes it there. See docs/cook-flow.md § "Planned servings and actual servings are two numbers".
 - Unit-preference / quantity learning (#390), waste reporting (#389)
 - Shopping list interaction (#381) — cooking does not touch shopping lists
 - Re-stocking on un-cook: reverting `status` from `cooked` does **not** restore pantry quantities (see Alternatives)
@@ -257,7 +259,7 @@ The cook assertion is the one that matters: it is the only test proving the whol
 | Normalize every quantity to the ingredient's `defaultUnit` on write | **Rejected** — a lossy rewrite of user input; conversion at read time is reversible |
 | Deduct oldest-added first (FIFO) | **Rejected** — FEFO (soonest-expiring) directly serves the spoilage-first principle |
 | Keep zero-quantity pantry rows | **Rejected** — breaks the `quantity > 0` invariant POST /pantry enforces and pollutes #381's shopping math. Delete them |
-| `{ servings }` override in the cook body | **Rejected** — would either discard the planned value #390 needs or force an `actual_servings` migration now. `PATCH` the entry first; one source of truth |
+| `{ servings }` override in the cook body | **Superseded.** Rejected here so the planned value would not be discarded and no `actual_servings` column would be needed yet. That column has since shipped: `POST /cook` takes `{ servings }`, stores it in `actual_servings`, and leaves planned `servings` untouched. Do not PATCH `servings` first. See docs/cook-flow.md § "Planned servings and actual servings are two numbers". |
 | Block the cook on insufficient stock (409) | **Rejected** — refuses to record something that already happened. Deduct to zero and report the shortfall |
 | Restore quantities when un-cooking (`status` back to `planned`) | **Rejected** — needs a deduction audit log to be correct; guessing would inflate inventory. Out of scope. Instead `cooked` is made terminal via the PATCH guards |
 | Let PATCH move `status` freely and detect re-cooks another way | **Rejected** — the only durable signal is a per-cook deduction record, i.e. a new table. `cooked` as a terminal state costs nothing and closes the double-deduct path today |

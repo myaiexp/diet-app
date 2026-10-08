@@ -1,12 +1,8 @@
 // Zod schemas for pantry item POST/PATCH bodies
 
 import { z } from 'zod';
-import { isUuid, isIsoDate } from '../validation.js';
 import { LOCATIONS } from '../vocab.js';
-import { unitText } from './fields.js';
-
-const uuidField = z.string().refine(isUuid, { message: 'Invalid UUID' });
-const isoDateField = z.string().refine(isIsoDate, { message: 'Invalid date' });
+import { unitText, uuidField, isoDateField } from './fields.js';
 
 const locationEnum = z.enum(LOCATIONS);
 

@@ -4,6 +4,7 @@ import { ingredients } from '@diet-app/db';
 import { ingredientsRoutes } from '../routes/ingredients.js';
 import { isUuid } from '../validation.js';
 import { makeSelectMock, makeDbMock, mergedRow } from './db-mock.js';
+import { renderWhere } from './drizzle-introspect.js';
 import { DEFAULT_LIMIT, MAX_LIMIT } from '../pagination.js';
 
 describe('isUuid', () => {
@@ -39,21 +40,25 @@ describe('GET /api/ingredients — list filtering', () => {
     expect(calls.where).toBeUndefined();
   });
 
-  test('?q alone: combined and() not used but a where clause is applied', async () => {
+  test('?q alone binds the name and the alias pattern and no category', async () => {
     const { db, calls } = makeSelectMock([ROW]);
     await ingredientsRoutes(db).request('/?q=chicken');
-    expect(calls.where).toBeDefined();
+    const { sql, params } = renderWhere(calls.where);
+    expect(params).toEqual(['%chicken%', '%chicken%']);
+    expect(sql).not.toMatch(/ and /i);
   });
 
-  // Finding #5: the ?q + ?category combined path runs the and(...) branch, which
-  // single-filter tests never exercise. A defined where clause proves the branch
-  // was taken; real two-filter SQL semantics are checked in the integration suite.
+  // The combined path is and(name-or-alias, category). A defined WHERE is not
+  // enough: ?q alone already produces one, and swapping and() for or() would
+  // still render a clause.
   test('?q + ?category together: both filters drive a combined where clause', async () => {
     const { db, calls } = makeSelectMock([ROW]);
     const res = await ingredientsRoutes(db).request('/?q=chicken&category=meat');
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual([ROW]);
-    expect(calls.where).toBeDefined();
+    const { sql, params } = renderWhere(calls.where);
+    expect(params).toEqual(['%chicken%', '%chicken%', 'meat']);
+    expect(sql).toMatch(/ and /i);
   });
 });
 

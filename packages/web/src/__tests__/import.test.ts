@@ -452,7 +452,7 @@ describe('recipe import screen', () => {
     expect(saveBtn.disabled).toBe(false);
   });
 
-  test('sends only ingredientId-bound lines to POST /recipes', async () => {
+  test('sends an exact line and an assumed alias line, and nothing else', async () => {
     const draft = makeDraft({
       ingredients: [
         makeLine({ rawName: 'bound', ingredientId: 'ing-1', quantity: 100, unit: 'g', match: 'exact' }),
@@ -476,11 +476,12 @@ describe('recipe import screen', () => {
 
     root.querySelector<HTMLButtonElement>('.import-footer .btn-primary')!.click();
     await vi.waitFor(() => expect(posted).not.toBeNull());
-    expect(posted!.ingredients.length).toBeGreaterThan(0);
-    for (const line of posted!.ingredients) {
-      expect(typeof line.ingredientId).toBe('string');
-      expect(line.ingredientId).not.toBeNull();
-    }
+    // An assumed line is still sent. A filter that dropped it, or that
+    // forwarded rawName/match, would fail this and not a "every id is a string".
+    expect(posted!.ingredients).toEqual([
+      { ingredientId: 'ing-1', quantity: 100, unit: 'g', optional: false, notes: null },
+      { ingredientId: 'ing-2', quantity: 150, unit: 'g', optional: false, notes: null },
+    ]);
   });
 
   test('renders 503 as the AI-not-configured message', async () => {

@@ -1,8 +1,7 @@
 // Zod schemas for meal plan entry and cook feedback write bodies
 
 import { z } from 'zod';
-import { isUuid, isIsoDate } from '../validation.js';
-import { trimmedNote, noteText, servingsCoerced } from './fields.js';
+import { trimmedNote, noteText, servingsCoerced, uuidField, isoDateField } from './fields.js';
 import {
   SLOTS,
   STATUSES,
@@ -11,9 +10,6 @@ import {
   EFFORT_CHECKS,
   MAKE_AGAIN,
 } from '../vocab.js';
-
-const uuidField = z.string().refine(isUuid, { message: 'Invalid UUID' });
-const isoDateField = z.string().refine(isIsoDate, { message: 'Invalid date' });
 
 export const CONTENT_MSG = 'Either recipeId or freeformNote is required';
 

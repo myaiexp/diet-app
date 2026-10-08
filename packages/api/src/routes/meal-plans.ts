@@ -112,9 +112,11 @@ export function mealPlansRoutes(db: Db): Hono {
           }
         }
 
-        // The cook deducted pantry stock from (substituteRecipeId ?? recipeId)
-        // scaled by servings. Changing any of those three afterwards would leave
-        // the entry claiming a meal that was never cooked that way, and the cook
+        // recipeId and substituteRecipeId are what the cook deducted from
+        // (substitute wins). `servings` is the planned figure, compared with
+        // `actualServings` — the deduction was scaled by the cook override,
+        // which PATCH cannot change. Changing any of the three would leave the
+        // entry claiming a meal that was never cooked that way, and the cook
         // route 409s on a cooked entry so it cannot be re-run to reconcile.
         // Re-sending an unchanged value is fine — only real changes are blocked.
         if (existing.status === 'cooked') {

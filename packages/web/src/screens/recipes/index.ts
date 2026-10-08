@@ -90,12 +90,16 @@ export function recipesScreen(): Screen {
         const tags = selectedTags.size ? [...selectedTags].join(',') : undefined;
         try {
           const recipes = await listAllRecipes(tags ? { tags } : {});
+          // The list request outlives the screen: navigating away detaches this
+          // pane, and the error toast would land on whatever screen is current.
+          if (ctx.isStale()) return;
           renderList(listPanel, recipes, onSelect);
           if (recipes[0]) {
             onSelect(recipes[0].id);
             markSelected(listPanel, recipes[0].id);
           }
         } catch (err) {
+          if (ctx.isStale()) return;
           say(userMessage(err), 'error');
         }
       }
@@ -140,10 +144,13 @@ export function recipesScreen(): Screen {
           const tags = selectedTags.size ? [...selectedTags].join(',') : undefined;
           try {
             const refreshed = await listAllRecipes(tags ? { tags } : {});
+            if (ctx.isStale()) return;
             renderList(panel, refreshed, onSelect);
             await detailHandle?.show(selectId);
+            if (ctx.isStale()) return;
             markSelected(panel, selectId);
           } catch (err) {
+            if (ctx.isStale()) return;
             say(userMessage(err), 'error');
           }
         }

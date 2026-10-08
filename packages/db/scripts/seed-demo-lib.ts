@@ -93,16 +93,10 @@ export function mondayOfIsoWeek(today: Date): Date {
 
 // ---------------------------------------------------------------------------
 // Database-name guard — refuses to run against anything but an obviously
-// disposable database unless told to. Mirrors scripts/setup-test-db.sh's
-// db_name_from_url shell logic in JS: strip scheme, drop the authority, drop
-// the query string, drop any trailing path segment.
-export function resolveDbName(connectionString: string): string {
-  const schemeIdx = connectionString.indexOf('://');
-  const afterScheme = schemeIdx === -1 ? connectionString : connectionString.slice(schemeIdx + 3);
-  const slashIdx = afterScheme.indexOf('/');
-  const path = slashIdx === -1 ? '' : afterScheme.slice(slashIdx + 1);
-  return path.split('?')[0].split('/')[0];
-}
+// disposable database unless told to. The parser is shared with the test
+// suites (src/test-db-url.ts). `_dev` is allowed here and nowhere else:
+// the test suites require a name that ends in `_test`.
+export { resolveDbName } from '../src/test-db-url.js';
 
 export function isGuardedDbName(name: string): boolean {
   return name.endsWith('_test') || name.endsWith('_dev');

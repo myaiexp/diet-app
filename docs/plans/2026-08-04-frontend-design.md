@@ -31,7 +31,9 @@
 >   scaling path; a second rounding implementation would disagree with cook deduction.
 > - **The cook-confirm table comes from `GET /api/meal-plans/:id/cook-preview`**,
 >   never a client FEFO recompute. The recipe scaler and cook stepper do not share
->   one value — cook starts from the entry's servings and PATCHes it on commit.
+>   one value. The stepper sends `{ servings }` in the `POST /api/meal-plans/:id/cook`
+>   body; the server records it in `actual_servings` and does not PATCH planned
+>   `servings` (docs/cook-flow.md § Planned servings and actual servings are two numbers).
 >
 > The prototype (`assets/ruoka-prototype.dc.html`) does **not** render in a browser — it is
 > a `.dc.html` needing the design tool's template runtime, so `{{ }}` bindings stay literal.

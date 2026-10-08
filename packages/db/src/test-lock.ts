@@ -1,9 +1,10 @@
 // Cross-process advisory lock the real-Postgres suites hold while they run
 //
-// Test-only, but it lives in src (not __tests__) because both consumers reach
+// Test-only, but it lives in src (not __tests__) because the api suites reach
 // it through the package index: vitest aliases @diet-app/db to src/index.ts and
 // the built artifact resolves dist/index.js. __tests__ is excluded from the
 // build, so an index that exported from there would not survive `pnpm build`.
+// import-products-sql imports this file directly; it does not need the index.
 //
 // Why a lock at all: every worktree's .env points TEST_DATABASE_URL at the one
 // dietapp_test database, so two sessions running the DB-backed files at once

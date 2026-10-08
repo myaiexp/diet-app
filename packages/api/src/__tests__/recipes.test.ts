@@ -20,7 +20,7 @@ import {
   type ThrowOnWrite,
 } from './db-mock.js';
 import { makeSelectRouter } from './select-router.js';
-import { renderWhere, tableNameOf } from './drizzle-introspect.js';
+import { renderWhere, tableNameOf, whereParams } from './drizzle-introspect.js';
 
 const RECIPE_ID = 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee';
 const INGREDIENT_ID = '11111111-1111-4111-8111-111111111111';
@@ -383,8 +383,23 @@ describe('recipesRoutes', () => {
       }),
     });
     expect(res.status).toBe(200);
-    expect(deletes.length).toBeGreaterThan(0);
-    expect(inserts.length).toBeGreaterThan(0);
+    // The delete is scoped to this recipe. A where-less delete, or one keyed
+    // on the line id, would still record a row and pass a length check.
+    expect(deletes).toHaveLength(1);
+    expect(whereParams(deletes[0])).toEqual([RECIPE_ID]);
+    expect(renderWhere(deletes[0]).sql).toMatch(/recipe_id/);
+    expect(inserts).toEqual([
+      [
+        {
+          recipeId: RECIPE_ID,
+          ingredientId: INGREDIENT_ID,
+          quantity: '1',
+          unit: 'kg',
+          optional: false,
+          notes: null,
+        },
+      ],
+    ]);
   });
 
   test('PATCH /:id maps an unknown ingredientId (23503) to 400 Invalid reference', async () => {

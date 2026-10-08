@@ -182,6 +182,19 @@ describe('mealPlanCookRoutes', () => {
     expect(reads.filter((r) => r.table === 'pantry_items')).toEqual([]);
   });
 
+  test('returns 400 when the recipe base servings is negative', async () => {
+    const { db, writes } = makeCookMock({
+      entry: PLANNED_ENTRY,
+      recipe: { ...RECIPE, servings: -2 },
+    });
+    const res = await mealPlanCookRoutes(db).request(`/${ENTRY_ID}/cook`, {
+      method: 'POST',
+    });
+    expect(res.status).toBe(400);
+    expect(await res.json()).toEqual({ error: 'Invalid servings scale' });
+    expect(writes).toEqual([]);
+  });
+
   test('returns 400 when servings scale is non-finite', async () => {
     const { db } = makeCookMock({
       entry: PLANNED_ENTRY,

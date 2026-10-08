@@ -1,8 +1,10 @@
 // Pure meal-plan demand vs pantry supply aggregation for shopping lists
 
 import { toBase, baseUnit, round6, type Dimension } from './units.js';
-import { parseServings } from './servings.js';
+import { resolvedRecipeId, servingsScale, type RecipeLine as AggregateRecipeLine } from './recipe-lines.js';
 import type { SkippedGenerateReason } from './vocab.js';
+
+export type { RecipeLine as AggregateRecipeLine } from './recipe-lines.js';
 
 export interface PlanEntry {
   id: string;
@@ -11,13 +13,6 @@ export interface PlanEntry {
   servings: number;
   status: string; // planned | cooked | skipped | substituted
   date: string; // YYYY-MM-DD, the entry's day within the week — drives the per-day simulation below
-}
-
-export interface AggregateRecipeLine {
-  ingredientId: string;
-  quantity: number;
-  unit: string;
-  optional: boolean;
 }
 
 export interface PantrySupplyRow {
@@ -91,7 +86,7 @@ export function aggregateShoppingList(input: {
   for (const entry of entries) {
     if (!DEMAND_STATUSES.has(entry.status)) continue;
 
-    const recipeId = entry.substituteRecipeId ?? entry.recipeId;
+    const recipeId = resolvedRecipeId(entry);
     if (!recipeId) continue; // freeform note only — nothing to buy, not an error
 
     const recipe = recipesById.get(recipeId);
@@ -100,10 +95,9 @@ export function aggregateShoppingList(input: {
       continue;
     }
 
-    // recipe.servings === 0 (or entry.servings out of 1–12) can't scale.
-    const entryServings = parseServings(entry.servings);
-    const scale = entryServings === null ? NaN : entryServings / recipe.servings;
-    if (!Number.isFinite(scale)) {
+    // A zero or negative recipe base, or an entry servings outside 1–12, can't scale.
+    const scale = servingsScale(entry.servings, recipe.servings);
+    if (scale === null) {
       skipped.push({ ingredientId: null, entryId: entry.id, reason: 'bad_scale' });
       continue;
     }

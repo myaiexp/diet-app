@@ -20,6 +20,20 @@ describe('assertEnv', () => {
     expect(exitSpy).not.toHaveBeenCalled();
   });
 
+  test('exits 1 when the env var is set to an empty string', () => {
+    // createApp mounts bearer auth only when authToken is truthy, so API_TOKEN=
+    // would boot the API with no auth. assertEnv is what stops that.
+    process.env[TEST_KEY] = '';
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation((() => {
+      throw new Error('process.exit called');
+    }) as never);
+
+    expect(() => assertEnv(TEST_KEY)).toThrow('process.exit called');
+    expect(errorSpy).toHaveBeenCalledWith(`${TEST_KEY} not set`);
+    expect(exitSpy).toHaveBeenCalledWith(1);
+  });
+
   test('exits 1 with a clear error when the env var is missing', () => {
     delete process.env[TEST_KEY];
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});

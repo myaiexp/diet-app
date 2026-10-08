@@ -93,9 +93,12 @@ The real-Postgres suites share one gate.
 These case counts are the only copy — CLAUDE.md and `.env.example` point here,
 so a new DB-backed case updates this list alone.
 
-All of them need `TEST_DATABASE_URL` pointing at `dietapp_test` (name must end in
-`_test`). Provision with `pnpm --filter @diet-app/db setup:test-db` (create +
-migrate + seed + grant the `dietapp` role on mase-owned tables).
+All of them need `TEST_DATABASE_URL` pointing at `dietapp_test`. The database
+name — the URL path, not the user, password or query string — must end in
+`_test`. `assertTestDbUrl` (`packages/db/src/test-db-url.ts`) refuses anything
+else before a connection opens. Provision with
+`pnpm --filter @diet-app/db setup:test-db` (create + migrate + seed + grant
+the `dietapp` role on mase-owned tables).
 
 Without `TEST_DATABASE_URL` those tests would skip, so a **loud gate test fails
 the run** instead; set `DIET_APP_SKIP_DB_TESTS=1` to opt out deliberately.
@@ -112,10 +115,12 @@ other's fixtures mid-test (idea #4088: five concurrent grind sessions produced
 serializes *full* runs per project, but the scoped `vitest run <path>` an
 implementer is told to use bypasses that.
 
-So both files take a Postgres advisory lock for their whole duration —
-`acquireDbTestLock` in `packages/db/src/test-lock.ts` (in `src`, not
-`__tests__`, because both consumers reach it through the package index, and
-`__tests__` is excluded from the build). It polls
+So every real-SQL suite above takes a Postgres advisory lock for its whole
+duration — `acquireDbTestLock` in `packages/db/src/test-lock.ts`. The api
+suites take it through `useRealDb()` (`@diet-app/db`); `import-products-sql`
+imports `../test-lock.js` directly. It lives in `src`, not `__tests__`,
+because the api suites reach it through the package index, and `__tests__`
+is excluded from the build. It polls
 `pg_try_advisory_lock` with a 120s deadline, so a wedged holder fails the run
 with a message naming the cause instead of hanging it, and Postgres drops the
 lock by itself if a run dies. Its own three cases live in

@@ -4,11 +4,11 @@ import type { Db } from '@diet-app/db';
 import { mealPlanEntries, recipes, recipeIngredients, pantryItems } from '@diet-app/db';
 import { asc, eq, inArray } from 'drizzle-orm';
 import { parseServings } from './servings.js';
+import { resolvedRecipeId, servingsScale, toRecipeLine } from './recipe-lines.js';
 import {
   planDeduction,
   type Deduction,
   type Shortfall,
-  type RecipeLine,
   type PantryRow,
 } from './cook-deduct.js';
 
@@ -41,7 +41,8 @@ export interface LoadCookPlanOpts {
    * — a read-only endpoint that holds row locks would stall real cooks.
    */
   lock: boolean;
-  /** Plan for these servings instead of the entry's stored value (preview only). */
+  /** Plan for these servings instead of the entry's stored value.
+   *  The preview passes `?servings=`; POST /cook passes the `{ servings }` override. */
   servings?: number;
 }
 
@@ -68,8 +69,8 @@ export async function loadCookPlan(
 
   const servings = opts.servings ?? Number(entry.servings);
   if (parseServings(servings) === null) return { kind: 'bad_scale' };
-  const resolvedRecipeId = entry.substituteRecipeId ?? entry.recipeId;
-  if (resolvedRecipeId == null) {
+  const recipeId = resolvedRecipeId(entry);
+  if (recipeId == null) {
     // Freeform entry: nothing to deduct, but it still cooks.
     return {
       kind: 'ok',
@@ -84,13 +85,13 @@ export async function loadCookPlan(
   const [recipe] = await reader
     .select()
     .from(recipes)
-    .where(eq(recipes.id, resolvedRecipeId));
+    .where(eq(recipes.id, recipeId));
   if (!recipe) return { kind: 'recipe_not_found' };
 
   const lines = await reader
     .select()
     .from(recipeIngredients)
-    .where(eq(recipeIngredients.recipeId, resolvedRecipeId));
+    .where(eq(recipeIngredients.recipeId, recipeId));
 
   const ingredientIds = [...new Set(lines.map((l) => l.ingredientId))];
   let pantryDbRows: Array<typeof pantryItems.$inferSelect> = [];
@@ -103,15 +104,10 @@ export async function loadCookPlan(
     pantryDbRows = await (opts.lock ? pantryQuery.for('update') : pantryQuery);
   }
 
-  const scale = servings / recipe.servings;
-  if (!Number.isFinite(scale)) return { kind: 'bad_scale' };
+  const scale = servingsScale(servings, recipe.servings);
+  if (scale === null) return { kind: 'bad_scale' };
 
-  const recipeLines: RecipeLine[] = lines.map((l) => ({
-    ingredientId: l.ingredientId,
-    quantity: Number(l.quantity),
-    unit: l.unit,
-    optional: l.optional ?? false,
-  }));
+  const recipeLines = lines.map(toRecipeLine);
   const pantryForPlanner: PantryRow[] = pantryDbRows.map((r) => ({
     id: r.id,
     ingredientId: r.ingredientId,
@@ -126,7 +122,7 @@ export async function loadCookPlan(
   return {
     kind: 'ok',
     entry,
-    resolvedRecipeId,
+    resolvedRecipeId: recipeId,
     servings,
     deductions: planned.deductions,
     shortfalls: planned.shortfalls,

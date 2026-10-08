@@ -21,7 +21,9 @@ paragraph of "why", the why belongs in the linked subdoc.
   DB pool: **`docs/auth-deploy.md`**. Password rotation: `docs/db-rotation.md`.
   Vhost reference (verbatim, no secret): `docs/nginx-diet.mase.fi.conf`.
 - **Database**: PostgreSQL `dietapp` — one database, and every worktree's `.env`
-  points at it. Schema changes: `pnpm --filter @diet-app/db generate` then
+  points at it. Postgres on the VPS listens on localhost:5432; off-box dev
+  reaches it through `pnpm dev:tunnel` (localhost:5433, the port `.env.example`
+  uses). Schema changes: `pnpm --filter @diet-app/db generate` then
   `migrate` — never `push` (it prompts and hangs without a TTY). `migrate` runs
   through a guard that refuses **destructive** pending DDL from a worktree and
   sends it to the deploy's own migrate step instead; additive DDL applies

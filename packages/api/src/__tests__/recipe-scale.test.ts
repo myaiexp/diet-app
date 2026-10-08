@@ -71,4 +71,11 @@ describe('scaleRecipeView', () => {
       error: 'invalid_base',
     });
   });
+
+  test('scaleRecipeView invalid_base when recipe.servings is negative', () => {
+    expect(scaleRecipeView({ ...BASE, servings: -2 }, 2)).toEqual({
+      ok: false,
+      error: 'invalid_base',
+    });
+  });
 });

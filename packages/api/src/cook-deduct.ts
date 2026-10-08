@@ -1,13 +1,9 @@
 // Pure FEFO pantry deduction planner (recipe lines vs pantry rows)
 
 import { toBase, fromBase, resolveUnit, round6, type Dimension } from './units.js';
+import type { RecipeLine } from './recipe-lines.js';
 
-export interface RecipeLine {
-  ingredientId: string;
-  quantity: number; // per the recipe's own base servings
-  unit: string;
-  optional: boolean;
-}
+export type { RecipeLine } from './recipe-lines.js';
 
 export interface PantryRow {
   id: string;

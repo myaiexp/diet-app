@@ -11,6 +11,7 @@ import { fileURLToPath } from 'url';
 import { and, eq, inArray } from 'drizzle-orm';
 import { createDb } from '../connection.js';
 import { acquireDbTestLock, type DbTestLock } from '../test-lock.js';
+import { assertTestDbUrl } from '../test-db-url.js';
 import { products } from '../schema/index.js';
 import { importProducts, type ExportedProduct } from '../import-products.js';
 
@@ -20,13 +21,8 @@ config({ path: fileURLToPath(new URL('../../../../.env', import.meta.url)), quie
 
 const TEST_DB_URL = process.env.TEST_DATABASE_URL;
 
-// SAFETY: mirrors the api suite's guard — never let this point at production.
-if (TEST_DB_URL && TEST_DB_URL.includes('dietapp') && !TEST_DB_URL.includes('_test')) {
-  throw new Error(
-    "Refusing to run tests: TEST_DATABASE_URL looks like the production database " +
-      "(contains 'dietapp' but not '_test'). Point it at dietapp_test before running tests.",
-  );
-}
+// SAFETY: same guard as the api suite — the database name must end in `_test`.
+if (TEST_DB_URL) assertTestDbUrl(TEST_DB_URL);
 
 const hasDb = Boolean(TEST_DB_URL);
 const db = hasDb ? createDb(TEST_DB_URL!) : null;

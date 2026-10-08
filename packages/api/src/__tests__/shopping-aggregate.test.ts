@@ -329,6 +329,15 @@ describe('aggregateShoppingList', () => {
     expect(skipped).toEqual([{ ingredientId: null, entryId: 'e1', reason: 'recipe_missing' }]);
   });
 
+  test('reports a negative recipe base as bad_scale', () => {
+    const input = baseInput({
+      recipesById: new Map([['r1', { servings: -2 }]]),
+    });
+    const { items, skipped } = aggregateShoppingList(input);
+    expect(items).toEqual([]);
+    expect(skipped).toEqual([{ ingredientId: null, entryId: 'e1', reason: 'bad_scale' }]);
+  });
+
   test('reports a non-finite scale as bad_scale', () => {
     const input = baseInput({
       recipesById: new Map([['r1', { servings: 0 }]]),

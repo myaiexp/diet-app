@@ -1,12 +1,8 @@
 // Zod schemas for shopping list, item, generate and complete write bodies
 
 import { z } from 'zod';
-import { isUuid, isIsoDate } from '../validation.js';
 import { LOCATIONS, LIST_STATUSES } from '../vocab.js';
-import { LIMITS, unitText, trimmedNote } from './fields.js';
-
-const uuidField = z.string().refine(isUuid, { message: 'Invalid UUID' });
-const isoDateField = z.string().refine(isIsoDate, { message: 'Invalid date' });
+import { LIMITS, unitText, trimmedNote, uuidField, isoDateField } from './fields.js';
 
 // Any date in the target week — the route snaps it to the ISO Monday.
 // includeOptional opts the recipes' optional lines into the week's demand; it is

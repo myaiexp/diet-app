@@ -42,6 +42,8 @@ describe.skipIf(!hasDb)('GET /api/ingredients', () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(Array.isArray(body)).toBe(true);
+    // An empty page satisfies the loop below, so a broken ILIKE would pass.
+    expect(body.length).toBeGreaterThan(0);
     // Each result should match chicken in name or aliases
     for (const item of body) {
       const nameMatch = item.name.toLowerCase().includes('chicken');
@@ -57,6 +59,7 @@ describe.skipIf(!hasDb)('GET /api/ingredients', () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(Array.isArray(body)).toBe(true);
+    expect(body.length).toBeGreaterThan(0);
     for (const item of body) {
       expect(item.category).toBe('produce');
     }
@@ -69,6 +72,8 @@ describe.skipIf(!hasDb)('GET /api/ingredients', () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(Array.isArray(body)).toBe(true);
+    expect(body.length).toBeGreaterThan(0);
+    expect(body.map((i: { name: string }) => i.name)).toContain('chicken breast');
     for (const item of body) {
       expect(item.category).toBe('protein');
       const nameMatch = item.name.toLowerCase().includes('chicken');

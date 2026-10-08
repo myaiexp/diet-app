@@ -1,7 +1,6 @@
 // Zod schema for PATCH /api/profile body
 
 import { z } from 'zod';
-import { isUuid } from '../validation.js';
 import { COOKING_SKILLS } from '../vocab.js';
 import {
   LIMITS,
@@ -9,9 +8,8 @@ import {
   chipsField,
   macroTargetsSchema,
   scheduleProfileSchema,
+  uuidField,
 } from './fields.js';
-
-const uuidField = z.string().refine(isUuid, { message: 'Invalid UUID' });
 
 const cookingSkillEnum = z.enum(COOKING_SKILLS);
 

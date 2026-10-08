@@ -2,6 +2,7 @@
 
 import { round6 } from './units.js';
 import { parseServings } from './servings.js';
+import { positiveFinite } from './recipe-lines.js';
 
 export type RecipeIngredientLineView = {
   id: string;
@@ -32,12 +33,6 @@ export type ScaleResult =
   | { ok: true; recipe: ScaledRecipe }
   | { ok: false; error: 'invalid_target' | 'invalid_base' };
 
-function asPositiveFinite(n: unknown): number | null {
-  const v = typeof n === 'number' ? n : Number(n);
-  if (!Number.isFinite(v) || v <= 0) return null;
-  return v;
-}
-
 /** Scale a loaded recipe view to targetServings. Deep-copies; never mutates input. */
 export function scaleRecipeView(
   recipe: RecipeWithIngredients,
@@ -46,7 +41,7 @@ export function scaleRecipeView(
   if (parseServings(targetServings) === null) {
     return { ok: false, error: 'invalid_target' };
   }
-  const base = asPositiveFinite(recipe.servings);
+  const base = positiveFinite(recipe.servings);
   if (base === null) {
     return { ok: false, error: 'invalid_base' };
   }

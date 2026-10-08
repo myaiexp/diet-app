@@ -1,7 +1,6 @@
 // Zod schemas for recipe POST/PATCH bodies and ingredient lines
 
 import { z } from 'zod';
-import { isUuid } from '../validation.js';
 import { SOURCE_TYPES } from '../vocab.js';
 import {
   LIMITS,
@@ -13,9 +12,8 @@ import {
   noteText,
   httpUrl,
   servingsInt,
+  uuidField,
 } from './fields.js';
-
-const uuidField = z.string().refine(isUuid, { message: 'Invalid UUID' });
 
 const sourceTypeEnum = z.enum(SOURCE_TYPES);
 

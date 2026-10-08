@@ -2,6 +2,7 @@
 
 import { z } from 'zod';
 import { MAX_SERVINGS, MIN_SERVINGS } from '../servings.js';
+import { isIsoDate, isUuid } from '../validation.js';
 
 // Caps sit well under the 1 MiB router bodyLimit (and nginx's 2M) so an
 // authenticated client cannot persist multi-megabyte text/JSONB. Numbers are
@@ -35,6 +36,9 @@ export const LIMITS = {
 export const servingsCoerced = z.coerce.number().int().min(MIN_SERVINGS).max(LIMITS.servings);
 /** Recipe servings — JSON number, same 1–12 cap as the UI scaler. */
 export const servingsInt = z.number().int().min(MIN_SERVINGS).max(LIMITS.servings);
+
+export const uuidField = z.string().refine(isUuid, { message: 'Invalid UUID' });
+export const isoDateField = z.string().refine(isIsoDate, { message: 'Invalid date' });
 
 export const shortText = z.string().trim().min(1).max(LIMITS.short);
 export const optionalShort = z.string().trim().max(LIMITS.short);

@@ -18,6 +18,7 @@ import { generateSchema } from '../schemas/shopping-lists.js';
 import { getISOWeekBounds, todayUtc } from '../date.js';
 import { sortListItems } from '../shopping-sort.js';
 import { isUniqueViolation } from '../pg-errors.js';
+import { resolvedRecipeId, toRecipeLine } from '../recipe-lines.js';
 import {
   aggregateShoppingList,
   type AggregateRecipeLine,
@@ -36,12 +37,7 @@ type GenerateResult =
 function groupLines(rows: (typeof recipeIngredients.$inferSelect)[]): Map<string, AggregateRecipeLine[]> {
   const byRecipe = new Map<string, AggregateRecipeLine[]>();
   for (const row of rows) {
-    const line: AggregateRecipeLine = {
-      ingredientId: row.ingredientId,
-      quantity: Number(row.quantity),
-      unit: row.unit,
-      optional: row.optional ?? false,
-    };
+    const line: AggregateRecipeLine = toRecipeLine(row);
     const existing = byRecipe.get(row.recipeId);
     if (existing) existing.push(line);
     else byRecipe.set(row.recipeId, [line]);
@@ -77,13 +73,11 @@ async function runGenerate(tx: Tx, opts: GenerateOptions): Promise<GenerateResul
     .from(mealPlanEntries)
     .where(and(gte(mealPlanEntries.date, monday), lte(mealPlanEntries.date, sunday)));
 
-  // substituteRecipeId ?? recipeId, deduped — mirrors loadCookPlan so a
+  // resolvedRecipeId — substitute wins, the same rule as cook. Deduped so a
   // substituted entry contributes exactly one recipe's lines, not both.
   const recipeIds = [
     ...new Set(
-      entries
-        .map((e) => e.substituteRecipeId ?? e.recipeId)
-        .filter((id): id is string => id != null),
+      entries.map((e) => resolvedRecipeId(e)).filter((id): id is string => id != null),
     ),
   ];
   const recipeRows = recipeIds.length

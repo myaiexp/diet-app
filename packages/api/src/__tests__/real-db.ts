@@ -7,7 +7,7 @@ import { config } from 'dotenv';
 config({ path: fileURLToPath(new URL('../../../../.env', import.meta.url)), quiet: true });
 
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
-import { createDb, acquireDbTestLock, type Db, type DbTestLock } from '@diet-app/db';
+import { createDb, acquireDbTestLock, assertTestDbUrl, type Db, type DbTestLock } from '@diet-app/db';
 
 export interface RealDb {
   /** Null when TEST_DATABASE_URL is unset; every case then skips on `hasDb`. */
@@ -24,15 +24,10 @@ export interface RealDb {
 export function useRealDb(): RealDb {
   const url = process.env.TEST_DATABASE_URL;
 
-  // SAFETY: never let a suite point at production. A URL that contains
-  // 'dietapp' without the '_test' suffix hard-fails before any connection
-  // opens. (The error omits the URL so embedded credentials don't leak.)
-  if (url && url.includes('dietapp') && !url.includes('_test')) {
-    throw new Error(
-      "Refusing to run tests: TEST_DATABASE_URL looks like the production database " +
-        "(contains 'dietapp' but not '_test'). Point it at dietapp_test before running tests.",
-    );
-  }
+  // SAFETY: the database name itself (the URL path) must end in `_test`.
+  // `_test` in the user, password or query string does not make `dietapp`
+  // disposable. The error names the database only, never the URL.
+  if (url) assertTestDbUrl(url);
 
   const hasDb = Boolean(url);
   const db = hasDb ? createDb(url!) : null;
