@@ -1,4 +1,4 @@
-// Drain helper for paginated list endpoints — one stop condition, one page size.
+// fetchAllPages drain (short-page stop, MAX_PAGES ceiling, API-max default page) and the listAll* helpers built on it.
 
 import { describe, test, expect, beforeEach, afterEach, vi, type Mock } from 'vitest';
 import { configureClient, resetClient } from '../api/client.js';

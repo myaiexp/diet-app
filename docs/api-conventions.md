@@ -5,7 +5,10 @@
 ## Route modules
 
 Each route module exports a named function `routeName(db: Db): Hono` (e.g.
-`recipesRoutes`, `pantryRoutes`), mounted in `app.ts` via `createApp(db, config)`.
+`pantryRoutes`), mounted in `app.ts` via `createApp(db, config)`. A module
+that needs runtime config takes it as a second options argument
+(`recipesRoutes(db, { ai })`). The default is `{}`, so a caller that only
+has a `db` still type-checks.
 
 ## Drizzle API choice
 

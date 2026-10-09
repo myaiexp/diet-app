@@ -5,6 +5,7 @@
 // are real navigations, and a 404 from getFeedback reads as "unrated" rather
 // than an error.
 
+import './pin-sunday.js';
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 import { configureClient, resetClient } from '../api/client.js';
 import { closeModal, isModalOpen } from '../ui/modal.js';

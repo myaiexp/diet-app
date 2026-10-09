@@ -15,8 +15,7 @@ import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import pg from 'pg';
 import drizzleConfig from '../drizzle.config.js';
-import { findDestructiveDdl } from '../src/destructive-ddl.js';
-import { decideMigrate, renderRefusal, type PendingMigration } from '../src/migrate-guard.js';
+import { decideMigrate, pendingMigrations, renderRefusal } from '../src/migrate-guard.js';
 import { isMainCheckout, lastAppliedWhen } from '../src/migrate-guard-io.js';
 
 const PKG_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -58,14 +57,9 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
-  const pending: PendingMigration[] = journal.entries
-    .filter((e) => applied === null || e.when > applied)
-    .map((e) => ({
-      tag: e.tag,
-      findings: findDestructiveDdl(
-        readFileSync(join(PKG_ROOT, 'drizzle', `${e.tag}.sql`), 'utf8'),
-      ),
-    }));
+  const pending = pendingMigrations(journal.entries, applied, (tag) =>
+    readFileSync(join(PKG_ROOT, 'drizzle', `${tag}.sql`), 'utf8'),
+  );
 
   const mainCheckout = isMainCheckout(REPO_ROOT);
   const verdict = decideMigrate({ mainCheckout, pending, force });

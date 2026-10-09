@@ -4,11 +4,12 @@
 // ordering of `slot` (which reads breakfast/dinner/lunch/snack) instead of
 // the client-side SLOTS order (breakfast/lunch/dinner/snack).
 
+import './pin-sunday.js';
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 import { configureClient, resetClient } from '../api/client.js';
 import { closeModal, isModalOpen } from '../ui/modal.js';
 import { planScreen } from '../screens/plan/index.js';
-import { mondayOf, isoToday, addDays, isoWeekNumber } from '../format/date.js';
+import { mondayOf, isoToday, addDays } from '../format/date.js';
 import type { MealPlanEntry, Recipe } from '../api/types.js';
 import { jsonResponse, makeCtx, mountRoot, pathOf, routeFetch } from './harness.js';
 import { makeEntry, makeRecipe } from './fixtures.js';
@@ -175,10 +176,12 @@ describe('plan week navigation', () => {
     const root = mountRoot();
     await planScreen().mount(root, makeCtx());
 
+    expect(isoToday()).toBe('2026-08-09');
+    expect(MONDAY).toBe('2026-08-03');
     expect(weekGetMondays().at(-1)).toBe(MONDAY);
     expect(breakfastDates(root)).toEqual(isoWeek(MONDAY));
     expect(root.querySelector('.plan-cell-title')?.textContent).toBe(`note-${MONDAY}`);
-    expect(root.querySelector('.plan-week-label')?.textContent).toContain(`vk ${isoWeekNumber(MONDAY)}`);
+    expect(root.querySelector('.plan-week-label')?.textContent).toContain('vk 32');
 
     const nextMonday = addDays(MONDAY, 7);
     root.querySelector<HTMLButtonElement>('[aria-label="next week"]')!.click();
@@ -187,7 +190,7 @@ describe('plan week navigation', () => {
     expect(weekGetMondays().at(-1)).toBe(nextMonday);
     expect(breakfastDates(root)).toEqual(isoWeek(nextMonday));
     expect(root.querySelector('.plan-cell-title')?.textContent).toBe(`note-${nextMonday}`);
-    expect(root.querySelector('.plan-week-label')?.textContent).toContain(`vk ${isoWeekNumber(nextMonday)}`);
+    expect(root.querySelector('.plan-week-label')?.textContent).toContain('vk 33');
     // A ±1-day bug stays inside the same ISO week; the requested monday must
     // actually move by a full week.
     expect(nextMonday).not.toBe(addDays(MONDAY, 1));
@@ -205,7 +208,7 @@ describe('plan week navigation', () => {
     expect(weekGetMondays().at(-1)).toBe(prevMonday);
     expect(breakfastDates(root)).toEqual(isoWeek(prevMonday));
     expect(root.querySelector('.plan-cell-title')?.textContent).toBe(`note-${prevMonday}`);
-    expect(root.querySelector('.plan-week-label')?.textContent).toContain(`vk ${isoWeekNumber(prevMonday)}`);
+    expect(root.querySelector('.plan-week-label')?.textContent).toContain('vk 31');
   });
 });
 

@@ -1,7 +1,7 @@
 // May this `pnpm migrate` run from here? — the verdict and its refusal text
 
 import { describe, it, expect } from 'vitest';
-import { decideMigrate, renderRefusal, type PendingMigration } from '../migrate-guard.js';
+import { decideMigrate, pendingMigrations, renderRefusal, type PendingMigration } from '../migrate-guard.js';
 
 const destructive = (tag: string): PendingMigration => ({
   tag,
@@ -92,5 +92,65 @@ describe('renderRefusal', () => {
     expect(renderRefusal([destructive('0004_x')], { mainCheckout: false })).toContain(
       'this is a worktree',
     );
+  });
+});
+
+describe('pendingMigrations', () => {
+  const drop = 'ALTER TABLE t DROP COLUMN c;';
+  const add = 'ALTER TABLE t ADD COLUMN c text;';
+
+  it('treats a null applied timestamp as every journal entry, in order', () => {
+    const reads: string[] = [];
+    const pending = pendingMigrations(
+      [
+        { tag: '0002_b', when: 20 },
+        { tag: '0001_a', when: 10 },
+      ],
+      null,
+      (tag) => {
+        reads.push(tag);
+        return tag === '0001_a' ? drop : add;
+      },
+    );
+    expect(reads).toEqual(['0002_b', '0001_a']);
+    expect(pending.map((p) => p.tag)).toEqual(['0002_b', '0001_a']);
+    expect(pending[0]?.findings).toEqual([]);
+    expect(pending[1]?.findings.map((f) => f.kind)).toEqual(['DROP COLUMN']);
+  });
+
+  it('excludes an entry whose when equals the newest applied, and does not read its SQL', () => {
+    const reads: string[] = [];
+    const pending = pendingMigrations(
+      [
+        { tag: 'old', when: 10 },
+        { tag: 'applied', when: 20 },
+        { tag: 'next', when: 30 },
+      ],
+      20,
+      (tag) => {
+        reads.push(tag);
+        return drop;
+      },
+    );
+    expect(reads).toEqual(['next']);
+    expect(pending.map((p) => p.tag)).toEqual(['next']);
+  });
+
+  it('compares when numerically, so 10 is after 9', () => {
+    const reads: string[] = [];
+    const pending = pendingMigrations(
+      [
+        { tag: 'ten', when: 10 },
+        { tag: 'nine', when: 9 },
+      ],
+      9,
+      (tag) => {
+        reads.push(tag);
+        return add;
+      },
+    );
+    // String compare says "10" < "9", which would drop the entry that is actually pending.
+    expect(reads).toEqual(['ten']);
+    expect(pending.map((p) => p.tag)).toEqual(['ten']);
   });
 });

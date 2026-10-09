@@ -30,7 +30,7 @@ export default defineConfig({
       ],
       // Measured with the real-Postgres suites on, rounded down. Raise these
       // when coverage climbs; never lower them to make a run pass.
-      thresholds: { statements: 93, branches: 86, functions: 91, lines: 94 },
+      thresholds: { statements: 95, branches: 88, functions: 94, lines: 97 },
     },
   },
 });

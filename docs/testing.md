@@ -143,8 +143,9 @@ prod (`DATABASE_URL` → `dietapp`), re-provision the test DB with
 ### The migrate guard
 
 `migrate` is not `drizzle-kit migrate` directly — it is `scripts/db-migrate.ts`,
-which refuses when all three hold: the pending migrations contain destructive
-DDL, and the checkout is not the main one. There is ONE database and helm copies
+which refuses when all three hold: the migrations are pending, they contain
+destructive DDL, and the checkout is not the main one (git unable to answer
+counts as not-main). There is ONE database and helm copies
 the `.env` naming it into every worktree, so a `DROP COLUMN` applied from a
 worktree takes the column out from under the API running on master and leaves it
 broken until that branch deploys.
@@ -213,6 +214,10 @@ fetch/DOM assertion, matching `cook-flow.test.ts` — never a hardcoded
 cook-confirm's close-mid-debounce case) install fake timers
 (`toFake: ['setTimeout', 'clearTimeout']` so `AbortSignal.timeout` stays
 native); `flush(ms)` then advances those timers instead of sleeping.
+Suites whose fixtures derive today (`plan`, `plan-edit`, `today`,
+`today-status`) import `pin-sunday.ts`, which freezes `Date` at Sunday
+2026-08-09 12:00 UTC and fakes nothing else. Week-label expectations are
+literals, not `isoWeekNumber` of the same date the screen formats.
 
 `routeFetch(routes, { unmatched })` is the fetch-side analog of
 `makeSelectRouter`: keys are `"GET /api/pantry"` or `"/api/ingredients"` (any

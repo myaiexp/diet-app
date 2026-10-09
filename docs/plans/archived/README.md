@@ -5,10 +5,10 @@ artifacts** produced before the app was built. They are kept for historical
 context only and **do not describe the current system**.
 
 > **⚠️ Superseded — do not treat as current.** Several of these assume a tech
-> stack that was never adopted (Next.js, Vercel, Supabase). What was actually
-> built is **Hono + self-hosted VPS (systemd) + PostgreSQL** — see the project
-> `CLAUDE.md` and `docs/plans/2026-03-05-project-init-design.md` for the real
-> architecture.
+> stack that was never adopted (Next.js, Vercel, Supabase). The current
+> architecture is the project `CLAUDE.md` and `docs/auth-deploy.md`.
+> `docs/plans/2026-03-05-project-init-design.md` is the original design; it is
+> superseded on URL, auth, and frontend.
 
 | File                                     | Topic (as originally synthesized)                           |
 | ---------------------------------------- | ----------------------------------------------------------- |

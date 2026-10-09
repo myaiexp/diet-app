@@ -39,13 +39,25 @@ describe.skipIf(!hasDb)('acquireDbTestLock', () => {
   test('a second acquire waits until the first releases', async () => {
     const first = await acquireDbTestLock(TEST_DB_URL!, { key: KEY });
     let secondAcquired = false;
-    const pending = acquireDbTestLock(TEST_DB_URL!, { key: KEY, pollMs: 10 }).then((lock) => {
+    let polls = 0;
+    const pending = acquireDbTestLock(TEST_DB_URL!, {
+      key: KEY,
+      pollMs: 10,
+      onPoll: () => {
+        polls += 1;
+      },
+    }).then((lock) => {
       secondAcquired = true;
       return lock;
     });
 
     try {
-      await sleep(80);
+      // A fixed sleep can pass before the second client has tried the lock
+      // at all. Waiting until it has polled twice is what makes "not yet"
+      // mean "blocked", not "hasn't started".
+      const deadline = Date.now() + 2_000;
+      while (polls < 2 && Date.now() < deadline) await sleep(5);
+      expect(polls).toBeGreaterThanOrEqual(2);
       expect(secondAcquired).toBe(false);
 
       await first.release();

@@ -11,7 +11,7 @@ import { configureClient, resetClient } from '../api/client.js';
 import { closeModal } from '../ui/modal.js';
 import { profileScreen } from '../screens/profile.js';
 import type { UserProfile, Ingredient } from '../api/types.js';
-import { jsonResponse, makeCtx, mountRoot, pathOf, routeFetch } from './harness.js';
+import { flush, jsonResponse, makeCtx, mountRoot, pathOf, routeFetch } from './harness.js';
 import { makeIngredient, makeProfile } from './fixtures.js';
 
 const WHITELIST = [
@@ -266,8 +266,13 @@ describe('profile screen', () => {
     await profileScreen().mount(root, makeCtx());
 
     saveButton(root).click();
+    await flush();
 
     expect(server.patchCalls).toHaveLength(0);
+    const patches = fetchMock.mock.calls.filter(
+      (c) => pathOf(c[0] as RequestInfo) === '/api/profile' && (c[1] as RequestInit | undefined)?.method === 'PATCH',
+    );
+    expect(patches).toHaveLength(0);
   });
 
   test('renders a clear empty state when no profile row exists (404), without crashing', async () => {

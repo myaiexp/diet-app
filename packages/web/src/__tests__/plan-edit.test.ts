@@ -5,6 +5,7 @@
 // leftover substitute in place, so the edit is a no-op (or a freeform that
 // still deducts the old substitute). These cases pin the mapping.
 
+import './pin-sunday.js';
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 import { configureClient, resetClient } from '../api/client.js';
 import { closeModal } from '../ui/modal.js';

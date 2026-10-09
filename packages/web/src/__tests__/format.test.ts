@@ -74,6 +74,11 @@ describe('dates', () => {
     expect(mondayOf('2026-08-09')).toBe('2026-08-03'); // Sunday closes the week
     expect(addDays('2026-08-03', 6)).toBe('2026-08-09');
     expect(isoWeekNumber('2026-08-04')).toBe(32);
+    // Thursday decides the week-year: 2026-12-31 is week 53, and 2027-01-01
+    // (a Friday) is still that week. 2027-01-04 is week 1.
+    expect(isoWeekNumber('2026-12-31')).toBe(53);
+    expect(isoWeekNumber('2027-01-01')).toBe(53);
+    expect(isoWeekNumber('2027-01-04')).toBe(1);
   });
 });
 

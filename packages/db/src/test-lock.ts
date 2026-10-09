@@ -36,6 +36,12 @@ export interface DbTestLockOptions {
   timeoutMs?: number;
   /** How often to retry while another holder has it. Default 100ms. */
   pollMs?: number;
+  /**
+   * Called after a try that did not get the lock, before the sleep.
+   * The wait test needs this: a fixed sleep can pass before the second
+   * client has polled even once, which looks the same as a lock that holds.
+   */
+  onPoll?: (attempt: number) => void;
 }
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -63,12 +69,15 @@ export async function acquireDbTestLock(
   await client.connect();
 
   const deadline = Date.now() + timeoutMs;
+  let polls = 0;
   for (;;) {
     const { rows } = await client.query<{ locked: boolean }>(
       'SELECT pg_try_advisory_lock($1) AS locked',
       [key],
     );
     if (rows[0]?.locked) break;
+    polls += 1;
+    opts.onPoll?.(polls);
     if (Date.now() >= deadline) {
       await client.end();
       throw new Error(

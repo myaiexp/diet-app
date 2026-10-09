@@ -35,7 +35,8 @@ paragraph of "why", the why belongs in the linked subdoc.
 
 ## API
 
-- Route modules export `routeName(db: Db): Hono`, mounted via `createApp`.
+- Route modules export `routeName(db: Db): Hono`, mounted via `createApp`
+  (config is a second options argument, `recipesRoutes(db, { ai })`).
   Drizzle `with:` vs core builder, pantry-always-joins-ingredient, list
   filter/page/order (id tie-break), shared 4xx helpers, JSON/PATCH, recipe
   import logging, and walking the PG `cause` chain: **`docs/api-conventions.md`**.
@@ -70,18 +71,11 @@ paragraph of "why", the why belongs in the linked subdoc.
 
 ## Testing and type-check
 
-api/db emit and exclude tests from `dist` (`tsconfig.typecheck.json` covers
-them); web type-checks tests via its main no-emit `tsconfig.json`. One vitest
-entry at the repo root. Tests and type-check resolve `@diet-app/db` from
-source, so a fresh clone or worktree needs no build; root `pnpm build`
-(`pnpm -r build`, dependency-ordered) is for the api's Node-resolved paths —
-`build`, `start`, `dev`. Real-SQL suites (listed with case counts in
-`docs/testing.md` § Test DB) share the loud `TEST_DATABASE_URL` /
-`DIET_APP_SKIP_DB_TESTS` gate, and hold one advisory lock
-(`packages/db/src/test-lock.ts`) so concurrent worktree sessions can't corrupt
-each other's fixtures in the single `dietapp_test`. Mocks, fixture-by-table
-(never call-order), demo seed, drizzle-kit override, schema-migration workflow:
-**`docs/testing.md`**.
+One vitest entry at the repo root. Tests and type-check resolve `@diet-app/db`
+from source, so they need no build; root `pnpm build` is only for the api's
+`build`, `start`, and `dev`. Real-SQL suites need `TEST_DATABASE_URL`, or
+`DIET_APP_SKIP_DB_TESTS=1` to skip them on purpose. The lock, mocks, fixtures,
+and the migration workflow: **`docs/testing.md`**.
 
 ## Plans
 
@@ -90,7 +84,8 @@ Active design docs in `docs/plans/`:
 - `2026-03-05-project-init-design.md` — original 2026-03-05 architecture
   (superseded on URL/auth/frontend; current stack is Stack/API above,
   `docs/auth-deploy.md`, and later shipped plans)
-- `2026-03-05-phase0-skeleton.md` — Phase 0
+- `2026-03-05-phase0-skeleton.md` — Phase 0, shipped; historical (npm
+  workspaces and the `mase.fi/diet/api` health path are superseded)
 - `2026-07-20-pantry-recipe-writes-design.md` + `-plan.md` — Phase 1 pantry/recipe
   write endpoints, shipped
 - `2026-07-20-cook-flow-design.md` + `-plan.md` — meal plan writes, auto-deduct

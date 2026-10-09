@@ -78,4 +78,36 @@ describe('scaleRecipeView', () => {
       error: 'invalid_base',
     });
   });
+
+  test('mutating the scaled view does not change the input', () => {
+    const recipe: RecipeWithIngredients = { ...BASE, extra: { label: 'orig' } };
+    const result = scaleRecipeView(recipe, 4);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    (result.recipe.extra as { label: string }).label = 'changed';
+    (result.recipe.recipeIngredients[0]?.ingredient as { name: string }).name = 'Tofu';
+    expect((recipe.extra as { label: string }).label).toBe('orig');
+    expect((recipe.recipeIngredients?.[0]?.ingredient as { name: string }).name).toBe('Chicken');
+  });
+
+  test('a non-finite quantity passes through unchanged', () => {
+    const line = BASE.recipeIngredients?.[0];
+    if (!line) throw new Error('fixture has no line');
+    const result = scaleRecipeView(
+      { ...BASE, recipeIngredients: [{ ...line, quantity: 'to taste' }] },
+      4,
+    );
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.recipe.recipeIngredients[0]?.quantity).toBe('to taste');
+  });
+
+  test('a recipe without lines scales to an empty list', () => {
+    const { recipeIngredients: _drop, ...header } = BASE;
+    const result = scaleRecipeView(header, 4);
+    expect(result).toMatchObject({
+      ok: true,
+      recipe: { servings: 4, baseServings: 2, recipeIngredients: [] },
+    });
+  });
 });

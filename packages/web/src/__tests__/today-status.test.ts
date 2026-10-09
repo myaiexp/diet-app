@@ -2,6 +2,7 @@
 // (shopping and POST /cook treat it like planned); skipped is a decision
 // not to cook. Plan reopens those cells for edit and never cooks them.
 
+import './pin-sunday.js';
 import { describe, test, expect, beforeEach, afterEach, vi } from 'vitest';
 import { configureClient, resetClient } from '../api/client.js';
 import { closeModal, isModalOpen } from '../ui/modal.js';

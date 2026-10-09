@@ -12,7 +12,7 @@
 // belongs there, and this guard's whole job is to send it there. Additive DDL still
 // applies straight from a worktree, because that is what a session developing against a
 // new column needs. Ported from helm's src/db/migrate-guard.ts.
-import type { DestructiveStatement } from './destructive-ddl.js';
+import { findDestructiveDdl, type DestructiveStatement } from './destructive-ddl.js';
 
 /** A migration drizzle-kit is about to apply, with whatever the scan found in it. */
 export interface PendingMigration {
@@ -38,6 +38,26 @@ export interface MigrateGuardInput {
 export type MigrateGuardVerdict =
   | { action: 'run' }
   | { action: 'refuse'; offenders: PendingMigration[] };
+
+/**
+ * Journal entries drizzle-kit would still apply.
+ *
+ * `applied === null` means the migrations table is empty, so every entry is
+ * pending. Otherwise the gate is `when > applied`: an equal timestamp is
+ * already applied, and the comparison is numeric — `"10" > "9"` is false.
+ */
+export function pendingMigrations(
+  entries: readonly { tag: string; when: number }[],
+  applied: number | null,
+  readSql: (tag: string) => string,
+): PendingMigration[] {
+  return entries
+    .filter((e) => applied === null || e.when > applied)
+    .map((e) => ({
+      tag: e.tag,
+      findings: findDestructiveDdl(readSql(e.tag)),
+    }));
+}
 
 /**
  * Refuse only when all three hold: destructive DDL, pending (so drizzle really would
