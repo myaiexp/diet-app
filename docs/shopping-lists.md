@@ -20,18 +20,31 @@ aggregates, and writes inside one transaction — the `cook-deduct.ts` split.
 ## Generation merges, never rebuilds
 
 `POST /shopping-lists/generate` is gated on `status = 'draft'` → 409 otherwise.
-The upsert rewrites **only** `quantityNeeded`/`quantityInPantry`/`netToBuy`/
-`category` — those four are generation-owned. `bought`, `customNote` and
+The upsert rewrites `quantityNeeded`/`quantityInPantry`/`netToBuy`/`category`
+on generated rows, except a row whose quantity the user has edited
+(`quantityEdited`): that triple stays as the edit stored it, and only
+`category` still refreshes. Refreshing coverage alone would mix the plan's
+cap — coverage of the *plan's* demand — into a demand the user already
+changed, and `/complete` would file that mix. `bought`, `customNote` and
 `source` are user-owned and always survive; manual rows are never rewritten or
 pruned. The prune deletes only `source='generated' AND bought=false` rows absent
-from the fresh plan: a generated row already bought stays even when the plan
+from the fresh plan, **including** quantity-edited ones: the flag protects the
+numbers, not the row. A generated row already bought stays even when the plan
 drops it, because that food was purchased and `/complete` still needs it for the
 pantry hand-off.
 
-Consequence to document rather than prevent: editing a quantity on a generated
-row is overwritten by the next regeneration, and deleting one only removes it
-until then. The body also takes an optional `includeOptional` boolean (default
-false) that opts the recipes' `optional` lines into the week's demand —
+A quantity edit is `PATCH /items/:id` with `quantityNeeded` and/or `netToBuy`.
+The server does not store the pair as sent. On a generated row `netToBuy`
+becomes `max(0, quantityNeeded − quantityInPantry)` and coverage is capped at
+the new demand, so the subtraction identity still holds and `/complete` files
+that net rather than a stale one. On a manual row the two stay equal and
+`quantityInPantry` stays 0 — the user typed what to buy. A pair that disagrees
+is 400. `quantityEdited` is set only when a sent number differs from the stored
+one: reaffirming the current demand heals a stale net without locking the row,
+so the next regeneration can still refresh it. Deleting a generated row still
+only removes it until the next regeneration. The body also takes an optional
+`includeOptional` boolean (default false) that opts the recipes' `optional` lines
+into the week's demand —
 per-generation and never persisted on the list, because whether you want the
 garnish is a fact about this shop, not about the week. It is the one knob here
 that logic genuinely cannot decide.

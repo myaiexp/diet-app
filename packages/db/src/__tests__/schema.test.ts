@@ -145,6 +145,9 @@ const COLUMN_SPECS: Record<string, Record<string, ColumnSpec>> = {
     // would skip NULL rows.
     bought: { type: 'PgBoolean', notNull: true, hasDefault: true },
     customNote: { type: 'PgText' },
+    // Regeneration keeps the quantity triple when this is set. Default false
+    // so an unedited row still takes the plan's numbers.
+    quantityEdited: { type: 'PgBoolean', notNull: true, hasDefault: true },
   },
   userProfile: {
     id: { type: 'PgUUID', notNull: true, hasDefault: true, primary: true },

@@ -51,6 +51,13 @@ export const shoppingListItems = pgTable(
     // notNull so the "unbought generated rows" delete predicate can't miss NULLs.
     bought: boolean('bought').notNull().default(false),
     customNote: text('custom_note'),
+    // Set when the user changes quantityNeeded or netToBuy. Regeneration
+    // rewrites the quantity triple on generated rows; without this flag that
+    // rewrite would discard the edit. bought and customNote are user-owned
+    // on their own and do not set this. Default false, so rows edited before
+    // the column existed are still generation-owned — the client never wrote
+    // quantities before this.
+    quantityEdited: boolean('quantity_edited').notNull().default(false),
   },
   // Generation upserts on this key, rewriting quantities in place so bought /
   // customNote / manual rows survive. Manual adds normalize their unit to the

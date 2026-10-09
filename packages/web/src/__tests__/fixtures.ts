@@ -125,6 +125,7 @@ export function makeShoppingItem(overrides: Partial<ShoppingItem> = {}): Shoppin
     source: 'generated',
     bought: false,
     customNote: null,
+    quantityEdited: false,
     ingredient: makeIngredient({
       name: 'Leek',
       aliases: ['purjo'],

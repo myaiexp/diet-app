@@ -258,8 +258,17 @@ describe('shoppingListItemsRoutes', () => {
       expect(res.status).toBe(200);
       const body = await res.json();
       expect(body.netToBuy).toBe('3');
+      expect(body.quantityNeeded).toBe('3');
       expect(body.customNote).toBe('brand X only');
-      expect(updates[0]).toEqual({ netToBuy: '3', customNote: 'brand X only' });
+      // Manual rows keep the two equal. A net-only edit moves demand with it
+      // and locks the row so a later regenerate cannot put the old amount back.
+      expect(updates[0]).toEqual({
+        quantityNeeded: '3',
+        quantityInPantry: '0',
+        netToBuy: '3',
+        quantityEdited: true,
+        customNote: 'brand X only',
+      });
     });
 
     // Finding #7557: quantityNeeded is numeric in Postgres — Drizzle wants the
@@ -273,10 +282,16 @@ describe('shoppingListItemsRoutes', () => {
         body: JSON.stringify({ quantityNeeded: 2.5 }),
       });
       expect(res.status).toBe(200);
-      expect(updates[0]).toEqual({ quantityNeeded: '2.5' });
+      expect(updates[0]).toEqual({
+        quantityNeeded: '2.5',
+        quantityInPantry: '0',
+        netToBuy: '2.5',
+        quantityEdited: true,
+      });
       expect((updates[0] as { quantityNeeded: unknown }).quantityNeeded).toBe('2.5');
       const body = await res.json();
       expect(body.quantityNeeded).toBe('2.5');
+      expect(body.netToBuy).toBe('2.5');
     });
 
     test('clears customNote with null', async () => {

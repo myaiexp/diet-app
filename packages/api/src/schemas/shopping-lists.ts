@@ -40,7 +40,9 @@ export const itemCreateSchema = z
 // ingredientId and unit are absent on purpose: changing either would move the
 // row across the (list_id, ingredient_id, unit) unique index. Delete and re-add
 // instead. netToBuy is nonnegative — 0 means "I have enough", which is a real
-// value — while quantityNeeded is positive.
+// value — while quantityNeeded is positive. The route does not store the pair
+// as sent: it recomputes so the triple stays consistent (item-quantities.ts)
+// and 400s a pair that disagrees.
 export const itemPatchSchema = z
   .object({
     bought: z.boolean().optional(),

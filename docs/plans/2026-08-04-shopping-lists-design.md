@@ -361,13 +361,14 @@ worse than an absent one.
 Not editable: `ingredientId`, `unit`, `listId`, `source`, `category`. Changing the
 first two would move the row across the unique index; delete and re-add instead.
 
-Two consequences of the merge model that the plan must document rather than
-prevent:
+Two consequences of the merge model:
 
-- Editing `quantityNeeded` / `netToBuy` on a `source='generated'` row is
-  **overwritten by the next regeneration** — those three quantity fields are
-  generation-owned. `bought` and `customNote` are not, and always survive. Manual
-  rows are never rewritten at all.
+- Editing `quantityNeeded` / `netToBuy` sets `quantityEdited`. Regeneration
+  then keeps that row's quantity triple and still refreshes `category`.
+  `bought` and `customNote` are user-owned either way and always survive.
+  Manual rows are never rewritten at all. A patch that does not change the
+  stored numbers does not set the flag, so reaffirming the plan's quantity
+  does not lock the row.
 - `DELETE /items/:id` on a generated row removes it **until the next
   regeneration**, which will bring it back because the plan still calls for it.
   Regeneration is explicit and infrequent, so this is acceptable; the alternative

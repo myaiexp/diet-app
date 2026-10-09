@@ -1,0 +1,1 @@
+ALTER TABLE "shopping_list_items" ADD COLUMN "quantity_edited" boolean DEFAULT false NOT NULL;

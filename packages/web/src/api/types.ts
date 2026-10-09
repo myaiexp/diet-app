@@ -336,6 +336,11 @@ export interface ShoppingItem {
   source: ShoppingItemSource;
   bought: boolean;
   customNote: string | null;
+  /**
+   * True once the user has changed a quantity. Regeneration will not
+   * overwrite this row's quantity triple.
+   */
+  quantityEdited: boolean;
   /** Eager-loaded on every read, same reason as PantryItem.ingredient. */
   ingredient: Ingredient;
 }

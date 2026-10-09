@@ -14,7 +14,14 @@ import {
 import { shoppingListGenerateRoutes } from '../routes/shopping-list-generate.js';
 import { makeDbMock, pgError, type ThrowOnWrite } from './db-mock.js';
 import { makeSelectRouter, type SelectFixture } from './select-router.js';
+import { PgDialect } from 'drizzle-orm/pg-core';
 import { tableNameOf, renderWhere } from './drizzle-introspect.js';
+
+const dialect = new PgDialect();
+
+function renderSql(value: unknown): string {
+  return dialect.sqlToQuery(value as never).sql;
+}
 
 const LIST_ID = '11111111-1111-4111-8111-111111111111';
 const ENTRY_ID = '22222222-2222-4222-8222-222222222222';
@@ -244,6 +251,17 @@ describe('shoppingListGenerateRoutes', () => {
     // rewritten by the plan's numbers — the documented "never revisit manual
     // rows" contract. The prune is already source-scoped; the upsert must be too.
     expect(itemInsert.conflict?.setWhere).toEqual(eq(shoppingListItems.source, 'generated'));
+    // A quantity the user edited is not generation's to overwrite. The flag
+    // stays out of the SET (a regenerate must not clear it) and each quantity
+    // column keeps the stored value when it is set.
+    const set = itemInsert.conflict?.set as Record<string, unknown>;
+    expect(setKeys).not.toContain('quantityEdited');
+    for (const column of ['quantityNeeded', 'quantityInPantry', 'netToBuy']) {
+      const sql = renderSql(set[column]);
+      expect(sql, column).toContain('quantity_edited');
+      expect(sql, column).toContain(`excluded.${column.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`)}`);
+    }
+    expect(renderSql(set.category)).not.toContain('quantity_edited');
   });
 
   test('preserves customNote on regeneration', async () => {

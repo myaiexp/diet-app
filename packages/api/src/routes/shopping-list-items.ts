@@ -10,6 +10,7 @@ import { parseJsonBody } from '../json-body.js';
 import { buildPatch } from '../patch-builder.js';
 import { itemCreateSchema, itemPatchSchema } from '../schemas/shopping-lists.js';
 import { isFkViolation, isUniqueViolation } from '../pg-errors.js';
+import { reconcileItemQuantities } from '../item-quantities.js';
 import { toBase, baseUnit, round6 } from '../units.js';
 
 type ListLock =
@@ -45,19 +46,43 @@ export function shoppingListItemsRoutes(db: Db): Hono {
     if (!parsed.ok) return parsed.response;
     const data = parsed.data;
 
-    // unit/ingredientId never reach buildPatch: itemPatchSchema.strict()
-    // already 400s an attempt to send them.
-    const patch: Partial<typeof shoppingListItems.$inferInsert> = buildPatch(data, shoppingListItems);
-
     const result = await db.transaction(async (tx) => {
-      const [item] = await tx
+      const [peek] = await tx
         .select({ listId: shoppingListItems.listId })
         .from(shoppingListItems)
         .where(eq(shoppingListItems.id, id));
-      if (!item) return { kind: 'not_found' } as const;
+      if (!peek) return { kind: 'not_found' } as const;
 
-      const lock = await lockList(tx, item.listId);
+      const lock = await lockList(tx, peek.listId);
       if (lock.kind !== 'ok') return lock;
+
+      // After the list lock, so a generate that held it has committed.
+      // Reading the quantities before the lock would recompute from a row
+      // generate is about to replace, then write that triple back over it.
+      const [existing] = await tx
+        .select()
+        .from(shoppingListItems)
+        .where(eq(shoppingListItems.id, id))
+        .for('update');
+      if (!existing) return { kind: 'not_found' } as const;
+
+      const reconciled = reconcileItemQuantities(existing, data);
+      if (!reconciled.ok) return { kind: 'bad_quantity' as const, error: reconciled.error };
+
+      // unit/ingredientId never reach buildPatch: itemPatchSchema.strict()
+      // already 400s an attempt to send them. The quantity columns are
+      // omitted too — the reconcile result is the only write of those.
+      const patch: Partial<typeof shoppingListItems.$inferInsert> = {
+        ...buildPatch(data, shoppingListItems, ['quantityNeeded', 'netToBuy']),
+      };
+      if (reconciled.write) {
+        patch.quantityNeeded = reconciled.write.quantityNeeded;
+        patch.quantityInPantry = reconciled.write.quantityInPantry;
+        patch.netToBuy = reconciled.write.netToBuy;
+        // Only ever set, never cleared: reaffirming the current demand heals
+        // a stale net without locking the row against the next regenerate.
+        if (reconciled.write.quantityEdited) patch.quantityEdited = true;
+      }
 
       const [row] = await tx
         .update(shoppingListItems)
@@ -70,6 +95,7 @@ export function shoppingListItemsRoutes(db: Db): Hono {
 
     if (result.kind === 'not_found') return notFound(c);
     if (result.kind === 'done') return conflict(c, DONE_LOCKED);
+    if (result.kind === 'bad_quantity') return badRequest(c, result.error);
     return c.json(result.row);
   });
 

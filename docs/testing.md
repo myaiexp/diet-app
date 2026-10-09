@@ -69,6 +69,10 @@ The real-Postgres suites share one gate.
 
 - `packages/api` `routes.test.ts` — 22 `test()` cases under
   `describe.skipIf(!hasDb)`, plus the loud gate.
+- `packages/api` `shopping-list-quantity-sql.test.ts` — 2 cases: an edited
+  generated quantity survives regeneration and is what `/complete` files, and
+  a manual row keeps `quantityNeeded` equal to `netToBuy` through to
+  `/complete`. Plus the loud gate.
 - `packages/api` `rollback-{recipes,cook-profile,shopping}-sql.test.ts` — 9
   cases, one per route that issues several writes in one `db.transaction`
   (recipe POST/fork/PATCH/DELETE, cook, profile PATCH with dislikes, list

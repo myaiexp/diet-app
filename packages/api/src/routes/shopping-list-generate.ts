@@ -143,10 +143,17 @@ async function runGenerate(tx: Tx, opts: GenerateOptions): Promise<GenerateResul
         // (same list/ingredient/unit) is a no-op, not an overwrite — the prune
         // below is already source-scoped, and without this the user's amount
         // plus a never-refreshed netted quantityInPantry would stick forever.
+        // quantityEdited rows keep the whole triple. Refreshing only coverage
+        // would mix the plan's cap (coverage of the plan's demand, not the
+        // user's) into a demand the user already changed, and /complete would
+        // file that mix. Category still tracks the ingredient.
         set: {
-          quantityNeeded: sql`excluded.quantity_needed`,
-          quantityInPantry: sql`excluded.quantity_in_pantry`,
-          netToBuy: sql`excluded.net_to_buy`,
+          quantityNeeded: sql`CASE WHEN ${shoppingListItems.quantityEdited}
+            THEN ${shoppingListItems.quantityNeeded} ELSE excluded.quantity_needed END`,
+          quantityInPantry: sql`CASE WHEN ${shoppingListItems.quantityEdited}
+            THEN ${shoppingListItems.quantityInPantry} ELSE excluded.quantity_in_pantry END`,
+          netToBuy: sql`CASE WHEN ${shoppingListItems.quantityEdited}
+            THEN ${shoppingListItems.netToBuy} ELSE excluded.net_to_buy END`,
           category: sql`excluded.category`,
         },
         setWhere: eq(shoppingListItems.source, 'generated'),
