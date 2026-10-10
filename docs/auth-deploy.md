@@ -75,8 +75,10 @@ mutating fetches, even with no body.
   (`NoNewPrivileges`, `ProtectSystem=strict`, `ProtectHome=tmpfs` + a
   read-only bind of the diet-app tree, `PrivateTmp`, `MemoryMax=1G`, plus
   kernel/namespace restrictions). `IPAddressDeny` lists every range
-  `ai/ssrf-host.ts` refuses for recipe import except loopback — `0.0.0.0/8`
-  included, since a connect to 0.0.0.0 reaches 127.0.0.1 services.
+  `ai/ssrf-host.ts` refuses for recipe import except loopback. Its
+  `0.0.0.0/8` entry does not stop a connect to 0.0.0.0 (the kernel rewrites
+  it to 127.0.0.1 before the packet filter sees it), so that case rests on
+  the in-process check alone.
   Loopback (Postgres, resolved) and public HTTP(S) (import / AI) stay
   allowed. Do not add `MemoryDenyWriteExecute` (V8 JIT). Do not deny `127.0.0.0/8` or `::1`. A
   `dist/`-served unit, so no `refuse-dirty-tree` `ExecStartPre`.

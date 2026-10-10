@@ -22,8 +22,9 @@ describe('systemd/diet-app-api.service sandbox', () => {
   });
 
   // Every non-routable range the recipe-import blocklist (ai/ssrf-host.ts)
-  // refuses, minus loopback (finding #7854, finding #12748). 0.0.0.0/8 matters
-  // most: a connect to 0.0.0.0 lands on 127.0.0.1, i.e. Postgres and nginx.
+  // refuses, minus loopback (finding #7854, finding #12748). Pins parity only:
+  // the 0.0.0.0/8 entry cannot stop a connect to 0.0.0.0, which the kernel
+  // rewrites to 127.0.0.1 before the packet filter runs (see the unit comment).
   test('denies the import blocklist ranges except loopback', () => {
     const deny = unit.match(/^IPAddressDeny=(.+)$/m);
     expect(deny).not.toBeNull();
