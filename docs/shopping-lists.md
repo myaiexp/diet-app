@@ -102,8 +102,8 @@ concern.
 ## `isPantryStaple` is user-owned
 
 Toggled via `PATCH /api/ingredients/:id` (the only writable catalog column).
-Generation treats staples like everything else and reads *sort* them last
-(`shopping-sort.ts`) rather than filtering them out — a mis-set flag should put
+Generation treats staples like every other ingredient, and the list read sorts
+them last (`shopping-sort.ts`) rather than filtering them out — a mis-set flag should put
 an ingredient in the wrong group (one tap to fix) instead of making it vanish.
 The flag is read live off the joined ingredient, never snapshotted onto the item
 row. It is deliberately **excluded from the seed's `ON CONFLICT DO UPDATE` set**

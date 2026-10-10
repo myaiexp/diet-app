@@ -1,5 +1,19 @@
 # Diet App Phase 0: Skeleton — Implementation Plan
 
+> **Shipped; historical.** Kept as the record of how Phase 0 was built. Its tooling,
+> deploy and verification steps are **not current** — do not follow them:
+>
+> | Plan says | Actual |
+> |---|---|
+> | npm workspaces, `npm run …` | pnpm workspace (`pnpm-workspace.yaml`, `packageManager` in `package.json`) |
+> | `engines: { node: ">=20" }` | `>=22`; `.nvmrc` pins the exact version |
+> | `scripts/deploy.sh` rsyncs to the VPS | `deploy` merges and restarts; `scripts/post-deploy.sh` publishes the web build |
+> | systemd `User=root`, `WorkingDirectory=/opt/diet-app` | `systemd/diet-app-api.service` (`User=mase`, the main checkout) |
+> | nginx `location /diet/api/`, health at `https://mase.fi/diet/api/health` | `https://diet.mase.fi`, health at `/api/health` |
+> | Update `.claude/phases/current.md` | no such file; phases live in `helm roadmap` |
+>
+> Current deploy, vhost, auth and health check: `docs/auth-deploy.md`.
+
 **Goal:** Stand up the diet-app as a deployable TypeScript monorepo with all database tables, seeded ingredients, and a running API on the VPS.
 
 **Architecture:** npm workspace monorepo with `packages/db` (Drizzle ORM + PostgreSQL) and `packages/api` (Hono). Follows central-hub conventions exactly: ESM, `.js` imports, UUID PKs, timezone timestamps. Separate `dietapp` database on the same VPS PostgreSQL instance. Deployed via systemd + nginx.

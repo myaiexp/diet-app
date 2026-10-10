@@ -11,7 +11,7 @@ import {
   MAKE_AGAIN,
 } from '../vocab.js';
 
-export const CONTENT_MSG = 'Either recipeId or freeformNote is required';
+export const CONTENT_MSG = 'One of recipeId, substituteRecipeId, or a non-empty freeformNote is required';
 
 /** Cook/shopping resolve substituteRecipeId ?? recipeId, so a substitute-only
  *  row (demo Friday dinner) is content even with recipeId and the note null. */

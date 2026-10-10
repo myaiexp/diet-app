@@ -237,9 +237,9 @@ describe('fieldErrors', () => {
   test('extracts Zod form errors from a 400 details payload', () => {
     const err = new ApiError(400, {
       error: 'Validation failed',
-      details: { formErrors: ['Either recipeId or freeformNote is required'] },
+      details: { formErrors: ['One of recipeId, substituteRecipeId, or a non-empty freeformNote is required'] },
     });
-    expect(fieldErrors(err)).toEqual(['Either recipeId or freeformNote is required']);
+    expect(fieldErrors(err)).toEqual(['One of recipeId, substituteRecipeId, or a non-empty freeformNote is required']);
   });
 
   test('flattens details.fieldErrors as field: message lines', () => {
@@ -254,12 +254,12 @@ describe('fieldErrors', () => {
     const err = new ApiError(400, {
       error: 'Validation failed',
       details: {
-        formErrors: ['Either recipeId or freeformNote is required'],
+        formErrors: ['One of recipeId, substituteRecipeId, or a non-empty freeformNote is required'],
         fieldErrors: { quantity: ['must be positive'] },
       },
     });
     expect(fieldErrors(err)).toEqual([
-      'Either recipeId or freeformNote is required',
+      'One of recipeId, substituteRecipeId, or a non-empty freeformNote is required',
       'quantity: must be positive',
     ]);
   });

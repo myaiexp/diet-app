@@ -69,6 +69,12 @@ one without complicating the whole default site).
 
 ## File structure
 
+> **As shipped, the layout differs from this tree** (and from the task list's `Create:`
+> paths, kept as written). Screens are `screens/<feature>/index.ts` plus sibling builders,
+> except `screens/profile.ts`; shopping is a real screen (`screens/shopping/`); the cook flow
+> is `modals/cook-flow.ts` beside the other modals; CSS is `app.css`, `form.css`, `cook.css`
+> and one sheet per screen. Current layout: **`docs/web-conventions.md`** § Source layout.
+
 ```
 packages/web/
   package.json, tsconfig.json, vite.config.ts, index.html
@@ -496,7 +502,7 @@ it('keeps the grid horizontally scrollable below 1050px rather than reflowing', 
   have no UI. The design doc's `+ fill → suggestions` link is correct only *after* #380
   lands — until then it points here.
 - `mealPlanCreateSchema` requires `recipeId` **or** a non-empty `freeformNote`. Validate that
-  client-side; the API returns "Either recipeId or freeformNote is required" otherwise.
+  client-side; the API returns "One of recipeId, substituteRecipeId, or a non-empty freeformNote is required" otherwise.
 - PATCH cannot set `status: 'cooked'` (create can't either) and cannot change `recipeId`,
   `substituteRecipeId` or `servings` on an already-cooked entry.
 - The week endpoint is bounded — no pagination.

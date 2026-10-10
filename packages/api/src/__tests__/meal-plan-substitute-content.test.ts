@@ -77,7 +77,7 @@ describe('PATCH substitute-only content', () => {
     );
     expect(res.status).toBe(400);
     expect((await res.json()).details.formErrors).toEqual([
-      'Either recipeId or freeformNote is required',
+      'One of recipeId, substituteRecipeId, or a non-empty freeformNote is required',
     ]);
     expect(updates).toHaveLength(0);
   });

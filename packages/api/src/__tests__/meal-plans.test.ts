@@ -298,7 +298,7 @@ describe('mealPlansRoutes', () => {
     const body = await res.json();
     expect(body.error).toBe('Validation failed');
     expect(body.details.formErrors).toEqual([
-      'Either recipeId or freeformNote is required',
+      'One of recipeId, substituteRecipeId, or a non-empty freeformNote is required',
     ]);
     expect(updates).toHaveLength(0);
   });

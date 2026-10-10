@@ -12,6 +12,7 @@
 > | No auth layer; API bound to `127.0.0.1` | Two independent gates (`docs/auth-deploy.md`) |
 > | nginx proxies `/diet/api/` | `https://diet.mase.fi` with same-origin `/api/` |
 > | chrono-node in the stack | not a dependency |
+> | npm workspace monorepo | pnpm workspace (`pnpm-workspace.yaml`) |
 >
 > Current URL, auth, CORS, deploy: `docs/auth-deploy.md`. Current frontend:
 > Stack in `CLAUDE.md` and `2026-08-04-frontend-design.md`.
