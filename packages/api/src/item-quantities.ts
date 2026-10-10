@@ -51,6 +51,17 @@ function fromMicro(m: number): number {
 }
 
 /**
+ * A generated row's net from its already-rounded needed and coverage, with
+ * coverage capped at needed. Generate stores this so the stored triple is the
+ * exact identity a both-fields PATCH checks; rounding the raw difference on its
+ * own can land one micro-unit away from it.
+ */
+export function generatedNetToBuy(needed: number, coverage: number): number {
+  const neededMicro = micro(needed);
+  return fromMicro(neededMicro - Math.min(micro(coverage), neededMicro));
+}
+
+/**
  * The write that keeps one item's quantity triple consistent, or null when the
  * patch does not mention a quantity.
  *

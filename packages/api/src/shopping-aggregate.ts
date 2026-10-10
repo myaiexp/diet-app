@@ -1,6 +1,7 @@
 // Pure meal-plan demand vs pantry supply aggregation for shopping lists
 
 import { toBase, baseUnit, round6, type Dimension } from './units.js';
+import { generatedNetToBuy } from './item-quantities.js';
 import { resolvedRecipeId, servingsScale, type RecipeLine as AggregateRecipeLine } from './recipe-lines.js';
 import type { SkippedGenerateReason } from './vocab.js';
 
@@ -180,12 +181,14 @@ export function aggregateShoppingList(input: {
       }
     }
 
+    const quantityNeeded = round6(d.quantity);
+    const quantityInPantry = round6(consumed);
     items.push({
       ingredientId: d.ingredientId,
       unit: baseUnit(d.dimension),
-      quantityNeeded: round6(d.quantity),
-      quantityInPantry: round6(consumed),
-      netToBuy: round6(Math.max(0, d.quantity - consumed)),
+      quantityNeeded,
+      quantityInPantry,
+      netToBuy: generatedNetToBuy(quantityNeeded, quantityInPantry),
       category: ingredientsById.get(d.ingredientId)?.category ?? 'other',
     });
   }

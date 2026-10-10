@@ -65,7 +65,11 @@ Consequence, and the reason the field's name is now slightly off:
 not "how much you have"** — it is capped at `quantityNeeded`, so surplus stock
 no longer reads back in full. Once availability is date-dependent, "how much do
 you have" has no single answer, and this is the only definition under which
-`netToBuy = quantityNeeded − quantityInPantry` stays true; the client's row
+`netToBuy = quantityNeeded − quantityInPantry` stays true. Generate computes
+net from the two already-rounded figures in micro-units (`generatedNetToBuy`,
+the arithmetic PATCH checks) so the identity holds on the stored values too, not
+only before rounding — otherwise a both-fields PATCH of a fresh row could 400 on
+a one-micro-unit drift. The client's row
 line says `pantry covers 200 g · 200 g short` for exactly that reason.
 
 ## `done` is terminal
