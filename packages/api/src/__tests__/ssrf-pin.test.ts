@@ -73,6 +73,42 @@ describe('pinnedLookup', () => {
     });
   });
 
+  // IPv6 first, so a regression that ignores numeric family 4 (undici's usual
+  // IPv4 lookup) would hand back the v6 pin and fail here.
+  test('family 4 returns only the IPv4 pin', async () => {
+    const fn = pinnedLookup('example.com', [allowed[1], allowed[0]]);
+    await expect(lookup(fn, 'example.com', { family: 4 })).resolves.toEqual({
+      address: '1.1.1.1',
+      family: 4,
+    });
+    await expect(lookup(fn, 'example.com', { family: 4, all: true })).resolves.toEqual([
+      { address: '1.1.1.1', family: 4 },
+    ]);
+  });
+
+  test('family 4 errors when the pin set is v6-only', async () => {
+    const fn = pinnedLookup('example.com', [allowed[1]]);
+    await expect(lookup(fn, 'example.com', { family: 4 })).rejects.toThrow(
+      /no allowed addresses/,
+    );
+  });
+
+  // Second gate after parseSafeUrl: one blocked answer poisons the whole set,
+  // even when a public address sits ahead of it.
+  test.each(['127.0.0.1', '169.254.169.254', '10.0.0.5', '::1'])(
+    'rejects a pin set containing blocked address %s',
+    async (blocked) => {
+      const fn = pinnedLookup('example.com', [
+        { address: '1.1.1.1', family: 4 },
+        { address: blocked, family: blocked.includes(':') ? 6 : 4 },
+      ]);
+      await expect(lookup(fn, 'example.com')).rejects.toThrow(/blocked address in pin set/);
+      await expect(lookup(fn, 'example.com', { all: true })).rejects.toThrow(
+        /blocked address in pin set/,
+      );
+    },
+  );
+
   test('rejects a lookup for a different hostname', async () => {
     const fn = pinnedLookup('example.com', allowed);
     await expect(lookup(fn, 'evil.example')).rejects.toThrow(/unexpected lookup host/);

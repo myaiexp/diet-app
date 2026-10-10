@@ -136,4 +136,32 @@ describe('importProducts', () => {
     expect(result.imported).toBe(0);
     expect(batches).toHaveLength(0);
   });
+
+  // The three drift counters are the only signal that S-kaupat changed its
+  // vocabulary; a full reimport still writes rows when they are wrong.
+  test('reports nutrient drift: unknown names counted per item, refused values, parsed rows', async () => {
+    const { db } = makeInsertMock();
+    const result = await importProducts(
+      db,
+      [
+        { ...lime, ean: '1', nutrients: [{ name: 'Vitamiini D', value: '1,2 µg' }] },
+        {
+          ...lime,
+          ean: '2',
+          nutrients: [
+            { name: 'Vitamiini D', value: '2 µg' },
+            { name: 'Kalsium', value: '120 mg' },
+          ],
+        },
+        { ...lime, ean: '3', nutrients: [{ name: 'Suola', value: '3 IU' }] },
+        { ...lime, ean: '4', nutrients: [{ name: 'Suola', value: '0,1 g' }] },
+      ],
+      'S',
+    );
+    expect(result.unknownNutrients).toEqual({ 'Vitamiini D': 2, Kalsium: 1 });
+    expect(result.unparseableValues).toBe(1);
+    // Only ean 4 parsed: unknown-only and refused-only items carry no nutrition.
+    expect(result.withNutrition).toBe(1);
+    expect(result.imported).toBe(4);
+  });
 });

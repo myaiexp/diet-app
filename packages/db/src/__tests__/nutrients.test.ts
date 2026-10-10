@@ -31,7 +31,7 @@ describe('parseQuantity', () => {
   // A "0" for an absent value would read as "this food contains no salt", which is
   // a different and worse claim than "we don't know".
   test('never coerces an unparseable value to zero', () => {
-    expect(parseQuantity('n/a')).not.toBe(0);
+    expect(parseQuantity('n/a')).toBeNull();
   });
 });
 
@@ -93,9 +93,16 @@ describe('parseNutrients', () => {
     expect(out.nutrition).toEqual({ salt_g: 0.5 });
   });
 
-  test('converts micrograms too', () => {
-    const out = parseNutrients([{ name: 'Suola', value: '2500 µg' }]);
+  // Three spellings of micrograms arrive in the wild; a missed one is either a
+  // dropped nutrient or, if ever written through, a 1e6 magnitude error.
+  test.each([
+    ['U+00B5 micro sign', '2500 µg'],
+    ['U+03BC Greek mu', '2500 μg'],
+    ['ascii ug', '2500 ug'],
+  ])('converts micrograms too (%s)', (_label, value) => {
+    const out = parseNutrients([{ name: 'Suola', value }]);
     expect(out.nutrition).toEqual({ salt_g: 0.0025 });
+    expect(out.unparseable).toEqual([]);
   });
 
   // Refusing beats guessing: an unconvertible unit on a mass key means the upstream
