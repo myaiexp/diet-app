@@ -85,7 +85,9 @@ reaches Postgres as an unhandled `invalid input syntax for type uuid`.
   Routes never re-inline those shapes and never import `z`. Schemas live under
   `schemas/`. Free-text, array, and URL fields share caps in
   `schemas/fields.ts` (title 200, notes 4k, steps 80×4k, http(s) URLs 2048,
-  servings 1–12);
+  servings 1–12). Numbers are capped there too, so an out-of-range value is a
+  400 rather than a PG 22003 500: minutes ≤ 43200, calories ≤ 20000, household
+  ≤ 20, quantities ≤ 1e6;
   `sourceUrl` / import `url` reject non-http(s). `macroTargets` /
   `scheduleProfile` are small known-key objects, not `z.unknown()` records.
   The router also mounts Hono `bodyLimit` at 1 MiB (`MAX_BODY_BYTES` in

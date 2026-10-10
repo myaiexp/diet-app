@@ -22,15 +22,18 @@ EnvironmentFile=/home/mase/Projects/diet-app/.env
 # target underneath it. tmpfs + the bind keeps only this tree reachable;
 # sibling .env files and ~/.ssh stay invisible. EnvironmentFile is read by
 # PID 1 as root, not by the service. load-env.ts re-reads the in-tree .env.
-# IPAddressDeny matches the import SSRF policy for non-routable ranges
-# (link-local/IMDS, RFC1918, CGNAT, IPv6 ULA/link-local/site-local). Loopback
-# (Postgres, systemd-resolved) and public HTTP(S) (import / AI) stay allowed.
-# Do not deny 127.0.0.0/8 or ::1.
+# IPAddressDeny mirrors the ranges packages/api/src/ai/ssrf-host.ts blocks for
+# recipe import, minus loopback: 0.0.0.0/8 (a connect to 0.0.0.0 lands on
+# 127.0.0.1), RFC1918, CGNAT, link-local/IMDS, 192.0.0.0/24, 198.18.0.0/15,
+# multicast and 240/4; IPv6 ULA, link-local, site-local, multicast, 6to4,
+# Teredo and local-use NAT64. Loopback (Postgres, systemd-resolved) and public
+# HTTP(S) (import / AI) stay allowed. Do not deny 127.0.0.0/8 or ::1. Add a
+# range here when ssrf-host.ts gains one; diet-app-api-service.test.ts pins it.
 NoNewPrivileges=yes
 ProtectSystem=strict
 ProtectHome=tmpfs
 BindReadOnlyPaths=/home/mase/Projects/diet-app
-IPAddressDeny=169.254.0.0/16 10.0.0.0/8 172.16.0.0/12 192.168.0.0/16 100.64.0.0/10 fc00::/7 fe80::/10 fec0::/10
+IPAddressDeny=0.0.0.0/8 10.0.0.0/8 100.64.0.0/10 169.254.0.0/16 172.16.0.0/12 192.0.0.0/24 192.168.0.0/16 198.18.0.0/15 224.0.0.0/4 240.0.0.0/4 fc00::/7 fe80::/10 fec0::/10 ff00::/8 2002::/16 2001::/32 64:ff9b:1::/48
 PrivateTmp=yes
 PrivateDevices=yes
 ProtectKernelTunables=yes

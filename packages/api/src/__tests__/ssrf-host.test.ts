@@ -64,6 +64,22 @@ describe('isBlockedAddress', () => {
     // Teredo 2001:0000::/32. Wikipedia's example client, and the prefix itself.
     ['2001:0::'],
     ['2001:0000:4136:e378:8000:63bf:3fff:fdd2'],
+    // Non-canonical spellings of blocked embeddings (finding #12749): the
+    // check classifies the parsed address, never the raw text.
+    ['64:ff9b:0:0:0:0:169.254.169.254'],
+    ['64:ff9b::0:7f00:1'],
+    ['64:FF9B::A9FE:A9FE'],
+    ['0:0:0:0:0:ffff:127.0.0.1'],
+    ['0000:0000:0000:0000:0000:ffff:7f00:0001'],
+    ['::0:7f00:1'],
+    ['0:0:0:0:0:0:127.0.0.1'],
+    // Reserved ::/8 outside the four unwrapped embeddings is not routable.
+    ['::ffff:0:0:7f00:1'],
+    ['::ffff:0:0:a9fe:a9fe'],
+    ['0:0:0:ffff:0:0:a9fe:a9fe'],
+    ['::1:0:0:0:1'],
+    // Zone ids do not parse as a URL host — fail closed.
+    ['fe80::1%eth0'],
     ['not-an-ip'],
     [''],
   ])('blocks %s', (addr) => {
@@ -82,6 +98,11 @@ describe('isBlockedAddress', () => {
     // SIIT of a public IPv4 is unwrapped, not blocked.
     ['::ffff:0:8.8.8.8'],
     ['::ffff:0:0808:0808'],
+    // Mapped / NAT64 public IPv4 in any spelling (finding #12749).
+    ['::ffff:8.8.8.8'],
+    ['0:0:0:0:0:ffff:0808:0808'],
+    ['64:ff9b:0:0:0:0:8.8.8.8'],
+    ['64:FF9B::808:808'],
   ])('allows public %s', (addr) => {
     expect(isBlockedAddress(addr)).toBe(false);
   });

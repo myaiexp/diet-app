@@ -1,12 +1,14 @@
-// Shared write-body field limits (strings, arrays, URLs, servings 1–12)
+// Shared write-body field limits (strings, arrays, URLs, servings, numeric caps)
 
 import { z } from 'zod';
 import { MAX_SERVINGS, MIN_SERVINGS } from '../servings.js';
 import { isIsoDate, isUuid } from '../validation.js';
 
 // Caps sit well under the 1 MiB router bodyLimit (and nginx's 2M) so an
-// authenticated client cannot persist multi-megabyte text/JSONB. Numbers are
-// the contract the limit tests hardcode — raise one, update the matching test.
+// authenticated client cannot persist multi-megabyte text/JSONB. Numeric caps
+// keep int4 columns (max 2147483647) and numeric quantities out of PG range
+// errors, which surface as a bare 500. Numbers are the contract the limit
+// tests hardcode — raise one, update the matching test.
 export const LIMITS = {
   /** Recipe title, cuisine, extracted ingredient name. */
   short: 200,
@@ -28,6 +30,13 @@ export const LIMITS = {
   ids: 200,
   scheduleNote: 500,
   macroGrams: 10_000,
+  /** Recipe prepTime / totalTime: 30 days, room for multi-week ferments. */
+  minutes: 43_200,
+  /** Profile daily calorie targets. */
+  calories: 20_000,
+  householdSize: 20,
+  /** Recipe-line, pantry and shopping quantities: a tonne in g, 1000 L in ml. */
+  quantity: 1_000_000,
   /** Meal-plan writes, cook-preview, recipe GET ?servings=, and recipe writes. */
   servings: MAX_SERVINGS,
 } as const;
@@ -36,6 +45,13 @@ export const LIMITS = {
 export const servingsCoerced = z.coerce.number().int().min(MIN_SERVINGS).max(LIMITS.servings);
 /** Recipe servings — JSON number, same 1–12 cap as the UI scaler. */
 export const servingsInt = z.number().int().min(MIN_SERVINGS).max(LIMITS.servings);
+
+/** Recipe prepTime / totalTime in whole minutes. */
+export const minutesInt = z.number().int().nonnegative().max(LIMITS.minutes);
+/** A stored amount of an ingredient (JSON may send a numeric string). */
+export const quantityPositive = z.coerce.number().positive().max(LIMITS.quantity);
+/** Shopping netToBuy — 0 is a real value ("I have enough"). */
+export const quantityNonnegative = z.coerce.number().nonnegative().max(LIMITS.quantity);
 
 export const uuidField = z.string().refine(isUuid, { message: 'Invalid UUID' });
 export const isoDateField = z.string().refine(isIsoDate, { message: 'Invalid date' });

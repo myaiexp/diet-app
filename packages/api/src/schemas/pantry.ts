@@ -2,13 +2,13 @@
 
 import { z } from 'zod';
 import { LOCATIONS } from '../vocab.js';
-import { unitText, uuidField, isoDateField } from './fields.js';
+import { unitText, uuidField, isoDateField, quantityPositive } from './fields.js';
 
 const locationEnum = z.enum(LOCATIONS);
 
 export const pantryCreateSchema = z.object({
   ingredientId: uuidField,
-  quantity: z.coerce.number().positive(),
+  quantity: quantityPositive,
   unit: unitText,
   location: locationEnum,
   addedDate: isoDateField.optional(),
@@ -18,7 +18,7 @@ export const pantryCreateSchema = z.object({
 
 export const pantryPatchSchema = z
   .object({
-    quantity: z.coerce.number().positive().optional(),
+    quantity: quantityPositive.optional(),
     unit: unitText.optional(),
     location: locationEnum.optional(),
     addedDate: isoDateField.optional(),

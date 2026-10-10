@@ -21,19 +21,31 @@ describe('systemd/diet-app-api.service sandbox', () => {
     expect(unit).toMatch(/^NoNewPrivileges=yes$/m);
   });
 
-  test('denies link-local, RFC1918, CGNAT, and IPv6 ULA (finding #7854)', () => {
+  // Every non-routable range the recipe-import blocklist (ai/ssrf-host.ts)
+  // refuses, minus loopback (finding #7854, finding #12748). 0.0.0.0/8 matters
+  // most: a connect to 0.0.0.0 lands on 127.0.0.1, i.e. Postgres and nginx.
+  test('denies the import blocklist ranges except loopback', () => {
     const deny = unit.match(/^IPAddressDeny=(.+)$/m);
     expect(deny).not.toBeNull();
     const ranges = deny![1]!.split(/\s+/);
     for (const need of [
-      '169.254.0.0/16',
+      '0.0.0.0/8',
       '10.0.0.0/8',
-      '172.16.0.0/12',
-      '192.168.0.0/16',
       '100.64.0.0/10',
+      '169.254.0.0/16',
+      '172.16.0.0/12',
+      '192.0.0.0/24',
+      '192.168.0.0/16',
+      '198.18.0.0/15',
+      '224.0.0.0/4',
+      '240.0.0.0/4',
       'fc00::/7',
       'fe80::/10',
       'fec0::/10',
+      'ff00::/8',
+      '2002::/16',
+      '2001::/32',
+      '64:ff9b:1::/48',
     ]) {
       expect(ranges, need).toContain(need);
     }

@@ -2,7 +2,15 @@
 
 import { z } from 'zod';
 import { LOCATIONS, LIST_STATUSES } from '../vocab.js';
-import { LIMITS, unitText, trimmedNote, uuidField, isoDateField } from './fields.js';
+import {
+  LIMITS,
+  unitText,
+  trimmedNote,
+  uuidField,
+  isoDateField,
+  quantityPositive,
+  quantityNonnegative,
+} from './fields.js';
 
 // Any date in the target week — the route snaps it to the ISO Monday.
 // includeOptional opts the recipes' optional lines into the week's demand; it is
@@ -31,7 +39,7 @@ export const listPatchSchema = z
 export const itemCreateSchema = z
   .object({
     ingredientId: uuidField,
-    quantityNeeded: z.coerce.number().positive(),
+    quantityNeeded: quantityPositive,
     unit: unitText,
     customNote: trimmedNote.optional(),
   })
@@ -46,8 +54,8 @@ export const itemCreateSchema = z
 export const itemPatchSchema = z
   .object({
     bought: z.boolean().optional(),
-    quantityNeeded: z.coerce.number().positive().optional(),
-    netToBuy: z.coerce.number().nonnegative().optional(),
+    quantityNeeded: quantityPositive.optional(),
+    netToBuy: quantityNonnegative.optional(),
     customNote: trimmedNote.nullable().optional(),
   })
   .strict();

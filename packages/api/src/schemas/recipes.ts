@@ -12,6 +12,8 @@ import {
   noteText,
   httpUrl,
   servingsInt,
+  minutesInt,
+  quantityPositive,
   uuidField,
 } from './fields.js';
 
@@ -19,7 +21,7 @@ const sourceTypeEnum = z.enum(SOURCE_TYPES);
 
 export const recipeIngredientLineSchema = z.object({
   ingredientId: uuidField,
-  quantity: z.coerce.number().positive(),
+  quantity: quantityPositive,
   unit: unitText,
   optional: z.boolean().optional(),
   notes: noteText.nullable().optional(),
@@ -31,8 +33,8 @@ export const recipeCreateSchema = z.object({
   sourceUrl: httpUrl.nullable().optional(),
   parentRecipeId: uuidField.nullable().optional(),
   steps: stepsField.optional(),
-  prepTime: z.number().int().nonnegative().optional(),
-  totalTime: z.number().int().nonnegative().optional(),
+  prepTime: minutesInt.optional(),
+  totalTime: minutesInt.optional(),
   servings: servingsInt.optional(),
   effortScore: z.number().int().min(1).max(5).optional(),
   tags: tagsField.optional(),
@@ -47,8 +49,8 @@ export const recipePatchSchema = z
     sourceUrl: httpUrl.nullable().optional(),
     parentRecipeId: uuidField.nullable().optional(),
     steps: stepsField.optional(),
-    prepTime: z.number().int().nonnegative().optional(),
-    totalTime: z.number().int().nonnegative().optional(),
+    prepTime: minutesInt.optional(),
+    totalTime: minutesInt.optional(),
     servings: servingsInt.optional(),
     effortScore: z.number().int().min(1).max(5).optional(),
     tags: tagsField.optional(),
