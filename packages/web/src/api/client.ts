@@ -1,6 +1,11 @@
 // fetch wrapper: base URL, JSON bodies, request timeout, one place status → ApiError
 
-import { ApiError, SessionRejectedError, type ApiErrorBody } from './errors.js';
+import {
+  ApiError,
+  SessionRejectedError,
+  UnexpectedBodyError,
+  type ApiErrorBody,
+} from './errors.js';
 import { claimSessionReload, clearSessionReload } from './reload-guard.js';
 
 export type QueryParams = Record<string, string | number | boolean | undefined>;
@@ -59,14 +64,16 @@ function buildUrl(path: string, params?: QueryParams): string {
   return qs ? `${url}?${qs}` : url;
 }
 
-async function readBody(res: Response): Promise<unknown> {
+/** Parsed JSON, or the raw text when the body is not JSON (a proxy or SPA page). */
+type Body = { json: unknown } | { text: string };
+
+async function readBody(res: Response): Promise<Body> {
   const text = await res.text();
-  if (!text) return null;
+  if (!text) return { json: null };
   try {
-    return JSON.parse(text) as unknown;
+    return { json: JSON.parse(text) as unknown };
   } catch {
-    // A proxy error page, not the API. Keep the text as the error string.
-    return { error: text.slice(0, 200) };
+    return { text: text.slice(0, 200) };
   }
 }
 
@@ -101,8 +108,15 @@ async function send<T>(
   if (res.status === 204) return undefined as T;
 
   const body = await readBody(res);
-  if (!res.ok) throw new ApiError(res.status, body as ApiErrorBody | null);
-  return body as T;
+  if (!res.ok) {
+    // A proxy error page keeps its text as the error string.
+    const errBody = 'json' in body ? (body.json as ApiErrorBody | null) : { error: body.text };
+    throw new ApiError(res.status, errBody);
+  }
+  // A success status with a non-JSON body is never API data; resolving it
+  // would hand screens an `{ error }` object shaped like the resource.
+  if ('text' in body) throw new UnexpectedBodyError(res.status, body.text);
+  return body.json as T;
 }
 
 export function apiGet<T>(path: string, params?: QueryParams): Promise<T> {

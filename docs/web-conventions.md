@@ -63,7 +63,11 @@
   (API_TOKEN mismatch), so it throws `SessionRejectedError` and the screen's
   error panel says so instead of reloading in a loop. Why `/api/` answers 401
   instead of redirecting: `docs/auth-deploy.md`.
-- Failures are `ApiError(status, body)`. `userMessage(e)` (`api/errors.ts`) is
+- Failures are `ApiError(status, body)`; a non-JSON error body (proxy page)
+  becomes `body.error`, cut to 200 chars. A 2xx with a non-JSON body (SPA
+  fallback, misrouted proxy) throws `UnexpectedBodyError` — deliberately not an
+  `ApiError`, so status branches never read it as an API answer.
+  `userMessage(e)` (`api/errors.ts`) is
   the one place a failure becomes user-facing copy (timeout, network, 5xx
   wording, else the API's `error` string); `fieldErrors(e)` flattens Zod
   `details`. Screens don't map statuses to text themselves.

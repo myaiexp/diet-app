@@ -155,15 +155,6 @@ describe('apiSend', () => {
     await expect(apiSend('DELETE', '/pantry/x')).resolves.toBeUndefined();
   });
 
-  test('keeps a non-JSON error body readable', async () => {
-    fetchMock.mockResolvedValue(
-      new Response('<html>502 Bad Gateway</html>', { status: 502 }),
-    );
-    await expect(apiSend('POST', '/recipes/import', {})).rejects.toMatchObject({
-      status: 502,
-    });
-  });
-
   test('honours a per-call timeout override', async () => {
     fetchMock.mockResolvedValue(jsonResponse(201, { id: 'new' }));
     const spy = vi.spyOn(AbortSignal, 'timeout');

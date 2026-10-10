@@ -17,6 +17,15 @@ describe('units', () => {
     expect(toBase(1, 'tl')).toEqual({ dimension: 'volume', value: 5 });
   });
 
+  test('resolves the metric and English volume units each by its own entry', () => {
+    // Independent table keys: dropping one turns imported lines in that unit
+    // into unit_mismatch / unknown_unit while the Finnish spoons stay green.
+    expect(toBase(1, 'ml')).toEqual({ dimension: 'volume', value: 1 });
+    expect(toBase(1, 'cl')).toEqual({ dimension: 'volume', value: 10 });
+    expect(toBase(1, 'tbsp')).toEqual({ dimension: 'volume', value: 15 });
+    expect(toBase(1, 'tsp')).toEqual({ dimension: 'volume', value: 5 });
+  });
+
   test('treats piece-like units as one count dimension', () => {
     for (const u of ['piece', 'pieces', 'pcs', 'kpl']) {
       expect(toBase(3, u)).toEqual({ dimension: 'count', value: 3 });
@@ -39,6 +48,8 @@ describe('units', () => {
     expect(fromBase(1000, 'kg')).toBe(1);
     expect(fromBase(250, 'dl')).toBe(2.5);
     expect(fromBase(15, 'rkl')).toBe(1);
+    expect(fromBase(45, 'tbsp')).toBe(3);
+    expect(fromBase(30, 'cl')).toBe(3);
   });
 
   test('mass and volume never share a dimension', () => {

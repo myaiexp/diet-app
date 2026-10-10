@@ -31,6 +31,21 @@ export class SessionRejectedError extends ApiError {
   }
 }
 
+/**
+ * A success status whose body is not JSON — an SPA fallback or a misrouted
+ * proxy answered, not the API. Deliberately not an ApiError: code that branches
+ * on API status codes must not read a 200 HTML page as an API answer.
+ */
+export class UnexpectedBodyError extends Error {
+  readonly status: number;
+
+  constructor(status: number, snippet: string) {
+    super(`HTTP ${status} with a non-JSON body: ${snippet}`);
+    this.name = 'UnexpectedBodyError';
+    this.status = status;
+  }
+}
+
 export function isApiError(e: unknown): e is ApiError {
   return e instanceof ApiError;
 }
@@ -47,6 +62,12 @@ const PAGINATION =
 const SESSION_REJECTED =
   'The API still rejects this session right after a reload, so the app stopped reloading. ' +
   'Reload by hand; if it keeps happening, API_TOKEN in .env and the nginx vhost disagree.';
+
+// A write may or may not have reached the API before the page came back, so
+// this copy cannot promise "nothing was saved".
+const UNEXPECTED_BODY =
+  'The server answered with a web page instead of data — a proxy or routing problem. ' +
+  'Reload and check before trying again.';
 
 function isAbortLike(e: unknown): boolean {
   // AbortSignal.timeout throws DOMException TimeoutError. Some engines still
@@ -70,6 +91,7 @@ export function userMessage(e: unknown): string {
   if (isAbortLike(e)) return TIMEOUT;
   if (e instanceof PaginationLimitError) return PAGINATION;
   if (e instanceof SessionRejectedError) return SESSION_REJECTED;
+  if (e instanceof UnexpectedBodyError) return UNEXPECTED_BODY;
   if (!isApiError(e)) {
     // fetch rejects (offline, DNS, TLS) with a TypeError carrying no useful text.
     return NETWORK;
