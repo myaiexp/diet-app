@@ -75,9 +75,9 @@ export function shoppingListCompleteRoutes(db: Db): Hono {
     // `overrides` is optional, but c.req.json() throws SyntaxError on a
     // genuinely empty request body (no bytes to parse) — parseJsonBody turns
     // that into 'Invalid JSON body'. We deliberately don't special-case a
-    // bodyless request into "no overrides": callers must send at least `{}`,
-    // matching every write route here but POST /cook, which was body-less
-    // before it grew an override and so opts into `allowEmptyBody`.
+    // bodyless request into "no overrides": callers must send at least `{}`.
+    // Zero-byte bodies are only POST /meal-plans/:id/cook and
+    // POST /recipes/:id/fork, via allowEmptyBody.
     const parsed = await parseJsonBody(c, completeSchema);
     if (!parsed.ok) return parsed.response;
     const overrides = new Map(

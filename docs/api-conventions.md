@@ -79,9 +79,10 @@ reaches Postgres as an unhandled `invalid input syntax for type uuid`.
   (`json-body.ts`) folds the JSON read, the Zod `safeParse`, and the
   `Invalid JSON body` / `Validation failed` / `Empty patch body` 400s into one
   call — `const parsed = await parseJsonBody(...); if (!parsed.ok) return parsed.response;`.
-  A write route requires at least `{}`; the one exception is `POST /cook`, whose
-  whole body is an optional override, so it passes `allowEmptyBody` and reads
-  zero bytes as `{}`.
+  A write route requires at least `{}`. `POST /meal-plans/:id/cook` and
+  `POST /recipes/:id/fork` accept a zero-byte body via `allowEmptyBody` and
+  read it as `{}` — cook's `{ servings }` and fork's `{ title }` are both
+  optional. Every other write still requires at least `{}`.
   Routes never re-inline those shapes and never import `z`. Schemas live under
   `schemas/`. Free-text, array, and URL fields share caps in
   `schemas/fields.ts` (title 200, notes 4k, steps 80×4k, http(s) URLs 2048,
