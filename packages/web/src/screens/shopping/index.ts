@@ -171,7 +171,7 @@ export function shoppingScreen(): Screen {
           "This week doesn't have a shopping list. Generate one from the meal plan — needed minus what's already in the pantry.",
         ),
         button('btn btn-primary', "generate this week's list", () =>
-          void runGenerate(isoToday(), { onGenerated: handleGenerated }),
+          void runGenerate(isoToday(), { onGenerated: handleGenerated }, false, () => ctx.isStale()),
         ),
       ),
     );
@@ -197,7 +197,12 @@ export function shoppingScreen(): Screen {
           // an emptied list that has moved on doesn't get offered a dead button.
           currentList.status === 'draft'
             ? button('btn btn-ghost', 'regenerate', () =>
-                void runGenerate(currentList.weekStarting, { onGenerated: handleGenerated }, includeOptional),
+                void runGenerate(
+                  currentList.weekStarting,
+                  { onGenerated: handleGenerated },
+                  includeOptional,
+                  () => ctx.isStale(),
+                ),
               )
             : null,
         ),
@@ -228,7 +233,7 @@ export function shoppingScreen(): Screen {
       },
     };
     bodyEl.replaceChildren(
-      buildShoppingHeader(list, headerHandlers, headerState),
+      buildShoppingHeader(list, headerHandlers, headerState, () => ctx.isStale()),
       ...renderNotices(),
       renderGroups(list),
     );
