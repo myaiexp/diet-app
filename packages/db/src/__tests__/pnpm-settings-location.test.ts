@@ -32,5 +32,8 @@ describe('pnpm settings location', () => {
     expect(workspace).toMatch(
       /^\s+'drizzle-kit>@esbuild-kit\/esm-loader':\s*npm:tsx@\^4$/m,
     );
+    // GHSA-68fv-2mgg-jv7q. Parents allow ^1.2.1, which resolved to the
+    // vulnerable release; 1.2.2 is the patched one.
+    expect(workspace).toMatch(/^\s+source-map-js:\s*1\.2\.2$/m);
   });
 });
