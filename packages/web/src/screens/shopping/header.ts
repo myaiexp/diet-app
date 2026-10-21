@@ -8,14 +8,15 @@ import type {
   ShoppingListStatus,
   SkippedGenerateLine,
   SkippedCompleteItem,
+  ShoppingCompleteResult,
 } from '../../api/types.js';
 import { generateShoppingList, completeShoppingList } from '../../api/shopping.js';
 import { userMessage } from '../../api/errors.js';
 import { toNumber } from '../../format/quantity.js';
 import { isoWeekNumber } from '../../format/date.js';
 import { el, button } from '../../ui/dom.js';
-import { openModal } from '../../ui/modal.js';
-import { modalFooter, submitModal } from '../../ui/modal-form.js';
+import { closeModal, openModal } from '../../ui/modal.js';
+import { modalFooter } from '../../ui/modal-form.js';
 import { say } from '../../ui/toast.js';
 import { openAddShoppingItemModal } from '../../modals/shopping-add.js';
 
@@ -40,17 +41,26 @@ export async function runGenerate(
   weekStarting: string,
   handlers: Pick<HeaderHandlers, 'onGenerated'>,
   includeOptional = false,
+  // The header has no screen ctx. Callers pass the mount's stale check so a
+  // generate that settles after navigation does not toast on the next screen.
+  isStale: () => boolean = () => false,
 ): Promise<void> {
   try {
     const result = await generateShoppingList(weekStarting, includeOptional);
+    if (isStale()) return;
     say('Shopping list generated.', 'success');
     handlers.onGenerated({ ...result.list, items: result.items }, result.skipped);
   } catch (e) {
+    if (isStale()) return;
     say(userMessage(e), 'error');
   }
 }
 
-function openCompleteConfirm(list: ShoppingList, handlers: HeaderHandlers): void {
+function openCompleteConfirm(
+  list: ShoppingList,
+  handlers: HeaderHandlers,
+  isStale: () => boolean,
+): void {
   // Only bought items with something actually left to buy get filed — a
   // bought row that the pantry already fully covered (netToBuy 0) files
   // nothing, so naming *that* count is what makes the confirm honest.
@@ -62,12 +72,22 @@ function openCompleteConfirm(list: ShoppingList, handlers: HeaderHandlers): void
   );
   const footer = modalFooter({ label: 'complete', onClick: () => void commit() });
 
-  // No errorBox: a failure toasts, and the confirm stays open to retry.
+  // A failure toasts and the confirm stays open to retry. Success closes
+  // before the screen re-renders. Neither toast fires if the screen has gone:
+  // submitModal would have toasted before this function could tell.
   async function commit(): Promise<void> {
-    await submitModal(() => completeShoppingList(list.id), {
-      success: 'Shopping list completed.',
-      onDone: (result) => handlers.onCompleted({ ...list, ...result.list }, result.skipped),
-    });
+    let result: ShoppingCompleteResult;
+    try {
+      result = await completeShoppingList(list.id);
+    } catch (e) {
+      if (isStale()) return;
+      say(userMessage(e), 'error');
+      return;
+    }
+    closeModal();
+    if (isStale()) return;
+    say('Shopping list completed.', 'success');
+    handlers.onCompleted({ ...list, ...result.list }, result.skipped);
   }
 
   openModal({ title: 'Complete shopping list', body, footer, width: 380 });
@@ -84,6 +104,7 @@ export function buildShoppingHeader(
   list: ShoppingList,
   handlers: HeaderHandlers,
   state: HeaderState,
+  isStale: () => boolean = () => false,
 ): HTMLElement {
   const total = list.items.length;
   const boughtCount = list.items.filter((i) => i.bought).length;
@@ -103,7 +124,7 @@ export function buildShoppingHeader(
     actions.append(
       optionalChip,
       button('btn btn-ghost btn-sm', 'regenerate', () =>
-        void runGenerate(list.weekStarting, handlers, state.includeOptional),
+        void runGenerate(list.weekStarting, handlers, state.includeOptional, isStale),
       ),
     );
   } else {
@@ -111,7 +132,7 @@ export function buildShoppingHeader(
   }
   if (list.status !== 'done' && boughtCount > 0) {
     actions.appendChild(
-      button('btn btn-primary btn-sm', 'complete', () => openCompleteConfirm(list, handlers)),
+      button('btn btn-primary btn-sm', 'complete', () => openCompleteConfirm(list, handlers, isStale)),
     );
   }
   if (list.status !== 'done') {

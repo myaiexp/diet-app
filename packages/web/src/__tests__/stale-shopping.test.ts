@@ -107,9 +107,9 @@ describe.each(FRESH_THEN_STALE)('shopping screen, $mode when the call settles', 
     expect(wrote.toast).toBe(stale ? null : 'error');
   });
 
-  // runGenerate and the complete commit (header.ts) toast before handing the
-  // result to the screen and have no ctx of their own, so these two cases pin
-  // the screen's handlers — DOM and subtitle — not the toast.
+  // Generate and complete toast from the header, which has no screen ctx
+  // of its own. The toast has to follow the same stale rule as the handler:
+  // a settle after navigation must not announce itself on the next screen.
   test('a first-run generate', async () => {
     const generate = hold<unknown>();
     const { root, ctx } = await mountWith({
@@ -126,6 +126,24 @@ describe.each(FRESH_THEN_STALE)('shopping screen, $mode when the call settles', 
 
     expect(wrote.dom).toBe(!stale);
     expect(wrote.subtitle).toBe(!stale);
+    expect(wrote.toast).toBe(stale ? null : 'success');
+  });
+
+  test('a first-run generate that fails', async () => {
+    const generate = hold<Response>();
+    const { root, ctx } = await mountWith({
+      'GET /api/shopping-lists/current': jsonResponse(404, { error: 'Not found' }),
+      'POST /api/shopping-lists/generate': generate.handler,
+    });
+    root.querySelector<HTMLButtonElement>('.empty-state .btn-primary')!.click();
+    await generate.requested();
+
+    const wrote = await settleWith(root, ctx, stale, () =>
+      generate.resolve(jsonResponse(500, { error: 'boom' })),
+    );
+
+    expect(wrote.dom).toBe(false);
+    expect(wrote.toast).toBe(stale ? null : 'error');
   });
 
   test('a list completion', async () => {
@@ -146,6 +164,26 @@ describe.each(FRESH_THEN_STALE)('shopping screen, $mode when the call settles', 
 
     expect(wrote.dom).toBe(!stale);
     expect(wrote.subtitle).toBe(!stale);
+    expect(wrote.toast).toBe(stale ? null : 'success');
+  });
+
+  test('a list completion that fails', async () => {
+    const complete = hold<Response>();
+    const list = makeShoppingList({ items: [makeShoppingItem({ bought: true })] });
+    const { root, ctx } = await mountWith({
+      'GET /api/shopping-lists/current': list,
+      'POST /api/shopping-lists/:id/complete': complete.handler,
+    });
+    clickAction('complete');
+    document.querySelector<HTMLButtonElement>('.modal-foot .btn-primary')!.click();
+    await complete.requested();
+
+    const wrote = await settleWith(root, ctx, stale, () =>
+      complete.resolve(jsonResponse(500, { error: 'boom' })),
+    );
+
+    expect(wrote.dom).toBe(false);
+    expect(wrote.toast).toBe(stale ? null : 'error');
   });
 
   test('a hand-added item', async () => {

@@ -8,3 +8,6 @@ packages:
 # Lives here, not in package.json's `pnpm` block: pnpm 11 ignores that field.
 overrides:
   'drizzle-kit>@esbuild-kit/esm-loader': npm:tsx@^4
+  # GHSA-68fv-2mgg-jv7q: magicast (via @vitest/coverage-v8) and css-tree/postcss
+  # allow ^1.2.1, and the lockfile had resolved 1.2.1. 1.2.2 is the patched release.
+  source-map-js: 1.2.2

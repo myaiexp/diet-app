@@ -291,8 +291,12 @@ parent selector for this nested dep; a flat `"@esbuild-kit/esm-loader"` key
 would not rewrite drizzle-kit's own dependency. Remove the override once
 drizzle-kit (>0.31.10) drops the vestigial dep.
 
+The same `overrides` map pins `source-map-js` to `1.2.2` (GHSA-68fv-2mgg-jv7q).
+`magicast` (under `@vitest/coverage-v8`), `css-tree` and `postcss` all allow
+`^1.2.1`, which the lockfile had resolved to the vulnerable `1.2.1`.
+
 It lives in `pnpm-workspace.yaml` rather than package.json's `pnpm` block
 because pnpm 11 ignores that field — silently, at install time, so an override
 that stopped applying would surface only as a fatter lockfile.
 `packages/db/src/__tests__/pnpm-settings-location.test.ts` guards the location
-(idea #3195).
+(idea #3195) and the `source-map-js` pin.
