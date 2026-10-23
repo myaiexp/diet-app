@@ -19,9 +19,10 @@ export const shoppingLists = pgTable(
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
   },
-  // One list per week. GET /current picks the newest week <= today, which is
-  // ambiguous with two lists for the same Monday; the constraint also turns
-  // generate's "does one exist" check from a TOCTOU race into a 23505 → 409.
+  // One list per week. GET /current picks this week's list (else the newest
+  // still-open earlier one), which is ambiguous with two lists for the same
+  // Monday; the constraint also turns generate's "does one exist" check from a
+  // TOCTOU race into a 23505 → 409.
   (t) => [uniqueIndex('shopping_lists_week_starting_idx').on(t.weekStarting)],
 );
 

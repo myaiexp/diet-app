@@ -61,7 +61,8 @@ paragraph of "why", the why belongs in the linked subdoc.
   **`docs/cook-flow.md`**. Design: `docs/plans/2026-07-20-cook-flow-design.md`.
 - **Shopping lists**: generate merges, never rebuilds; netting is a per-day
   FEFO simulation (`quantityInPantry` = demand covered, not stock on hand);
-  `done` is terminal via `/complete`. Rules: **`docs/shopping-lists.md`**.
+  `done` is terminal via `/complete`; `/current` is this week's list, else an
+  open earlier one, never a completed earlier week. Rules: **`docs/shopping-lists.md`**.
   Design: `docs/plans/2026-08-04-shopping-lists-design.md`.
 - **Grocery products** are SKUs, not ingredient concepts — do not merge the
   tables or overwrite `ingredients.nutritionPer100g` from a product. Schema,

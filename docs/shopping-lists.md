@@ -1,7 +1,7 @@
 # Shopping lists
 
-> Item keys, generation merge, per-day netting, `/complete`, aisle grouping, and
-> staples. Design: `docs/plans/2026-08-04-shopping-lists-design.md`.
+> Item keys, generation merge, per-day netting, `/current`, `/complete`, aisle
+> grouping, and staples. Design: `docs/plans/2026-08-04-shopping-lists-design.md`.
 > `CLAUDE.md` keeps the map.
 
 ## Items are keyed by dimension and stored in the base unit
@@ -71,6 +71,19 @@ the arithmetic PATCH checks) so the identity holds on the stored values too, not
 only before rounding — otherwise a both-fields PATCH of a fresh row could 400 on
 a one-micro-unit drift. The client's row
 line says `pantry covers 200 g · 200 g short` for exactly that reason.
+
+## `/current` is this week, or an open earlier week
+
+`GET /current` returns this ISO week's list in any status; failing that, the
+newest earlier list that is not `done`; failing that, 404. Future weeks never
+qualify. A completed earlier week must not: the screen's only path to this
+week's generate is that 404 (first run) or the carry-over notice, so returning
+last week's `done` list would hide the new week for good. An open earlier list
+does qualify, because its bought items still need `/complete` to reach the
+pantry. The screen marks it with a notice naming both weeks and a `generate
+vk N's list` button for today (`screens/shopping/carry-over.ts`), and withholds
+regenerate — that would rewrite demand for meals already past. Once this
+week's list exists, the carry-over no longer reaches the screen.
 
 ## `done` is terminal
 

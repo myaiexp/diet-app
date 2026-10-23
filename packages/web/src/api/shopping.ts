@@ -10,7 +10,11 @@ import type {
   ShoppingCompleteResult,
 } from './types.js';
 
-/** The list whose week most recently started (week_starting <= today). 404 when none exists. */
+/**
+ * This ISO week's list in any status, else the newest earlier list still open
+ * (a carry-over whose bought items are unfiled), else 404. Never a completed
+ * earlier week and never a future one — docs/shopping-lists.md.
+ */
 export function getCurrentShoppingList(): Promise<ShoppingList> {
   return apiGet<ShoppingList>('/shopping-lists/current');
 }

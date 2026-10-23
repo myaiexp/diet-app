@@ -3,7 +3,7 @@
 // that keep `done` owned by POST /:id/complete, and the delete guard.
 
 import { describe, test, expect } from 'vitest';
-import { asc, desc, lte } from 'drizzle-orm';
+import { asc, desc } from 'drizzle-orm';
 import { shoppingLists } from '@diet-app/db';
 import { shoppingListsRoutes } from '../routes/shopping-lists.js';
 import { makeDbMock, makeSelectMock, mergedRow } from './db-mock.js';
@@ -110,7 +110,8 @@ describe('GET /api/shopping-lists/current', () => {
   test('selects by week_starting, not createdAt', async () => {
     // Regression for the audit finding: the old handler ordered by createdAt with
     // no filter, so a future-week draft (higher createdAt) shadowed the real
-    // current list. The fix filters week_starting <= today and orders by it desc.
+    // current list. Which rows the filter admits is shopping-list-current-sql's
+    // job — only Postgres can show it; this pins the ordering it relies on.
     let captured: any;
     const db = relationalDb((config) => {
       captured = config;
@@ -118,8 +119,7 @@ describe('GET /api/shopping-lists/current', () => {
     });
     await shoppingListsRoutes(db).request('/current');
 
-    const today = new Date().toISOString().slice(0, 10);
-    expect(captured.where).toEqual(lte(shoppingLists.weekStarting, today));
+    expect(captured.where).toBeDefined();
     expect(captured.orderBy).toEqual(desc(shoppingLists.weekStarting));
     expect(captured.orderBy).not.toEqual(desc(shoppingLists.createdAt));
   });

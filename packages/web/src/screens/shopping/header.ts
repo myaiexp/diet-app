@@ -26,7 +26,8 @@ export interface HeaderHandlers {
   onItemCreated: (item: ShoppingItem) => void;
 }
 
-function regenerateUnavailableReason(status: ShoppingListStatus): string {
+function regenerateUnavailableReason(status: ShoppingListStatus, earlierWeek: boolean): string {
+  if (earlierWeek) return 'earlier week — regeneration is only offered for this week';
   return status === 'done'
     ? 'completed — regeneration is not offered on a finished list'
     : 'already being shopped — regeneration is not offered mid-shop';
@@ -98,6 +99,10 @@ export interface HeaderState {
    * persisted: the API takes it per request, so it applies to this shop only. */
   includeOptional: boolean;
   onToggleOptional: () => void;
+  /** The list is a carry-over from before this week. Regenerating it would
+   * rewrite demand for meals already past; the carry-over notice offers this
+   * week's generate instead. */
+  earlierWeek: boolean;
 }
 
 export function buildShoppingHeader(
@@ -113,7 +118,7 @@ export function buildShoppingHeader(
   const meterFill = el('div', { class: 'shopping-meter-fill', style: `width:${pct}%` });
 
   const actions = el('div', { class: 'flex gap-2 shopping-actions' });
-  if (list.status === 'draft') {
+  if (list.status === 'draft' && !state.earlierWeek) {
     const optionalChip = button(
       `chip${state.includeOptional ? ' is-on' : ''}`,
       'include optional',
@@ -128,7 +133,7 @@ export function buildShoppingHeader(
       ),
     );
   } else {
-    actions.appendChild(el('span', { class: 'helper' }, regenerateUnavailableReason(list.status)));
+    actions.appendChild(el('span', { class: 'helper' }, regenerateUnavailableReason(list.status, state.earlierWeek)));
   }
   if (list.status !== 'done' && boughtCount > 0) {
     actions.appendChild(

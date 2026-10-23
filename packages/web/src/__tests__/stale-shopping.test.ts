@@ -7,6 +7,7 @@ import { closeModal } from '../ui/modal.js';
 import { shoppingScreen } from '../screens/shopping/index.js';
 import { jsonResponse, makeCtx, mountRoot, routeFetch, type RouteTable } from './harness.js';
 import { makeIngredient, makeShoppingItem, makeShoppingList } from './fixtures.js';
+import './pin-fixture-week.js';
 import { FRESH_THEN_STALE, hold, settleWith, type TestCtx } from './stale-probe.js';
 
 const POTATO = makeIngredient({ id: 'ing-potato', name: 'Potato', aliases: ['peruna'], defaultUnit: 'kg' });

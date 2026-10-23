@@ -220,7 +220,9 @@ cook-confirm's close-mid-debounce case) install fake timers
 native); `flush(ms)` then advances those timers instead of sleeping.
 Suites whose fixtures derive today (`plan`, `plan-edit`, `today`,
 `today-status`) import `pin-sunday.ts`, which freezes `Date` at Sunday
-2026-08-09 12:00 UTC and fakes nothing else. Week-label expectations are
+2026-08-09 12:00 UTC and fakes nothing else. The shopping suites import
+`pin-fixture-week.ts` (Wed 2026-08-19) instead, so `makeShoppingList`'s week
+reads as this week's rather than an earlier week's carry-over. Week-label expectations are
 literals, not `isoWeekNumber` of the same date the screen formats.
 
 `routeFetch(routes, { unmatched })` is the fetch-side analog of

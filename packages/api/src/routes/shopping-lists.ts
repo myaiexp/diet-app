@@ -3,7 +3,7 @@
 import { Hono } from 'hono';
 import type { Db } from '@diet-app/db';
 import { shoppingLists, shoppingListItems } from '@diet-app/db';
-import { asc, desc, eq, lte } from 'drizzle-orm';
+import { and, asc, desc, eq, gte, lte, ne, or } from 'drizzle-orm';
 import { isUuid } from '../validation.js';
 import { getPagination } from '../pagination.js';
 import { notFound, badRequest, conflict } from '../responses.js';
@@ -11,7 +11,7 @@ import { parseJsonBody } from '../json-body.js';
 import { buildPatch } from '../patch-builder.js';
 import { listPatchSchema } from '../schemas/shopping-lists.js';
 import { sortListItems } from '../shopping-sort.js';
-import { todayUtc } from '../date.js';
+import { getISOWeekBounds, todayUtc } from '../date.js';
 import { shoppingListGenerateRoutes } from './shopping-list-generate.js';
 import { shoppingListItemsRoutes } from './shopping-list-items.js';
 import { shoppingListCompleteRoutes } from './shopping-list-complete.js';
@@ -40,14 +40,20 @@ export function shoppingListsRoutes(db: Db): Hono {
   app.route('/', shoppingListGenerateRoutes(db));
 
   app.get('/current', async (c) => {
-    // "Current" = the list whose week has most recently started (week_starting on
-    // or before today), ordered newest-first — not the most recently *created*
-    // row. Ordering by createdAt would let a list drafted in advance for a future
-    // week shadow the one actually covering the current week. The <= today filter
-    // also excludes future-week drafts entirely.
+    // "Current" = this ISO week's list in any status; failing that, the newest
+    // earlier list still open (draft/shopping), whose bought items have not
+    // been filed to the pantry yet; failing that, 404. A completed earlier week
+    // never qualifies — returning it would stop the 404 the screen's generate
+    // keys off, and nothing would ever create this week's list. Future weeks
+    // are excluded (week_starting <= today). Ordered by week_starting, not
+    // createdAt: this week's row sorts first, then the newest carry-over.
     const today = todayUtc();
+    const { monday } = getISOWeekBounds(today);
     const row = await db.query.shoppingLists.findFirst({
-      where: lte(shoppingLists.weekStarting, today),
+      where: and(
+        lte(shoppingLists.weekStarting, today),
+        or(gte(shoppingLists.weekStarting, monday), ne(shoppingLists.status, 'done')),
+      ),
       orderBy: desc(shoppingLists.weekStarting),
       with: WITH_ITEMS,
     });

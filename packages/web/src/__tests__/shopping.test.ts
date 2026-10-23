@@ -12,6 +12,7 @@ import { shoppingScreen } from '../screens/shopping/index.js';
 import { groupByAisle, pantryLine } from '../screens/shopping/groups.js';
 import { jsonResponse, makeCtx, mountRoot, pathOf, routeFetch } from './harness.js';
 import { makeIngredient, makeShoppingItem, makeShoppingList } from './fixtures.js';
+import './pin-fixture-week.js';
 import type { ShoppingListRow } from '../api/types.js';
 
 let fetchMock: ReturnType<typeof vi.fn>;

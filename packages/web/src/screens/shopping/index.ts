@@ -1,5 +1,5 @@
 // Shopping list screen: current-week list, aisle-grouped rows, bought toggle,
-// regenerate / complete, and the ad-hoc add.
+// regenerate / complete, the ad-hoc add, and an earlier week's carry-over.
 //
 // See groups.ts for the pure aisle bucketing (must never re-sort
 // within a group — the server already put staples last) and
@@ -28,6 +28,7 @@ import {
   type HeaderState,
 } from './header.js';
 import { describeSkippedGenerate, describeSkippedComplete } from './notices.js';
+import { buildCarryOverNotice, isEarlierWeek } from './carry-over.js';
 
 export function shoppingScreen(): Screen {
   let list: ShoppingList | null = null;
@@ -134,6 +135,17 @@ export function shoppingScreen(): Screen {
     );
   }
 
+  // GET /current falls back to an earlier week's open list while this week has
+  // none; its notice is then the only way to start this week's.
+  function renderCarryOver(currentList: ShoppingList): HTMLElement[] {
+    if (!isEarlierWeek(currentList)) return [];
+    return [
+      buildCarryOverNotice(currentList, (today) =>
+        void runGenerate(today, { onGenerated: handleGenerated }, includeOptional, () => ctx.isStale()),
+      ),
+    ];
+  }
+
   function renderGroups(currentList: ShoppingList): HTMLElement {
     const wrap = el('div', { class: 'shopping-groups' });
     const readOnly = currentList.status === 'done';
@@ -179,6 +191,7 @@ export function shoppingScreen(): Screen {
 
   function renderEmpty(currentList: ShoppingList): void {
     bodyEl.replaceChildren(
+      ...renderCarryOver(currentList),
       ...renderNotices(),
       el(
         'div',
@@ -195,7 +208,9 @@ export function shoppingScreen(): Screen {
           button('btn btn-primary', 'open the week', () => ctx.navigate('/plan')),
           // Regeneration is a draft-only operation (the API 409s otherwise), so
           // an emptied list that has moved on doesn't get offered a dead button.
-          currentList.status === 'draft'
+          // An earlier week's draft would regenerate past meals; the carry-over
+          // notice offers this week's instead.
+          currentList.status === 'draft' && !isEarlierWeek(currentList)
             ? button('btn btn-ghost', 'regenerate', () =>
                 void runGenerate(
                   currentList.weekStarting,
@@ -231,9 +246,11 @@ export function shoppingScreen(): Screen {
         includeOptional = !includeOptional;
         render();
       },
+      earlierWeek: isEarlierWeek(list),
     };
     bodyEl.replaceChildren(
       buildShoppingHeader(list, headerHandlers, headerState, () => ctx.isStale()),
+      ...renderCarryOver(list),
       ...renderNotices(),
       renderGroups(list),
     );

@@ -7,6 +7,7 @@ import { closeModal, isModalOpen } from '../ui/modal.js';
 import { shoppingScreen } from '../screens/shopping/index.js';
 import { jsonResponse, makeCtx, mountRoot, pathOf, routeFetch } from './harness.js';
 import { makeIngredient, makeShoppingItem, makeShoppingList } from './fixtures.js';
+import './pin-fixture-week.js';
 
 const POTATO = makeIngredient({
   id: 'ing-potato',
