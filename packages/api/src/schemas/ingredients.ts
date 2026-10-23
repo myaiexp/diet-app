@@ -2,7 +2,7 @@
 
 import { z } from 'zod';
 
-// Deliberately one field. isPantryStaple is user-owned curation (the shopping
+// Deliberately one field. isStaple is user-owned curation (the shopping
 // list groups staples last rather than hiding them, so a wrong flag is one tap
 // to fix). General catalog editing is idea #3231 and carries an unresolved
 // seed-vs-user ownership question per column — widening this schema would ship
@@ -10,7 +10,7 @@ import { z } from 'zod';
 // refreshes every other column on every re-seed.
 export const ingredientPatchSchema = z
   .object({
-    isPantryStaple: z.boolean().optional(),
+    isStaple: z.boolean().optional(),
   })
   .strict();
 

@@ -79,7 +79,7 @@ const PANTRY_ROW = {
   opened: false,
 };
 
-const INGREDIENT = { id: ING_ID, name: 'Carrot', category: 'produce', isPantryStaple: false };
+const INGREDIENT = { id: ING_ID, name: 'Carrot', category: 'produce', isStaple: false };
 
 // aggregateShoppingList's output for ENTRY/RECIPE/LINE/PANTRY_ROW above:
 // scale 2/2=1, demand 400g, pantry 100g → net 300g. This is what the route

@@ -99,9 +99,11 @@ server-side by aisle instead would split one category into two headers
 (non-staple produce, then staple produce), which is why it stays a client
 concern.
 
-## `isPantryStaple` is user-owned
+## `isStaple` is user-owned
 
-Toggled via `PATCH /api/ingredients/:id` (the only writable catalog column).
+`isStaple` (column `is_staple`) means "assumed always on hand" — salt, oil,
+butter. It has nothing to do with where an item is stored
+(`pantry_items.location`); a staple can live in the fridge. Toggled via `PATCH /api/ingredients/:id` (the only writable catalog column).
 Generation treats staples like every other ingredient, and the list read sorts
 them last (`shopping-sort.ts`) rather than filtering them out — a mis-set flag should put
 an ingredient in the wrong group (one tap to fix) instead of making it vanish.

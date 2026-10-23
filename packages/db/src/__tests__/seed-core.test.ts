@@ -18,7 +18,7 @@ function makeMockDb({ existingProfiles = [] as unknown[] } = {}) {
     ingredientUpsertRows: null as unknown[] | null,
     onConflictTarget: undefined as unknown,
     // The conflict-update SET map. Capturing only the target would leave the
-    // "does a re-seed overwrite isPantryStaple" question unobservable — the
+    // "does a re-seed overwrite isStaple" question unobservable — the
     // assertion below would pass whether or not the column is in the list.
     onConflictSet: undefined as Record<string, unknown> | undefined,
     profileInserted: false,
@@ -59,8 +59,8 @@ function makeMockDb({ existingProfiles = [] as unknown[] } = {}) {
 }
 
 const SAMPLE: IngredientSeedRow[] = [
-  { name: 'potato', aliases: ['peruna'], category: 'produce', defaultUnit: 'g', nutritionPer100g: {}, shelfLife: {}, tags: [], isPantryStaple: true },
-  { name: 'onion', aliases: ['sipuli'], category: 'produce', defaultUnit: 'g', nutritionPer100g: {}, shelfLife: {}, tags: [], isPantryStaple: false },
+  { name: 'potato', aliases: ['peruna'], category: 'produce', defaultUnit: 'g', nutritionPer100g: {}, shelfLife: {}, tags: [], isStaple: true },
+  { name: 'onion', aliases: ['sipuli'], category: 'produce', defaultUnit: 'g', nutritionPer100g: {}, shelfLife: {}, tags: [], isStaple: false },
 ];
 
 describe('resolveConnectionString', () => {
@@ -103,14 +103,14 @@ describe('seedDatabase', () => {
     expect(result.ingredientCount).toBe(0);
   });
 
-  test('does not overwrite isPantryStaple on re-seed', async () => {
+  test('does not overwrite isStaple on re-seed', async () => {
     // The flag is user-owned (PATCH /api/ingredients/:id). If it appeared in the
     // conflict-update set, every `pnpm db:seed` would reset the user's curation
     // back to the JSON guess.
     const { db, calls } = makeMockDb();
     await seedDatabase(db, SAMPLE);
 
-    expect(Object.keys(calls.onConflictSet!)).not.toContain('isPantryStaple');
+    expect(Object.keys(calls.onConflictSet!)).not.toContain('isStaple');
     // ...while the genuine catalog columns must keep refreshing.
     expect(Object.keys(calls.onConflictSet!)).toEqual(
       expect.arrayContaining([
@@ -125,13 +125,13 @@ describe('seedDatabase', () => {
     );
   });
 
-  test('still seeds isPantryStaple for a newly inserted ingredient', async () => {
+  test('still seeds isStaple for a newly inserted ingredient', async () => {
     const { db, calls } = makeMockDb();
     await seedDatabase(db, SAMPLE);
 
     expect(calls.ingredientUpsertRows![0]).toMatchObject({
       name: 'potato',
-      isPantryStaple: true,
+      isStaple: true,
     });
   });
 

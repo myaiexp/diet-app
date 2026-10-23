@@ -181,7 +181,7 @@ from `scripts/generate-ingredients.mjs`, then upserts every row into
 `ingredients` on the unique `name` and creates the default `user_profile` if
 none exists (`seed` alone skips the regenerate step). It is idempotent and never
 deletes, since `recipe_ingredients` / `pantry_items` reference the rows without
-cascade. `isPantryStaple` is written on insert but deliberately left out of the
+cascade. `isStaple` is written on insert but deliberately left out of the
 `ON CONFLICT DO UPDATE` set: it is user-curated through
 `PATCH /api/ingredients/:id`, so a re-seed must not reset it
 (`seed-core.test.ts` pins this). The catalog source is also where the

@@ -43,7 +43,7 @@ function ingredient(name, category, defaultUnit, nutrition, opts = {}) {
     },
     shelfLife: opts.shelfLife || shelfLifeDefaults[category],
     tags: opts.tags || [],
-    isPantryStaple: opts.staple || false,
+    isStaple: opts.staple || false,
   };
 }
 
@@ -592,7 +592,7 @@ console.log(`Generated ${ingredients.length} ingredients`);
 console.log(`Categories: ${Object.entries(
   ingredients.reduce((acc, i) => { acc[i.category] = (acc[i.category] || 0) + 1; return acc; }, {})
 ).map(([k,v]) => `${k}:${v}`).join(', ')}`);
-console.log(`Pantry staples: ${ingredients.filter(i => i.isPantryStaple).length}`);
+console.log(`Staples: ${ingredients.filter(i => i.isStaple).length}`);
 console.log(`With Finnish aliases: ${ingredients.filter(i => i.aliases.length > 0).length}`);
 
 writeFileSync(join(__dirname, '..', 'data', 'ingredients.json'), JSON.stringify(ingredients, null, 2) + '\n');

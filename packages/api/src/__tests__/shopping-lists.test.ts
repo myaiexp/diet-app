@@ -16,7 +16,7 @@ const ITEM = (over: Record<string, unknown>) => ({
   id: '22222222-2222-2222-2222-222222222222',
   netToBuy: '2',
   category: 'produce',
-  ingredient: { id: '33333333-3333-3333-3333-333333333333', name: 'Onion', isPantryStaple: false },
+  ingredient: { id: '33333333-3333-3333-3333-333333333333', name: 'Onion', isStaple: false },
   ...over,
 });
 
@@ -33,12 +33,12 @@ const MIXED_ITEMS = [
   ITEM({
     id: 'aaaaaaaa-0000-0000-0000-000000000001',
     category: 'condiment',
-    ingredient: { name: 'Olive oil', isPantryStaple: true },
+    ingredient: { name: 'Olive oil', isStaple: true },
   }),
   ITEM({
     id: 'aaaaaaaa-0000-0000-0000-000000000002',
     category: 'produce',
-    ingredient: { name: 'Leek', isPantryStaple: false },
+    ingredient: { name: 'Leek', isStaple: false },
   }),
 ];
 

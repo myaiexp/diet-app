@@ -136,7 +136,7 @@ describe('GET /api/ingredients/:id — lookup', () => {
     nutritionPer100g: { kcal: 165 },
     shelfLife: { fridge: 3 },
     tags: [],
-    isPantryStaple: false,
+    isStaple: false,
   };
 
   test('returns 200 with the full ingredient shape when found', async () => {
@@ -158,14 +158,14 @@ describe('GET /api/ingredients/:id — lookup', () => {
   });
 });
 
-describe('PATCH /api/ingredients/:id — isPantryStaple toggle', () => {
+describe('PATCH /api/ingredients/:id — isStaple toggle', () => {
   const VALID_ID = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
   const ROW = {
     id: VALID_ID,
     name: 'Potato',
     category: 'produce',
     defaultUnit: 'g',
-    isPantryStaple: true,
+    isStaple: true,
   };
 
   const patch = (body: unknown, updateRows = mergedRow(ROW)) => {
@@ -181,12 +181,12 @@ describe('PATCH /api/ingredients/:id — isPantryStaple toggle', () => {
     };
   };
 
-  test('toggles isPantryStaple and returns the updated row', async () => {
-    const { mock, request } = patch({ isPantryStaple: false });
+  test('toggles isStaple and returns the updated row', async () => {
+    const { mock, request } = patch({ isStaple: false });
     const res = await request();
     expect(res.status).toBe(200);
-    expect(await res.json()).toMatchObject({ id: VALID_ID, isPantryStaple: false });
-    expect(mock.updates[0]).toMatchObject({ isPantryStaple: false });
+    expect(await res.json()).toMatchObject({ id: VALID_ID, isStaple: false });
+    expect(mock.updates[0]).toMatchObject({ isStaple: false });
   });
 
   test('returns 400 for a malformed id', async () => {
@@ -194,7 +194,7 @@ describe('PATCH /api/ingredients/:id — isPantryStaple toggle', () => {
     const res = await ingredientsRoutes(mock.db).request('/not-a-uuid', {
       method: 'PATCH',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ isPantryStaple: true }),
+      body: JSON.stringify({ isStaple: true }),
     });
     expect(res.status).toBe(400);
     expect(await res.json()).toEqual({ error: 'Invalid id format' });
@@ -219,7 +219,7 @@ describe('PATCH /api/ingredients/:id — isPantryStaple toggle', () => {
   });
 
   test('returns 404 when the ingredient does not exist', async () => {
-    const { request } = patch({ isPantryStaple: true }, () => []);
+    const { request } = patch({ isStaple: true }, () => []);
     const res = await request();
     expect(res.status).toBe(404);
     expect(await res.json()).toEqual({ error: 'Not found' });
@@ -228,7 +228,7 @@ describe('PATCH /api/ingredients/:id — isPantryStaple toggle', () => {
   test('returns 404 when the row vanishes before the update lands', async () => {
     // No pre-check select: an empty RETURNING is the single signal for both
     // "never existed" and "deleted concurrently", so neither can 500.
-    const { mock, request } = patch({ isPantryStaple: false }, () => []);
+    const { mock, request } = patch({ isStaple: false }, () => []);
     const res = await request();
     expect(res.status).toBe(404);
     expect(mock.writes).toHaveLength(1);

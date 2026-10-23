@@ -17,7 +17,7 @@ import { shoppingListItemsRoutes } from './shopping-list-items.js';
 import { shoppingListCompleteRoutes } from './shopping-list-complete.js';
 
 // The list's items with their ingredient joined — sortListItems reads `name`
-// and `isPantryStaple` off it live rather than from a snapshot on the item row.
+// and `isStaple` off it live rather than from a snapshot on the item row.
 const WITH_ITEMS = { items: { with: { ingredient: true } } } as const;
 
 type ListWithItems = { items: Parameters<typeof sortListItems>[0] };

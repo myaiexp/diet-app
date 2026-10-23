@@ -32,7 +32,7 @@ export function makeIngredient(overrides: Partial<Ingredient> = {}): Ingredient 
     nutritionPer100g: null,
     shelfLife: null,
     tags: null,
-    isPantryStaple: null,
+    isStaple: null,
     createdAt: ING_AT,
     updatedAt: ING_AT,
     ...overrides,
@@ -131,7 +131,7 @@ export function makeShoppingItem(overrides: Partial<ShoppingItem> = {}): Shoppin
       aliases: ['purjo'],
       category: 'produce',
       defaultUnit: 'pieces',
-      isPantryStaple: false,
+      isStaple: false,
     }),
     ...overrides,
   };

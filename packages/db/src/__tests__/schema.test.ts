@@ -30,7 +30,7 @@ const COLUMN_SPECS: Record<string, Record<string, ColumnSpec>> = {
     nutritionPer100g: { type: 'PgJsonb', notNull: true },
     shelfLife: { type: 'PgJsonb', notNull: true },
     tags: { type: 'PgArray', hasDefault: true },
-    isPantryStaple: { type: 'PgBoolean', hasDefault: true },
+    isStaple: { type: 'PgBoolean', hasDefault: true },
     createdAt: { type: 'PgTimestamp', notNull: true, hasDefault: true },
     updatedAt: { type: 'PgTimestamp', notNull: true, hasDefault: true },
   },

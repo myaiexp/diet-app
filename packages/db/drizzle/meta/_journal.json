@@ -43,6 +43,13 @@
       "when": 1791526663546,
       "tag": "0005_quantity_edited",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792776027053,
+      "tag": "0006_rename_is_staple",
+      "breakpoints": true
     }
   ]
 }

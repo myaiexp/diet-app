@@ -54,7 +54,7 @@ export function ingredientsRoutes(db: Db): Hono {
     return c.json(row);
   });
 
-  // The catalog is otherwise read-only. isPantryStaple is the one column the
+  // The catalog is otherwise read-only. isStaple is the one column the
   // user curates: shopping list reads group staples last, and the seed
   // deliberately stops refreshing this column so a re-seed can't undo a toggle.
   app.patch('/:id', async (c) => {

@@ -23,7 +23,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": true
+    "isStaple": true
   },
   {
     "name": "onion",
@@ -49,7 +49,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": true
+    "isStaple": true
   },
   {
     "name": "garlic",
@@ -75,7 +75,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": true
+    "isStaple": true
   },
   {
     "name": "carrot",
@@ -101,7 +101,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "tomato",
@@ -127,7 +127,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "bell pepper",
@@ -154,7 +154,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "cucumber",
@@ -180,7 +180,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "lettuce",
@@ -207,7 +207,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "spinach",
@@ -234,7 +234,7 @@
       "gluten-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "broccoli",
@@ -261,7 +261,7 @@
       "gluten-free",
       "high-fiber"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "cauliflower",
@@ -287,7 +287,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "zucchini",
@@ -314,7 +314,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "eggplant",
@@ -341,7 +341,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "celery",
@@ -367,7 +367,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "mushroom",
@@ -394,7 +394,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "sweet potato",
@@ -420,7 +420,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "cabbage",
@@ -446,7 +446,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "red cabbage",
@@ -472,7 +472,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "kale",
@@ -499,7 +499,7 @@
       "gluten-free",
       "high-fiber"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "green beans",
@@ -525,7 +525,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "peas",
@@ -553,7 +553,7 @@
       "high-protein",
       "high-fiber"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "corn",
@@ -579,7 +579,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "asparagus",
@@ -605,7 +605,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "leek",
@@ -631,7 +631,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "radish",
@@ -657,7 +657,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "beetroot",
@@ -683,7 +683,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "turnip",
@@ -709,7 +709,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "parsnip",
@@ -735,7 +735,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "artichoke",
@@ -762,7 +762,7 @@
       "gluten-free",
       "high-fiber"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "fennel",
@@ -788,7 +788,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "spring onion",
@@ -815,7 +815,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "shallot",
@@ -841,7 +841,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "ginger root",
@@ -867,7 +867,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "brussels sprouts",
@@ -894,7 +894,7 @@
       "gluten-free",
       "high-fiber"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "red onion",
@@ -920,7 +920,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "bok choy",
@@ -947,7 +947,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "swiss chard",
@@ -974,7 +974,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "watercress",
@@ -1000,7 +1000,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "arugula",
@@ -1026,7 +1026,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "kohlrabi",
@@ -1052,7 +1052,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "avocado",
@@ -1078,7 +1078,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "jalapeño",
@@ -1105,7 +1105,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "chili pepper",
@@ -1131,7 +1131,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "butternut squash",
@@ -1157,7 +1157,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "pumpkin",
@@ -1183,7 +1183,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "fresh basil",
@@ -1209,7 +1209,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "fresh parsley",
@@ -1235,7 +1235,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "fresh cilantro",
@@ -1262,7 +1262,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "fresh dill",
@@ -1288,7 +1288,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "fresh mint",
@@ -1314,7 +1314,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "fresh rosemary",
@@ -1340,7 +1340,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "fresh thyme",
@@ -1366,7 +1366,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "fresh chives",
@@ -1392,7 +1392,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "lemongrass",
@@ -1418,7 +1418,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "apple",
@@ -1444,7 +1444,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "banana",
@@ -1470,7 +1470,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "orange",
@@ -1496,7 +1496,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "lemon",
@@ -1522,7 +1522,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": true
+    "isStaple": true
   },
   {
     "name": "lime",
@@ -1548,7 +1548,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "strawberry",
@@ -1574,7 +1574,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "blueberry",
@@ -1600,7 +1600,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "raspberry",
@@ -1627,7 +1627,7 @@
       "gluten-free",
       "high-fiber"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "grape",
@@ -1653,7 +1653,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "pear",
@@ -1679,7 +1679,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "peach",
@@ -1705,7 +1705,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "plum",
@@ -1731,7 +1731,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "mango",
@@ -1757,7 +1757,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "pineapple",
@@ -1783,7 +1783,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "watermelon",
@@ -1809,7 +1809,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "kiwi",
@@ -1836,7 +1836,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "pomegranate",
@@ -1862,7 +1862,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "cranberry",
@@ -1888,7 +1888,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "cherry",
@@ -1914,7 +1914,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "apricot",
@@ -1940,7 +1940,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "fig",
@@ -1966,7 +1966,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "coconut",
@@ -1992,7 +1992,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "grapefruit",
@@ -2018,7 +2018,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "melon",
@@ -2044,7 +2044,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "passion fruit",
@@ -2071,7 +2071,7 @@
       "gluten-free",
       "high-fiber"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "rhubarb",
@@ -2097,7 +2097,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "blackberry",
@@ -2124,7 +2124,7 @@
       "gluten-free",
       "high-fiber"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "lingonberry",
@@ -2150,7 +2150,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "chicken breast",
@@ -2177,7 +2177,7 @@
       "dairy-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "chicken thigh",
@@ -2203,7 +2203,7 @@
       "dairy-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "chicken wing",
@@ -2229,7 +2229,7 @@
       "dairy-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "chicken",
@@ -2256,7 +2256,7 @@
       "dairy-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "turkey breast",
@@ -2282,7 +2282,7 @@
       "dairy-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "turkey",
@@ -2308,7 +2308,7 @@
       "dairy-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "duck breast",
@@ -2334,7 +2334,7 @@
       "dairy-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "beef steak",
@@ -2361,7 +2361,7 @@
       "dairy-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "ground beef",
@@ -2388,7 +2388,7 @@
       "dairy-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "beef roast",
@@ -2414,7 +2414,7 @@
       "dairy-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "beef short ribs",
@@ -2441,7 +2441,7 @@
       "dairy-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "beef liver",
@@ -2467,7 +2467,7 @@
       "dairy-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "pork chop",
@@ -2493,7 +2493,7 @@
       "dairy-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "pork tenderloin",
@@ -2519,7 +2519,7 @@
       "dairy-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "ground pork",
@@ -2545,7 +2545,7 @@
       "dairy-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "bacon",
@@ -2571,7 +2571,7 @@
       "dairy-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "ham",
@@ -2597,7 +2597,7 @@
       "dairy-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "pork belly",
@@ -2622,7 +2622,7 @@
       "gluten-free",
       "dairy-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "sausage",
@@ -2646,7 +2646,7 @@
     "tags": [
       "dairy-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "lamb chop",
@@ -2672,7 +2672,7 @@
       "dairy-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "lamb leg",
@@ -2698,7 +2698,7 @@
       "dairy-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "ground lamb",
@@ -2724,7 +2724,7 @@
       "dairy-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "salmon",
@@ -2750,7 +2750,7 @@
       "dairy-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "tuna",
@@ -2776,7 +2776,7 @@
       "dairy-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "cod",
@@ -2802,7 +2802,7 @@
       "dairy-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "shrimp",
@@ -2828,7 +2828,7 @@
       "dairy-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "trout",
@@ -2855,7 +2855,7 @@
       "dairy-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "mackerel",
@@ -2881,7 +2881,7 @@
       "dairy-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "sardine",
@@ -2907,7 +2907,7 @@
       "dairy-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "herring",
@@ -2934,7 +2934,7 @@
       "dairy-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "pike-perch",
@@ -2960,7 +2960,7 @@
       "dairy-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "perch",
@@ -2986,7 +2986,7 @@
       "dairy-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "crab",
@@ -3012,7 +3012,7 @@
       "dairy-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "mussel",
@@ -3038,7 +3038,7 @@
       "dairy-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "squid",
@@ -3064,7 +3064,7 @@
       "dairy-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "smoked salmon",
@@ -3090,7 +3090,7 @@
       "dairy-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "anchovies",
@@ -3117,7 +3117,7 @@
       "dairy-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "egg",
@@ -3144,7 +3144,7 @@
       "gluten-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "tofu",
@@ -3171,7 +3171,7 @@
       "gluten-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "tempeh",
@@ -3197,7 +3197,7 @@
       "vegan",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "seitan",
@@ -3223,7 +3223,7 @@
       "vegan",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "lentils",
@@ -3251,7 +3251,7 @@
       "high-protein",
       "high-fiber"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "chickpeas",
@@ -3279,7 +3279,7 @@
       "high-protein",
       "high-fiber"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "black beans",
@@ -3307,7 +3307,7 @@
       "high-protein",
       "high-fiber"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "kidney beans",
@@ -3335,7 +3335,7 @@
       "high-protein",
       "high-fiber"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "white beans",
@@ -3363,7 +3363,7 @@
       "high-protein",
       "high-fiber"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "edamame",
@@ -3391,7 +3391,7 @@
       "gluten-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "soybeans",
@@ -3418,7 +3418,7 @@
       "gluten-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "milk",
@@ -3443,7 +3443,7 @@
       "vegetarian",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "whole milk",
@@ -3468,7 +3468,7 @@
       "vegetarian",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "skim milk",
@@ -3493,7 +3493,7 @@
       "vegetarian",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "heavy cream",
@@ -3519,7 +3519,7 @@
       "vegetarian",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "sour cream",
@@ -3545,7 +3545,7 @@
       "vegetarian",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "cream cheese",
@@ -3570,7 +3570,7 @@
       "vegetarian",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "butter",
@@ -3595,7 +3595,7 @@
       "vegetarian",
       "gluten-free"
     ],
-    "isPantryStaple": true
+    "isStaple": true
   },
   {
     "name": "cheddar cheese",
@@ -3621,7 +3621,7 @@
       "gluten-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "mozzarella",
@@ -3647,7 +3647,7 @@
       "gluten-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "parmesan",
@@ -3673,7 +3673,7 @@
       "gluten-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "gouda cheese",
@@ -3700,7 +3700,7 @@
       "gluten-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "feta cheese",
@@ -3726,7 +3726,7 @@
       "vegetarian",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "goat cheese",
@@ -3751,7 +3751,7 @@
       "vegetarian",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "blue cheese",
@@ -3776,7 +3776,7 @@
       "vegetarian",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "ricotta",
@@ -3802,7 +3802,7 @@
       "vegetarian",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "cottage cheese",
@@ -3828,7 +3828,7 @@
       "gluten-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "swiss cheese",
@@ -3854,7 +3854,7 @@
       "gluten-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "greek yogurt",
@@ -3881,7 +3881,7 @@
       "high-protein",
       "fermented"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "plain yogurt",
@@ -3908,7 +3908,7 @@
       "gluten-free",
       "fermented"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "kefir",
@@ -3934,7 +3934,7 @@
       "gluten-free",
       "fermented"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "whipped cream",
@@ -3959,7 +3959,7 @@
       "vegetarian",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "mascarpone",
@@ -3985,7 +3985,7 @@
       "vegetarian",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "quark",
@@ -4011,7 +4011,7 @@
       "gluten-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "buttermilk",
@@ -4037,7 +4037,7 @@
       "gluten-free",
       "fermented"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "condensed milk",
@@ -4062,7 +4062,7 @@
       "vegetarian",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "evaporated milk",
@@ -4088,7 +4088,7 @@
       "vegetarian",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "oat milk",
@@ -4115,7 +4115,7 @@
       "vegan",
       "dairy-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "almond milk",
@@ -4142,7 +4142,7 @@
       "dairy-free",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "soy milk",
@@ -4170,7 +4170,7 @@
       "dairy-free",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "coconut milk",
@@ -4197,7 +4197,7 @@
       "dairy-free",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "coconut cream",
@@ -4224,7 +4224,7 @@
       "dairy-free",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "white rice",
@@ -4251,7 +4251,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": true
+    "isStaple": true
   },
   {
     "name": "brown rice",
@@ -4278,7 +4278,7 @@
       "gluten-free",
       "whole-grain"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "basmati rice",
@@ -4304,7 +4304,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "jasmine rice",
@@ -4330,7 +4330,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "arborio rice",
@@ -4356,7 +4356,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "wild rice",
@@ -4383,7 +4383,7 @@
       "gluten-free",
       "whole-grain"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "quinoa",
@@ -4411,7 +4411,7 @@
       "high-protein",
       "whole-grain"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "couscous",
@@ -4436,7 +4436,7 @@
       "vegetarian",
       "vegan"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "bulgur wheat",
@@ -4463,7 +4463,7 @@
       "high-fiber",
       "whole-grain"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "oats",
@@ -4491,7 +4491,7 @@
       "whole-grain",
       "high-fiber"
     ],
-    "isPantryStaple": true
+    "isStaple": true
   },
   {
     "name": "all-purpose flour",
@@ -4517,7 +4517,7 @@
       "vegetarian",
       "vegan"
     ],
-    "isPantryStaple": true
+    "isStaple": true
   },
   {
     "name": "whole wheat flour",
@@ -4544,7 +4544,7 @@
       "whole-grain",
       "high-fiber"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "bread flour",
@@ -4569,7 +4569,7 @@
       "vegetarian",
       "vegan"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "rye flour",
@@ -4596,7 +4596,7 @@
       "whole-grain",
       "high-fiber"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "cornmeal",
@@ -4622,7 +4622,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "cornstarch",
@@ -4648,7 +4648,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": true
+    "isStaple": true
   },
   {
     "name": "spaghetti",
@@ -4673,7 +4673,7 @@
       "vegetarian",
       "vegan"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "penne",
@@ -4698,7 +4698,7 @@
       "vegetarian",
       "vegan"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "fusilli",
@@ -4724,7 +4724,7 @@
       "vegetarian",
       "vegan"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "macaroni",
@@ -4749,7 +4749,7 @@
       "vegetarian",
       "vegan"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "egg noodles",
@@ -4773,7 +4773,7 @@
     "tags": [
       "vegetarian"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "rice noodles",
@@ -4799,7 +4799,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "udon noodles",
@@ -4825,7 +4825,7 @@
       "vegetarian",
       "vegan"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "ramen noodles",
@@ -4851,7 +4851,7 @@
       "vegetarian",
       "vegan"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "lasagna sheets",
@@ -4875,7 +4875,7 @@
     "tags": [
       "vegetarian"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "whole wheat pasta",
@@ -4902,7 +4902,7 @@
       "whole-grain",
       "high-fiber"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "bread",
@@ -4927,7 +4927,7 @@
       "vegetarian",
       "vegan"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "sourdough bread",
@@ -4953,7 +4953,7 @@
       "vegan",
       "fermented"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "rye bread",
@@ -4980,7 +4980,7 @@
       "whole-grain",
       "high-fiber"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "pita bread",
@@ -5005,7 +5005,7 @@
       "vegetarian",
       "vegan"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "tortilla",
@@ -5030,7 +5030,7 @@
       "vegetarian",
       "vegan"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "breadcrumbs",
@@ -5055,7 +5055,7 @@
       "vegetarian",
       "vegan"
     ],
-    "isPantryStaple": true
+    "isStaple": true
   },
   {
     "name": "panko",
@@ -5081,7 +5081,7 @@
       "vegetarian",
       "vegan"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "polenta",
@@ -5108,7 +5108,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "barley",
@@ -5135,7 +5135,7 @@
       "whole-grain",
       "high-fiber"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "buckwheat",
@@ -5163,7 +5163,7 @@
       "whole-grain",
       "high-fiber"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "millet",
@@ -5190,7 +5190,7 @@
       "gluten-free",
       "whole-grain"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "spelt flour",
@@ -5216,7 +5216,7 @@
       "vegan",
       "whole-grain"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "potato starch",
@@ -5242,7 +5242,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "tapioca starch",
@@ -5268,7 +5268,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "granola",
@@ -5292,7 +5292,7 @@
     "tags": [
       "vegetarian"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "salt",
@@ -5318,7 +5318,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": true
+    "isStaple": true
   },
   {
     "name": "black pepper",
@@ -5344,7 +5344,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": true
+    "isStaple": true
   },
   {
     "name": "white pepper",
@@ -5370,7 +5370,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "paprika",
@@ -5396,7 +5396,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": true
+    "isStaple": true
   },
   {
     "name": "smoked paprika",
@@ -5422,7 +5422,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "cayenne pepper",
@@ -5448,7 +5448,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "chili flakes",
@@ -5474,7 +5474,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "chili powder",
@@ -5500,7 +5500,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "cumin",
@@ -5527,7 +5527,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": true
+    "isStaple": true
   },
   {
     "name": "coriander seeds",
@@ -5553,7 +5553,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "turmeric",
@@ -5579,7 +5579,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": true
+    "isStaple": true
   },
   {
     "name": "cinnamon",
@@ -5605,7 +5605,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": true
+    "isStaple": true
   },
   {
     "name": "nutmeg",
@@ -5631,7 +5631,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "cloves",
@@ -5657,7 +5657,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "cardamom",
@@ -5683,7 +5683,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "ginger powder",
@@ -5709,7 +5709,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "garlic powder",
@@ -5735,7 +5735,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": true
+    "isStaple": true
   },
   {
     "name": "onion powder",
@@ -5761,7 +5761,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "oregano",
@@ -5787,7 +5787,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": true
+    "isStaple": true
   },
   {
     "name": "dried basil",
@@ -5813,7 +5813,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "dried thyme",
@@ -5839,7 +5839,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "dried rosemary",
@@ -5865,7 +5865,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "bay leaves",
@@ -5891,7 +5891,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "dried parsley",
@@ -5917,7 +5917,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "dried dill",
@@ -5943,7 +5943,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "star anise",
@@ -5969,7 +5969,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "fennel seeds",
@@ -5995,7 +5995,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "mustard seeds",
@@ -6021,7 +6021,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "celery salt",
@@ -6047,7 +6047,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "five-spice powder",
@@ -6074,7 +6074,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "garam masala",
@@ -6100,7 +6100,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "curry powder",
@@ -6126,7 +6126,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": true
+    "isStaple": true
   },
   {
     "name": "italian seasoning",
@@ -6153,7 +6153,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "allspice",
@@ -6179,7 +6179,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "saffron",
@@ -6205,7 +6205,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "vanilla extract",
@@ -6231,7 +6231,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": true
+    "isStaple": true
   },
   {
     "name": "vanilla bean",
@@ -6257,7 +6257,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "sumac",
@@ -6283,7 +6283,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "za'atar",
@@ -6310,7 +6310,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "msg",
@@ -6336,7 +6336,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "black cardamom",
@@ -6362,7 +6362,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "szechuan pepper",
@@ -6389,7 +6389,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "fenugreek",
@@ -6415,7 +6415,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "juniper berries",
@@ -6441,7 +6441,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "caraway seeds",
@@ -6467,7 +6467,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "poppy seeds",
@@ -6493,7 +6493,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "sesame seeds",
@@ -6519,7 +6519,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "cocoa powder",
@@ -6546,7 +6546,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": true
+    "isStaple": true
   },
   {
     "name": "olive oil",
@@ -6572,7 +6572,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": true
+    "isStaple": true
   },
   {
     "name": "extra virgin olive oil",
@@ -6598,7 +6598,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "vegetable oil",
@@ -6625,7 +6625,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": true
+    "isStaple": true
   },
   {
     "name": "sesame oil",
@@ -6651,7 +6651,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "coconut oil",
@@ -6677,7 +6677,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "avocado oil",
@@ -6703,7 +6703,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "soy sauce",
@@ -6728,7 +6728,7 @@
       "vegetarian",
       "vegan"
     ],
-    "isPantryStaple": true
+    "isStaple": true
   },
   {
     "name": "fish sauce",
@@ -6752,7 +6752,7 @@
     "tags": [
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "oyster sauce",
@@ -6774,7 +6774,7 @@
       "pantry_days": 365
     },
     "tags": [],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "worcestershire sauce",
@@ -6797,7 +6797,7 @@
       "pantry_days": 365
     },
     "tags": [],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "hot sauce",
@@ -6823,7 +6823,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "sriracha",
@@ -6849,7 +6849,7 @@
       "vegetarian",
       "vegan"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "tabasco",
@@ -6876,7 +6876,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "ketchup",
@@ -6902,7 +6902,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "tomato paste",
@@ -6929,7 +6929,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": true
+    "isStaple": true
   },
   {
     "name": "tomato sauce",
@@ -6955,7 +6955,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "canned tomatoes",
@@ -6982,7 +6982,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": true
+    "isStaple": true
   },
   {
     "name": "white vinegar",
@@ -7009,7 +7009,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": true
+    "isStaple": true
   },
   {
     "name": "apple cider vinegar",
@@ -7035,7 +7035,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "balsamic vinegar",
@@ -7061,7 +7061,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "rice vinegar",
@@ -7087,7 +7087,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "red wine vinegar",
@@ -7113,7 +7113,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "mustard",
@@ -7139,7 +7139,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": true
+    "isStaple": true
   },
   {
     "name": "dijon mustard",
@@ -7165,7 +7165,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "whole grain mustard",
@@ -7190,7 +7190,7 @@
       "vegetarian",
       "vegan"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "mayonnaise",
@@ -7215,7 +7215,7 @@
       "vegetarian",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "tahini",
@@ -7241,7 +7241,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "honey",
@@ -7266,7 +7266,7 @@
       "vegetarian",
       "gluten-free"
     ],
-    "isPantryStaple": true
+    "isStaple": true
   },
   {
     "name": "maple syrup",
@@ -7292,7 +7292,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "sugar",
@@ -7318,7 +7318,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": true
+    "isStaple": true
   },
   {
     "name": "brown sugar",
@@ -7344,7 +7344,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "powdered sugar",
@@ -7370,7 +7370,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "miso paste",
@@ -7396,7 +7396,7 @@
       "vegan",
       "fermented"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "hoisin sauce",
@@ -7422,7 +7422,7 @@
       "vegetarian",
       "vegan"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "teriyaki sauce",
@@ -7448,7 +7448,7 @@
       "vegetarian",
       "vegan"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "barbecue sauce",
@@ -7473,7 +7473,7 @@
       "vegetarian",
       "vegan"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "pesto",
@@ -7498,7 +7498,7 @@
       "vegetarian",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "harissa",
@@ -7524,7 +7524,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "sambal oelek",
@@ -7550,7 +7550,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "curry paste",
@@ -7574,7 +7574,7 @@
     "tags": [
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "coconut aminos",
@@ -7600,7 +7600,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "lemon juice",
@@ -7626,7 +7626,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "lime juice",
@@ -7652,7 +7652,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "jam",
@@ -7678,7 +7678,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "peanut butter",
@@ -7705,7 +7705,7 @@
       "gluten-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "almond butter",
@@ -7732,7 +7732,7 @@
       "gluten-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "frozen peas",
@@ -7758,7 +7758,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "frozen corn",
@@ -7784,7 +7784,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "frozen spinach",
@@ -7810,7 +7810,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "frozen broccoli",
@@ -7836,7 +7836,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "frozen green beans",
@@ -7862,7 +7862,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "frozen mixed vegetables",
@@ -7888,7 +7888,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "frozen strawberries",
@@ -7914,7 +7914,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "frozen blueberries",
@@ -7940,7 +7940,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "frozen raspberries",
@@ -7966,7 +7966,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "frozen mango",
@@ -7992,7 +7992,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "frozen banana",
@@ -8018,7 +8018,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "frozen edamame",
@@ -8045,7 +8045,7 @@
       "gluten-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "frozen shrimp",
@@ -8071,7 +8071,7 @@
       "dairy-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "frozen fish fillets",
@@ -8097,7 +8097,7 @@
       "dairy-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "frozen pizza dough",
@@ -8121,7 +8121,7 @@
     "tags": [
       "vegetarian"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "frozen puff pastry",
@@ -8145,7 +8145,7 @@
     "tags": [
       "vegetarian"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "frozen pie crust",
@@ -8169,7 +8169,7 @@
     "tags": [
       "vegetarian"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "frozen cauliflower",
@@ -8195,7 +8195,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "frozen bell peppers",
@@ -8222,7 +8222,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "frozen berries mix",
@@ -8248,7 +8248,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "ice cream",
@@ -8273,7 +8273,7 @@
       "vegetarian",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "baking powder",
@@ -8299,7 +8299,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": true
+    "isStaple": true
   },
   {
     "name": "baking soda",
@@ -8325,7 +8325,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": true
+    "isStaple": true
   },
   {
     "name": "active dry yeast",
@@ -8350,7 +8350,7 @@
       "vegetarian",
       "vegan"
     ],
-    "isPantryStaple": true
+    "isStaple": true
   },
   {
     "name": "gelatin",
@@ -8374,7 +8374,7 @@
     "tags": [
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "dark chocolate",
@@ -8400,7 +8400,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "milk chocolate",
@@ -8425,7 +8425,7 @@
       "vegetarian",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "chocolate chips",
@@ -8450,7 +8450,7 @@
       "vegetarian",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "almonds",
@@ -8477,7 +8477,7 @@
       "gluten-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "walnuts",
@@ -8503,7 +8503,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "cashews",
@@ -8529,7 +8529,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "peanuts",
@@ -8556,7 +8556,7 @@
       "gluten-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "pecans",
@@ -8582,7 +8582,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "pine nuts",
@@ -8608,7 +8608,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "hazelnuts",
@@ -8634,7 +8634,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "pistachios",
@@ -8661,7 +8661,7 @@
       "gluten-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "macadamia nuts",
@@ -8687,7 +8687,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "sunflower seeds",
@@ -8714,7 +8714,7 @@
       "gluten-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "pumpkin seeds",
@@ -8741,7 +8741,7 @@
       "gluten-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "flax seeds",
@@ -8768,7 +8768,7 @@
       "gluten-free",
       "high-fiber"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "chia seeds",
@@ -8795,7 +8795,7 @@
       "gluten-free",
       "high-fiber"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "hemp seeds",
@@ -8822,7 +8822,7 @@
       "gluten-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "dried cranberries",
@@ -8848,7 +8848,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "raisins",
@@ -8874,7 +8874,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "dried apricots",
@@ -8900,7 +8900,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "dates",
@@ -8926,7 +8926,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "canned tuna",
@@ -8952,7 +8952,7 @@
       "dairy-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "canned chickpeas",
@@ -8978,7 +8978,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "canned beans",
@@ -9004,7 +9004,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "canned corn",
@@ -9030,7 +9030,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "canned coconut milk",
@@ -9056,7 +9056,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "chicken stock",
@@ -9080,7 +9080,7 @@
     "tags": [
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "vegetable stock",
@@ -9106,7 +9106,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "beef stock",
@@ -9130,7 +9130,7 @@
     "tags": [
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "desiccated coconut",
@@ -9156,7 +9156,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "almond flour",
@@ -9182,7 +9182,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "coconut flour",
@@ -9209,7 +9209,7 @@
       "gluten-free",
       "high-fiber"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "nutritional yeast",
@@ -9236,7 +9236,7 @@
       "gluten-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "protein powder",
@@ -9262,7 +9262,7 @@
       "gluten-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "romanesco",
@@ -9289,7 +9289,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "celeriac",
@@ -9315,7 +9315,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "endive",
@@ -9342,7 +9342,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "radicchio",
@@ -9369,7 +9369,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "okra",
@@ -9395,7 +9395,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "snap peas",
@@ -9421,7 +9421,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "bean sprouts",
@@ -9447,7 +9447,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "daikon radish",
@@ -9474,7 +9474,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "taro",
@@ -9501,7 +9501,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "plantain",
@@ -9528,7 +9528,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "nectarine",
@@ -9554,7 +9554,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "persimmon",
@@ -9580,7 +9580,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "lychee",
@@ -9606,7 +9606,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "papaya",
@@ -9632,7 +9632,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "dragon fruit",
@@ -9659,7 +9659,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "star fruit",
@@ -9686,7 +9686,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "guava",
@@ -9714,7 +9714,7 @@
       "gluten-free",
       "high-fiber"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "chinese cabbage",
@@ -9740,7 +9740,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "fresh sage",
@@ -9766,7 +9766,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "fresh tarragon",
@@ -9792,7 +9792,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "fresh oregano",
@@ -9819,7 +9819,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "venison",
@@ -9845,7 +9845,7 @@
       "dairy-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "rabbit",
@@ -9871,7 +9871,7 @@
       "dairy-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "elk",
@@ -9897,7 +9897,7 @@
       "dairy-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "reindeer",
@@ -9924,7 +9924,7 @@
       "dairy-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "prosciutto",
@@ -9951,7 +9951,7 @@
       "dairy-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "chorizo",
@@ -9976,7 +9976,7 @@
     "tags": [
       "dairy-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "salami",
@@ -10001,7 +10001,7 @@
     "tags": [
       "dairy-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "pepperoni",
@@ -10026,7 +10026,7 @@
     "tags": [
       "dairy-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "canned sardines",
@@ -10052,7 +10052,7 @@
       "dairy-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "octopus",
@@ -10078,7 +10078,7 @@
       "dairy-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "scallop",
@@ -10104,7 +10104,7 @@
       "dairy-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "lobster",
@@ -10130,7 +10130,7 @@
       "dairy-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "clam",
@@ -10157,7 +10157,7 @@
       "dairy-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "whitefish",
@@ -10183,7 +10183,7 @@
       "dairy-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "halibut",
@@ -10210,7 +10210,7 @@
       "dairy-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "tilapia",
@@ -10236,7 +10236,7 @@
       "dairy-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "split peas",
@@ -10264,7 +10264,7 @@
       "high-protein",
       "high-fiber"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "fava beans",
@@ -10291,7 +10291,7 @@
       "gluten-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "mung beans",
@@ -10318,7 +10318,7 @@
       "gluten-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "halloumi",
@@ -10344,7 +10344,7 @@
       "gluten-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "brie",
@@ -10369,7 +10369,7 @@
       "vegetarian",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "camembert",
@@ -10395,7 +10395,7 @@
       "vegetarian",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "gruyere",
@@ -10422,7 +10422,7 @@
       "gluten-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "provolone",
@@ -10448,7 +10448,7 @@
       "vegetarian",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "cream",
@@ -10473,7 +10473,7 @@
       "vegetarian",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "creme fraiche",
@@ -10499,7 +10499,7 @@
       "vegetarian",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "skyr",
@@ -10526,7 +10526,7 @@
       "high-protein",
       "fermented"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "ghee",
@@ -10551,7 +10551,7 @@
       "vegetarian",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "orzo",
@@ -10577,7 +10577,7 @@
       "vegetarian",
       "vegan"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "gnocchi",
@@ -10602,7 +10602,7 @@
     "tags": [
       "vegetarian"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "farro",
@@ -10629,7 +10629,7 @@
       "vegan",
       "whole-grain"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "amaranth",
@@ -10656,7 +10656,7 @@
       "gluten-free",
       "whole-grain"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "teff",
@@ -10684,7 +10684,7 @@
       "gluten-free",
       "whole-grain"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "rice paper",
@@ -10710,7 +10710,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "croissant",
@@ -10734,7 +10734,7 @@
     "tags": [
       "vegetarian"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "bagel",
@@ -10760,7 +10760,7 @@
       "vegetarian",
       "vegan"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "ciabatta",
@@ -10786,7 +10786,7 @@
       "vegetarian",
       "vegan"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "naan bread",
@@ -10810,7 +10810,7 @@
     "tags": [
       "vegetarian"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "focaccia",
@@ -10835,7 +10835,7 @@
       "vegetarian",
       "vegan"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "cracker",
@@ -10859,7 +10859,7 @@
     "tags": [
       "vegetarian"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "rice cake",
@@ -10885,7 +10885,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "gluten-free pasta",
@@ -10911,7 +10911,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "semolina",
@@ -10936,7 +10936,7 @@
       "vegetarian",
       "vegan"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "dried sage",
@@ -10962,7 +10962,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "dried tarragon",
@@ -10988,7 +10988,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "dried marjoram",
@@ -11014,7 +11014,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "lemon pepper",
@@ -11040,7 +11040,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "herbes de provence",
@@ -11067,7 +11067,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "cajun seasoning",
@@ -11094,7 +11094,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "taco seasoning",
@@ -11120,7 +11120,7 @@
       "vegetarian",
       "vegan"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "wasabi",
@@ -11146,7 +11146,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "horseradish",
@@ -11172,7 +11172,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "truffle oil",
@@ -11198,7 +11198,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "gochujang",
@@ -11224,7 +11224,7 @@
       "vegan",
       "fermented"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "sweet chili sauce",
@@ -11250,7 +11250,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "pomegranate molasses",
@@ -11276,7 +11276,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "capers",
@@ -11302,7 +11302,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "olives",
@@ -11328,7 +11328,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "sun-dried tomatoes",
@@ -11354,7 +11354,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "kimchi",
@@ -11381,7 +11381,7 @@
       "gluten-free",
       "fermented"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "sauerkraut",
@@ -11408,7 +11408,7 @@
       "gluten-free",
       "fermented"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "mirin",
@@ -11434,7 +11434,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "frozen artichoke hearts",
@@ -11460,7 +11460,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "frozen sweet potato fries",
@@ -11486,7 +11486,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "frozen dumplings",
@@ -11509,7 +11509,7 @@
       "pantry_days": null
     },
     "tags": [],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "frozen spring rolls",
@@ -11533,7 +11533,7 @@
     "tags": [
       "vegetarian"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "frozen waffles",
@@ -11557,7 +11557,7 @@
     "tags": [
       "vegetarian"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "frozen hash browns",
@@ -11584,7 +11584,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "frozen french fries",
@@ -11610,7 +11610,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "frozen acai",
@@ -11637,7 +11637,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "frozen cherries",
@@ -11663,7 +11663,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "molasses",
@@ -11689,7 +11689,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "agave nectar",
@@ -11715,7 +11715,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "dried mushrooms",
@@ -11741,7 +11741,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "nori seaweed",
@@ -11767,7 +11767,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "marzipan",
@@ -11793,7 +11793,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "rice flour",
@@ -11819,7 +11819,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "paneer",
@@ -11846,7 +11846,7 @@
       "gluten-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "coconut flakes",
@@ -11872,7 +11872,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "mixed nuts",
@@ -11898,7 +11898,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "canned salmon",
@@ -11924,7 +11924,7 @@
       "dairy-free",
       "high-protein"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "chicken stock cube",
@@ -11948,7 +11948,7 @@
     "tags": [
       "gluten-free"
     ],
-    "isPantryStaple": true
+    "isStaple": true
   },
   {
     "name": "vegetable stock cube",
@@ -11974,7 +11974,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": true
+    "isStaple": true
   },
   {
     "name": "beef stock cube",
@@ -11998,7 +11998,7 @@
     "tags": [
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "white wine",
@@ -12024,7 +12024,7 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   },
   {
     "name": "red wine",
@@ -12050,6 +12050,6 @@
       "vegan",
       "gluten-free"
     ],
-    "isPantryStaple": false
+    "isStaple": false
   }
 ]

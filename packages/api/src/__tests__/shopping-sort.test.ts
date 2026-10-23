@@ -5,7 +5,7 @@ import { sortListItems, type SortableItem } from '../shopping-sort.js';
 
 const item = (over: Partial<SortableItem> & { id: string }): SortableItem => ({
   category: 'produce',
-  ingredient: { name: 'thing', isPantryStaple: false },
+  ingredient: { name: 'thing', isStaple: false },
   ...over,
 });
 
@@ -14,8 +14,8 @@ const ids = (rows: SortableItem[]) => rows.map((r) => r.id);
 describe('sortListItems', () => {
   test('places non-staples before staples', () => {
     const rows = [
-      item({ id: 'a', ingredient: { name: 'salt', isPantryStaple: true } }),
-      item({ id: 'b', ingredient: { name: 'chicken', isPantryStaple: false } }),
+      item({ id: 'a', ingredient: { name: 'salt', isStaple: true } }),
+      item({ id: 'b', ingredient: { name: 'chicken', isStaple: false } }),
     ];
     expect(ids(sortListItems(rows))).toEqual(['b', 'a']);
   });
@@ -31,8 +31,8 @@ describe('sortListItems', () => {
 
   test('sorts by ingredient name within a category', () => {
     const rows = [
-      item({ id: 'a', ingredient: { name: 'onion', isPantryStaple: false } }),
-      item({ id: 'b', ingredient: { name: 'apple', isPantryStaple: false } }),
+      item({ id: 'a', ingredient: { name: 'onion', isStaple: false } }),
+      item({ id: 'b', ingredient: { name: 'apple', isStaple: false } }),
     ];
     expect(ids(sortListItems(rows))).toEqual(['b', 'a']);
   });
@@ -44,10 +44,10 @@ describe('sortListItems', () => {
 
   test('treats a null or missing ingredient as a non-staple with an empty name', () => {
     const rows = [
-      item({ id: 'staple', ingredient: { name: 'aaa', isPantryStaple: true } }),
+      item({ id: 'staple', ingredient: { name: 'aaa', isStaple: true } }),
       item({ id: 'nullish', ingredient: null }),
       item({ id: 'absent', ingredient: undefined }),
-      item({ id: 'named', ingredient: { name: 'bbb', isPantryStaple: false } }),
+      item({ id: 'named', ingredient: { name: 'bbb', isStaple: false } }),
     ];
     // Empty name sorts first inside the non-staple group; the staple sinks last
     // despite its name sorting earliest.
@@ -56,8 +56,8 @@ describe('sortListItems', () => {
 
   test('groups staples last across categories rather than filtering them out', () => {
     const rows = [
-      item({ id: 'staple-condiment', category: 'condiment', ingredient: { name: 'oil', isPantryStaple: true } }),
-      item({ id: 'plain-produce', category: 'produce', ingredient: { name: 'leek', isPantryStaple: false } }),
+      item({ id: 'staple-condiment', category: 'condiment', ingredient: { name: 'oil', isStaple: true } }),
+      item({ id: 'plain-produce', category: 'produce', ingredient: { name: 'leek', isStaple: false } }),
     ];
     // condiment < produce alphabetically, but staple-ness dominates.
     expect(ids(sortListItems(rows))).toEqual(['plain-produce', 'staple-condiment']);

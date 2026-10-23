@@ -32,8 +32,8 @@ describe('ingredients.json', () => {
     expect(new Set(names).size).toBe(names.length);
   });
 
-  test('pantry staples are marked correctly', () => {
-    const staples = data.filter((i: any) => i.isPantryStaple);
+  test('staples are marked correctly', () => {
+    const staples = data.filter((i: any) => i.isStaple);
     expect(staples.length).toBeGreaterThan(20);
     const stapleNames = staples.map((i: any) => i.name);
     expect(stapleNames).toContain('salt');

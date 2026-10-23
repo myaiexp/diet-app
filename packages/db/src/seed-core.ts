@@ -43,12 +43,12 @@ export async function seedDatabase(
             nutritionPer100g: row.nutritionPer100g,
             shelfLife: row.shelfLife,
             tags: row.tags,
-            isPantryStaple: row.isPantryStaple,
+            isStaple: row.isStaple,
           })),
         )
         .onConflictDoUpdate({
           target: ingredients.name,
-          // isPantryStaple is deliberately absent here: it is user-owned,
+          // isStaple is deliberately absent here: it is user-owned,
           // toggled through PATCH /api/ingredients/:id, and the JSON only
           // carries an initial guess. Refreshing it on every re-seed — the
           // idempotent path run whenever ingredient data is regenerated —

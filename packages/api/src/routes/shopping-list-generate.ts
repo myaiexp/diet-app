@@ -213,7 +213,7 @@ export function shoppingListGenerateRoutes(db: Db): Hono {
     }
 
     // Relational read for the ingredient join sortListItems needs (name,
-    // isPantryStaple) — same eager-load case GET /:id and /current use, and run
+    // isStaple) — same eager-load case GET /:id and /current use, and run
     // after the transaction commits so it sees the upsert/delete it just made.
     const rows = await db.query.shoppingListItems.findMany({
       where: eq(shoppingListItems.listId, result.list.id),

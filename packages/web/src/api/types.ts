@@ -45,7 +45,7 @@ export interface Ingredient {
   nutritionPer100g: Record<string, number> | null;
   shelfLife: Record<string, number | null> | null;
   tags: string[] | null;
-  isPantryStaple: boolean | null;
+  isStaple: boolean | null;
   createdAt: string;
   updatedAt: string;
 }

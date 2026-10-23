@@ -52,12 +52,12 @@ afterEach(() => {
 
 describe('groupByAisle (pure)', () => {
   test('buckets into aisle order and keeps server order inside each bucket', () => {
-    // 'c' is a pantry staple the server already sunk to the bottom of
+    // 'c' is a staple the server already sunk to the bottom of
     // 'produce' — grouping must not re-sort it back up.
     const items = [
       makeShoppingItem({ id: 'a', category: 'dairy' }),
       makeShoppingItem({ id: 'b', category: 'produce' }),
-      makeShoppingItem({ id: 'c', category: 'produce', ingredient: makeIngredient({ isPantryStaple: true }) }),
+      makeShoppingItem({ id: 'c', category: 'produce', ingredient: makeIngredient({ isStaple: true }) }),
       makeShoppingItem({ id: 'd', category: 'protein' }),
     ];
 

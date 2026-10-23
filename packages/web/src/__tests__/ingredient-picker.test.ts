@@ -19,7 +19,7 @@ function makePotato(overrides: Parameters<typeof makeIngredient>[0] = {}) {
     aliases: ['peruna'],
     category: 'produce',
     defaultUnit: 'kg',
-    isPantryStaple: false,
+    isStaple: false,
     ...overrides,
   });
 }

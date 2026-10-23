@@ -1,12 +1,12 @@
 // Shopping list item display order: non-staples first, then category, name, id
 
-// isPantryStaple is read live off the joined ingredient, never snapshotted onto
+// isStaple is read live off the joined ingredient, never snapshotted onto
 // the item row: category is stable, but this flag is *designed* to be toggled
 // (PATCH /api/ingredients/:id), so a copy would go stale the moment it is.
 export interface SortableItem {
   id: string;
   category: string;
-  ingredient?: { name?: string | null; isPantryStaple?: boolean | null } | null;
+  ingredient?: { name?: string | null; isStaple?: boolean | null } | null;
 }
 
 function compare(a: string, b: string): number {
@@ -24,8 +24,8 @@ function compare(a: string, b: string): number {
  */
 export function sortListItems<T extends SortableItem>(items: T[]): T[] {
   return [...items].sort((a, b) => {
-    const aStaple = a.ingredient?.isPantryStaple === true;
-    const bStaple = b.ingredient?.isPantryStaple === true;
+    const aStaple = a.ingredient?.isStaple === true;
+    const bStaple = b.ingredient?.isStaple === true;
     if (aStaple !== bStaple) return aStaple ? 1 : -1;
 
     const byCategory = compare(a.category, b.category);

@@ -27,7 +27,7 @@ paragraph of "why", the why belongs in the linked subdoc.
   `migrate` — never `push` (it prompts and hangs without a TTY). `migrate` runs
   through a guard that refuses **destructive** pending DDL from a worktree and
   sends it to the deploy's own migrate step instead; additive DDL applies
-  normally. Catalog seed (idempotent upsert; never resets `isPantryStaple`):
+  normally. Catalog seed (idempotent upsert; never resets `isStaple`):
   `pnpm --filter @diet-app/db db:seed`. Test DB:
   `pnpm --filter @diet-app/db setup:test-db`. Details: **`docs/testing.md`**.
 - Core concepts: spoilage-first pantry, AI meal planning, constraint
