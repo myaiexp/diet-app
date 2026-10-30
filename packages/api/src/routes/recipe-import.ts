@@ -49,7 +49,7 @@ function buildDraft(
       notes: ing.notes ?? null,
       match: m.match,
       // The review screen's third state: matched, but the amount was guessed.
-      // `match` only carries exact|alias|none, and a round number is not
+      // `match` only says how the name bound, and a round number is not
       // evidence of a guess — only the extraction model knows.
       quantityInferred: ing.quantityInferred ?? false,
     };
@@ -122,7 +122,7 @@ export function recipeImportRoutes(db: Db, opts: RecipeImportRoutesOpts): Hono {
     const names = extracted.recipe.ingredients.map((i) => i.name);
     const matches = await doMatch(db, names);
     const draft = buildDraft(extracted.recipe, matches, sourceUrl);
-    const unmatchedCount = draft.ingredients.filter((l) => l.match === 'none').length;
+    const unmatchedCount = draft.ingredients.filter((l) => l.ingredientId === null).length;
 
     return c.json({ draft, unmatchedCount, truncated, lowYield });
   });

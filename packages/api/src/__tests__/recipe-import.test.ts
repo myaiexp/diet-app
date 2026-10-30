@@ -211,6 +211,22 @@ describe('POST /recipes/import', () => {
     expect(typeof body.draft.ingredients[0].quantity).toBe('number');
   });
 
+  test('an ambiguous line counts as unmatched, since nothing is bound yet', async () => {
+    const { app } = makeApp({
+      matches: [
+        { rawName: 'Egg', ingredientId: null, ingredientName: null, match: 'ambiguous' },
+        { rawName: 'Unicorn dust', ingredientId: null, ingredientName: null, match: 'none' },
+      ],
+    });
+    const res = await app.request('/import', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text: 'Omelette: whisk eggs, cook.' }),
+    });
+    expect(res.status).toBe(200);
+    expect((await res.json()).unmatchedCount).toBe(2);
+  });
+
   test('url path uses fetch then extract (mocked)', async () => {
     const { app, extractRecipeFromText, fetchUrlAsText } = makeApp({
       fetchResult: {

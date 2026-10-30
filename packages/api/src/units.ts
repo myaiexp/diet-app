@@ -30,6 +30,9 @@ const UNITS: Record<string, UnitInfo> = {
   kpl: { dimension: 'count', factor: 1 },
 };
 
+/** Every spelling resolveUnit accepts, for error messages. */
+export const KNOWN_UNITS: readonly string[] = Object.keys(UNITS);
+
 // Resolve free-text unit to dimension + base factor. Unknown → null.
 export function resolveUnit(unit: string): { dimension: Dimension; factor: number } | null {
   const key = unit.trim().toLowerCase();

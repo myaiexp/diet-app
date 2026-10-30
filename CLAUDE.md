@@ -42,8 +42,9 @@ paragraph of "why", the why belongs in the linked subdoc.
   import logging, and walking the PG `cause` chain: **`docs/api-conventions.md`**.
 - **Pantry**: `location` is a closed set (`LOCATIONS`, `vocab.ts`); POST derives
   `expiresDate` from `shelfLife.<location>_days` and 400s when that key is
-  absent (always for `counter`); PATCH never recomputes it; `status` bands are
-  server-side, in whole UTC days. Rules: **`docs/pantry.md`**. Design:
+  absent (always for `counter`); PATCH never recomputes it; units must resolve in
+  `units.ts`, a unit-only PATCH rescales, and `expectedQuantity` guards a stale
+  edit; `status` bands are server-side, in whole UTC days. Rules: **`docs/pantry.md`**. Design:
   `docs/plans/2026-07-20-pantry-recipe-writes-design.md`.
 - **Recipe scaling**: scaled views are `GET /recipes/:id?servings=N`
   (`recipe-scale.ts`); the client must not reimplement `qty × target / base`.

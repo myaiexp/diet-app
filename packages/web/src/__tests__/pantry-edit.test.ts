@@ -119,6 +119,7 @@ describe('pantry row ⋯ menu', () => {
           path: '/api/pantry/item-1',
           body: {
             quantity: 250,
+            expectedQuantity: 400,
             unit: 'ml',
             location: 'freezer',
             opened: true,
@@ -130,42 +131,6 @@ describe('pantry row ⋯ menu', () => {
       expect(root.querySelector('.row-meta')?.textContent).toContain('freezer');
       expect(root.querySelector('.label-muted')?.textContent).toBe('opened');
       expect(root.querySelectorAll('.pantry-row')).toHaveLength(1);
-    });
-  });
-
-  test('save without edits still PATCHes the seeded expiresDate and other fields', async () => {
-    const item = milkItem();
-    fetchMock.mockImplementation(
-      routeFetch(
-        {
-          'GET /api/pantry': [item],
-          'PATCH /api/pantry/:id': item,
-        },
-        { unmatched: '404' },
-      ),
-    );
-
-    const root = mountRoot();
-    await pantryScreen().mount(root, makeCtx());
-    openRow(root);
-
-    const form = document.querySelector('.pantry-form')!;
-    expect(form.querySelector<HTMLInputElement>('input[type="number"]')!.value).toBe('400');
-    expect(form.querySelector<HTMLInputElement>('input[type="date"]')!.value).toBe('2026-08-10');
-    clickSave();
-    await vi.waitFor(() => {
-      expect(methodCalls('PATCH')).toEqual([
-        {
-          path: '/api/pantry/item-1',
-          body: {
-            quantity: 400,
-            unit: 'g',
-            location: 'fridge',
-            opened: false,
-            expiresDate: '2026-08-10',
-          },
-        },
-      ]);
     });
   });
 
@@ -186,6 +151,13 @@ describe('pantry row ⋯ menu', () => {
     const root = mountRoot();
     await pantryScreen().mount(root, makeCtx());
     openRow(root);
+    fillEdit({
+      quantity: '400',
+      unit: 'g',
+      location: 'freezer',
+      opened: false,
+      expiresDate: '2026-08-10',
+    });
     clickSave();
     await vi.waitFor(() => {
       expect(root.querySelector('.row-title')?.textContent).toBe('Milk');

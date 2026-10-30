@@ -793,8 +793,7 @@
   {
     "name": "spring onion",
     "aliases": [
-      "kevätsipuli",
-      "salottisipuli"
+      "kevätsipuli"
     ],
     "category": "produce",
     "defaultUnit": "g",
@@ -925,8 +924,7 @@
   {
     "name": "bok choy",
     "aliases": [
-      "pak choi",
-      "kiinankaali"
+      "pak choi"
     ],
     "category": "produce",
     "defaultUnit": "g",
@@ -4067,7 +4065,6 @@
   {
     "name": "evaporated milk",
     "aliases": [
-      "kondensoitu maito",
       "haihdutettu maito"
     ],
     "category": "dairy",
@@ -5505,8 +5502,7 @@
   {
     "name": "cumin",
     "aliases": [
-      "juustokumina",
-      "kumina"
+      "juustokumina"
     ],
     "category": "spice",
     "defaultUnit": "g",
@@ -9797,8 +9793,7 @@
   {
     "name": "fresh oregano",
     "aliases": [
-      "tuore oregano",
-      "oregano"
+      "tuore oregano"
     ],
     "category": "produce",
     "defaultUnit": "g",

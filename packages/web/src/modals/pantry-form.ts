@@ -1,14 +1,16 @@
 // Pantry add and edit item modals.
 
-import type { Ingredient, PantryItem, PantryLocation, PantryCreate } from '../api/types.js';
+import type { Ingredient, PantryItem, PantryLocation, PantryCreate, PantryPatch } from '../api/types.js';
 import { LOCATIONS } from '../api/types.js';
-import { createPantryItem, patchPantryItem, deletePantryItem } from '../api/pantry.js';
+import { createPantryItem, getPantryItem, patchPantryItem, deletePantryItem } from '../api/pantry.js';
 import { isApiError } from '../api/errors.js';
+import { formatQuantity, toNumber } from '../format/quantity.js';
 import { el, button } from '../ui/dom.js';
-import { field, errorBox, selectInput } from '../ui/form.js';
+import { field, errorBox, selectInput, showError } from '../ui/form.js';
 import { createIngredientQuantityForm, readQuantityUnit } from '../ui/ingredient-picker.js';
-import { openModal } from '../ui/modal.js';
+import { closeModal, openModal } from '../ui/modal.js';
 import { modalFooter, submitModal } from '../ui/modal-form.js';
+import { say } from '../ui/toast.js';
 
 const NO_SHELF_LIFE =
   'expiresDate is required when ingredient has no shelf life for this location';
@@ -70,6 +72,27 @@ export interface EditItemHandlers {
   onDeleted: (id: string) => void;
 }
 
+type EditFields = Required<Pick<PantryPatch, 'quantity' | 'unit' | 'location' | 'opened' | 'expiresDate'>>;
+
+/**
+ * Only what the user changed. POST /cook moves quantity while this dialog can
+ * sit open, so a field sent back unchanged would overwrite a deduction that
+ * cannot be re-run; a changed quantity names the value it replaces.
+ */
+function changedFields(base: PantryItem, form: EditFields): PantryPatch {
+  const patch: PantryPatch = {};
+  const baseQuantity = toNumber(base.quantity);
+  if (form.quantity !== baseQuantity) {
+    patch.quantity = form.quantity;
+    patch.expectedQuantity = baseQuantity;
+  }
+  if (form.unit !== base.unit) patch.unit = form.unit;
+  if (form.location !== base.location) patch.location = form.location;
+  if (form.opened !== (base.opened ?? false)) patch.opened = form.opened;
+  if (form.expiresDate !== base.expiresDate.slice(0, 10)) patch.expiresDate = form.expiresDate;
+  return patch;
+}
+
 export function openEditItemModal(
   item: PantryItem,
   ingredient: Ingredient | undefined,
@@ -95,6 +118,7 @@ export function openEditItemModal(
     value: item.expiresDate.slice(0, 10),
   }) as HTMLInputElement;
   const err = errorBox();
+  let base = item;
 
   const body = el(
     'div',
@@ -110,18 +134,45 @@ export function openEditItemModal(
   async function submit(): Promise<void> {
     const parsed = readQuantityUnit(qtyInput, unitInput, err);
     if (!parsed) return;
-    const patch = {
+    const patch = changedFields(base, {
       quantity: parsed.quantity,
       unit: parsed.unit,
       location: locSelect.value as PantryLocation,
       opened: openedInput.checked,
       expiresDate: expiresInput.value,
-    };
+    });
+    if (Object.keys(patch).length === 0) {
+      closeModal();
+      return;
+    }
     await submitModal(() => patchPantryItem(item.id, patch), {
       errorBox: err,
       success: 'Pantry item updated',
+      onError: (e) => {
+        if (!isApiError(e)) return;
+        if (e.status === 409) void rebase();
+        if (e.status === 404) {
+          closeModal();
+          say('That pantry item is gone — it was used up or removed');
+          handlers.onDeleted(item.id);
+        }
+      },
       onDone: handlers.onSaved,
     });
+  }
+
+  /** The row moved under the dialog: show its new quantity and compare the next save against it. */
+  async function rebase(): Promise<void> {
+    let fresh: PantryItem;
+    try {
+      fresh = await getPantryItem(item.id);
+    } catch {
+      return; // The 409 is already on screen; the next save will 409 again.
+    }
+    base = fresh;
+    handlers.onSaved(fresh);
+    const now = formatQuantity(toNumber(fresh.quantity), fresh.unit);
+    showError(err, `Quantity is now ${now} — check it and save again.`);
   }
 
   async function remove(): Promise<void> {

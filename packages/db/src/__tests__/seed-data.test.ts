@@ -82,6 +82,24 @@ describe('ingredients.json', () => {
     expect(unaliased).toEqual([]);
   });
 
+  test('no string reaches two rows, except the one the matcher must ask about', () => {
+    // Exact matching can only bind a string to one row, so a shared alias either
+    // binds the wrong food or, since the matcher refuses to guess, costs a manual
+    // pick on every import. `paprika` stays shared on purpose: it is the English
+    // name of the spice and the Finnish name of the vegetable, and no catalog
+    // edit can make one line mean both.
+    const AMBIGUOUS_ON_PURPOSE = ['paprika'];
+    const rowsByString = new Map<string, Set<string>>();
+    for (const item of data) {
+      for (const text of [item.name, ...item.aliases]) {
+        const key = text.trim().replace(/\s+/g, ' ').toLowerCase();
+        rowsByString.set(key, (rowsByString.get(key) ?? new Set()).add(item.name));
+      }
+    }
+    const shared = [...rowsByString].filter(([, rows]) => rows.size > 1).map(([key]) => key);
+    expect(shared).toEqual(AMBIGUOUS_ON_PURPOSE);
+  });
+
   test('shelf life has correct structure', () => {
     for (const item of data) {
       const sl = item.shelfLife;

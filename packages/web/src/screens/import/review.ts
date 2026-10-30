@@ -58,6 +58,7 @@ export function classify(line: EditableLine): LineState {
  * who cannot see the match cannot review it.
  */
 function bindLabel(line: EditableLine): string {
+  if (line.match === 'ambiguous') return '→ several catalog matches';
   if (!line.ingredientId) return '→ no catalog match';
   return line.ingredientName ? `→ ${line.ingredientName}` : '→ catalog match';
 }

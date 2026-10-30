@@ -235,6 +235,25 @@ describe('recipe import screen', () => {
     expect(binds).toEqual(['→ Pearl barley', '→ no catalog match']);
   });
 
+  test('an ambiguous line says so, and must be picked like an unmatched one', async () => {
+    const draft = makeDraft({
+      ingredients: [
+        makeLine({ rawName: 'paprika', ingredientId: null, ingredientName: null, quantity: 100, match: 'ambiguous' }),
+      ],
+    });
+    fetchMock.mockImplementation(draftFetch(draft, 1));
+
+    const root = mountRoot();
+    await importScreen().mount(root, makeCtx());
+    submit(root);
+    await waitForReview(root);
+
+    expect(root.querySelector('.import-line-bind .label-muted')!.textContent).toBe(
+      '→ several catalog matches',
+    );
+    expect(root.querySelector<HTMLButtonElement>('.import-footer .btn-primary')!.disabled).toBe(true);
+  });
+
   test('a bound line with no resolved name falls back to the generic label', async () => {
     const draft = makeDraft({
       ingredients: [

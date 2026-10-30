@@ -321,8 +321,8 @@ describe('mealPlanCookRoutes', () => {
       recipe: { ...RECIPE, servings: 1 },
       lines: [{ ...LINE, quantity: '500', unit: 'g' }],
       pantryRows: [
-        { ...PANTRY_ROW, id: laterId, quantity: '400', unit: 'g', expiresDate: '2026-09-01' },
-        { ...PANTRY_ROW, id: soonerId, quantity: '300', unit: 'g', expiresDate: '2026-07-01' },
+        { ...PANTRY_ROW, id: laterId, quantity: '400', unit: 'g', expiresDate: '2099-09-01' },
+        { ...PANTRY_ROW, id: soonerId, quantity: '300', unit: 'g', expiresDate: '2099-07-01' },
       ],
     });
     const res = await mealPlanCookRoutes(db).request(`/${ENTRY_ID}/cook`, {

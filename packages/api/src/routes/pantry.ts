@@ -3,17 +3,20 @@
 import { Hono } from 'hono';
 import type { Db } from '@diet-app/db';
 import { pantryItems, ingredients } from '@diet-app/db';
-import { eq, asc } from 'drizzle-orm';
+import { and, eq, asc } from 'drizzle-orm';
 import { isUuid } from '../validation.js';
 import { getPagination } from '../pagination.js';
 import { computeStatus } from '../pantry-status.js';
 import { resolveExpiresDate } from '../pantry-expiry.js';
+import { planUnitChange } from '../pantry-unit-change.js';
 import { todayUtc } from '../date.js';
-import { notFound, badRequest } from '../responses.js';
+import { notFound, badRequest, conflict } from '../responses.js';
 import { parseJsonBody } from '../json-body.js';
 import { buildPatch } from '../patch-builder.js';
 import { pantryCreateSchema, pantryPatchSchema } from '../schemas/pantry.js';
 import { isFkViolation } from '../pg-errors.js';
+
+const QUANTITY_CHANGED = 'Quantity has changed since this item was loaded';
 
 function withStatus<T extends { expiresDate: string }>(row: T) {
   return { ...row, status: computeStatus(row.expiresDate) };
@@ -122,20 +125,41 @@ export function pantryRoutes(db: Db): Hono {
     });
     if (!existing) return notFound(c);
 
+    const unitChange = planUnitChange(existing, data);
+    if (unitChange.kind === 'refused') return badRequest(c, unitChange.error);
+    const rescaled = unitChange.kind === 'rescaled';
+
     const patch: Partial<typeof pantryItems.$inferInsert> = {
       ...buildPatch(data, pantryItems),
+      ...(rescaled ? { quantity: String(unitChange.quantity) } : {}),
       updatedAt: new Date(),
     };
+
+    // POST /cook deducts under FOR UPDATE and cannot be re-run, so a quantity
+    // typed against a stale read must not land, and neither may one rescaled
+    // from the pre-check row above. The compare sits in the UPDATE's own WHERE:
+    // a write queued behind a cook's row lock re-checks the committed value.
+    const guards = [eq(pantryItems.id, id)];
+    if (rescaled) {
+      guards.push(eq(pantryItems.quantity, existing.quantity), eq(pantryItems.unit, existing.unit));
+    } else if (data.expectedQuantity !== undefined) {
+      guards.push(eq(pantryItems.quantity, String(data.expectedQuantity)));
+    }
 
     const [row] = await db
       .update(pantryItems)
       .set(patch)
-      .where(eq(pantryItems.id, id))
+      .where(and(...guards))
       .returning();
 
-    // Race: row deleted between pre-check and update — empty RETURNING must
-    // not reach withStatus (row.expiresDate would TypeError into a 500).
-    if (!row) return notFound(c);
+    // Empty RETURNING must not reach withStatus (row.expiresDate would
+    // TypeError into a 500): either the row was deleted between pre-check and
+    // update, or a compare refused the write.
+    if (!row) {
+      if (guards.length === 1) return notFound(c);
+      const current = await db.query.pantryItems.findFirst({ where: eq(pantryItems.id, id) });
+      return current ? conflict(c, QUANTITY_CHANGED) : notFound(c);
+    }
     return c.json(withStatus({ ...row, ingredient: existing.ingredient }));
   });
 
