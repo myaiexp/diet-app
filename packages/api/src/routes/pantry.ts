@@ -8,6 +8,7 @@ import { isUuid } from '../validation.js';
 import { getPagination } from '../pagination.js';
 import { computeStatus } from '../pantry-status.js';
 import { resolveExpiresDate } from '../pantry-expiry.js';
+import { planUnitChange } from '../pantry-unit-change.js';
 import { todayUtc } from '../date.js';
 import { notFound, badRequest, conflict } from '../responses.js';
 import { parseJsonBody } from '../json-body.js';
@@ -124,31 +125,38 @@ export function pantryRoutes(db: Db): Hono {
     });
     if (!existing) return notFound(c);
 
+    const unitChange = planUnitChange(existing, data);
+    if (unitChange.kind === 'refused') return badRequest(c, unitChange.error);
+    const rescaled = unitChange.kind === 'rescaled';
+
     const patch: Partial<typeof pantryItems.$inferInsert> = {
       ...buildPatch(data, pantryItems),
+      ...(rescaled ? { quantity: String(unitChange.quantity) } : {}),
       updatedAt: new Date(),
     };
 
     // POST /cook deducts under FOR UPDATE and cannot be re-run, so a quantity
-    // typed against a stale read must not land. The compare sits in the UPDATE's
-    // own WHERE: a write queued behind a cook's row lock re-checks it against
-    // the committed quantity.
-    const { expectedQuantity } = data;
+    // typed against a stale read must not land, and neither may one rescaled
+    // from the pre-check row above. The compare sits in the UPDATE's own WHERE:
+    // a write queued behind a cook's row lock re-checks the committed value.
+    const guards = [eq(pantryItems.id, id)];
+    if (rescaled) {
+      guards.push(eq(pantryItems.quantity, existing.quantity), eq(pantryItems.unit, existing.unit));
+    } else if (data.expectedQuantity !== undefined) {
+      guards.push(eq(pantryItems.quantity, String(data.expectedQuantity)));
+    }
+
     const [row] = await db
       .update(pantryItems)
       .set(patch)
-      .where(
-        expectedQuantity === undefined
-          ? eq(pantryItems.id, id)
-          : and(eq(pantryItems.id, id), eq(pantryItems.quantity, String(expectedQuantity))),
-      )
+      .where(and(...guards))
       .returning();
 
     // Empty RETURNING must not reach withStatus (row.expiresDate would
     // TypeError into a 500): either the row was deleted between pre-check and
-    // update, or the compare refused the write.
+    // update, or a compare refused the write.
     if (!row) {
-      if (expectedQuantity === undefined) return notFound(c);
+      if (guards.length === 1) return notFound(c);
       const current = await db.query.pantryItems.findFirst({ where: eq(pantryItems.id, id) });
       return current ? conflict(c, QUANTITY_CHANGED) : notFound(c);
     }

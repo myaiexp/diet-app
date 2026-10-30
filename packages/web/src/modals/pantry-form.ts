@@ -172,7 +172,7 @@ export function openEditItemModal(
     base = fresh;
     handlers.onSaved(fresh);
     const now = formatQuantity(toNumber(fresh.quantity), fresh.unit);
-    showError(err, `Quantity is now ${now} — save again to replace it.`);
+    showError(err, `Quantity is now ${now} — check it and save again.`);
   }
 
   async function remove(): Promise<void> {

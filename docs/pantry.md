@@ -63,6 +63,23 @@ that:
 
 `expectedQuantity` is optional, so a client that wants last-write-wins omits it.
 
+## Units are a closed set, and a rename keeps the amount
+
+POST and PATCH refuse any unit `resolveUnit` (`units.ts`) cannot resolve: cook
+reports a lot it cannot convert as `unit_mismatch` and shopping drops it from
+coverage, so an unknown unit would make the stock invisible to both. Only the
+spelling is checked; the row keeps the unit the user wrote (`kg` stays `kg`,
+unlike a shopping item, which normalizes to the dimension's base).
+
+A PATCH with `unit` and no `quantity` rescales what is stored
+(`planUnitChange`, `pantry-unit-change.ts`): 2 kg to `g` writes 2000. It computes
+from the pre-check read, so the UPDATE's `WHERE` compares that quantity and unit,
+and a mismatch is the same 409. No factor crosses mass, volume and count, so a
+unit-only PATCH across dimensions is a 400, as is a result that rounds to 0 or
+passes the quantity cap. Sending `quantity` too makes both literal, which is how
+a row recorded in the wrong dimension is corrected. The edit modal needs no
+conversion of its own: leaving the quantity field alone sends the unit by itself.
+
 ## Status is computed per response, in whole UTC days
 
 Every pantry response carries `status` from `computeStatus(expiresDate)`

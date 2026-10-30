@@ -70,3 +70,15 @@ describe.skipIf(!hasDb)('pantry PATCH expectedQuantity', () => {
     });
   });
 });
+
+describe.skipIf(!hasDb)('pantry PATCH unit changes', () => {
+  test('a unit-only PATCH rescales the stored amount, and cook still sees it', async () => {
+    await withItem({ quantity: 1.5, unit: 'kg' }, async (id) => {
+      const res = await patch(id, { unit: 'g' });
+      expect(res.status).toBe(200);
+      const body = await res.json();
+      expect(body.unit).toBe('g');
+      expect(body.quantity).toBe('1500');
+    });
+  });
+});

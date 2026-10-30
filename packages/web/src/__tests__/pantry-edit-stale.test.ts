@@ -184,4 +184,31 @@ describe('pantry edit against a moving row', () => {
       expect(document.querySelector('.modal-backdrop')).toBeNull();
     });
   });
+
+  test('a unit-only edit sends just the unit, so the API rescales the stored amount', async () => {
+    const item = milkItem({ quantity: '0.5', unit: 'kg' });
+    const rescaled = milkItem({ quantity: '500', unit: 'g' });
+    fetchMock.mockImplementation(
+      routeFetch(
+        { 'GET /api/pantry': [item], 'PATCH /api/pantry/:id': rescaled },
+        { unmatched: '404' },
+      ),
+    );
+
+    const root = mountRoot();
+    await pantryScreen().mount(root, makeCtx());
+    openRow(root);
+    fillEdit({
+      quantity: '0.5',
+      unit: 'g',
+      location: 'fridge',
+      opened: false,
+      expiresDate: '2026-08-10',
+    });
+    clickSave();
+    await vi.waitFor(() => {
+      expect(methodCalls('PATCH')).toEqual([{ path: '/api/pantry/item-1', body: { unit: 'g' } }]);
+      expect(root.querySelector('.pantry-qty')?.textContent).toBe('500 g');
+    });
+  });
 });
