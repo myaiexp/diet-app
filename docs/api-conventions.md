@@ -143,9 +143,13 @@ vanished mid-request, and that belongs in a 500, not a tidy 400.
   A matched line carries `ingredientName` beside `ingredientId` — the matcher
   already holds the candidate rows, so naming the binding costs no query and
   saves the review screen a per-line lookup.
-  Matching is exact on `ingredients.name` then exact on `aliases`, both
-  case-folded and whitespace-collapsed — so a Finnish recipe line only ever
-  reaches a row through its Finnish alias. **Every catalog row carries at least
+  Matching is exact on `ingredients.name` or `aliases`, both case-folded and
+  whitespace-collapsed — so a Finnish recipe line only ever reaches a row through
+  its Finnish alias. A string reaching two rows is `match: 'ambiguous'` and binds
+  to neither, even when one hit is a name: the review screen forces a pick, which
+  beats silently binding the wrong food. `seed-data.test.ts` keeps `paprika` (the
+  spice in English, the vegetable in Finnish) the only such string; an alias
+  shared by accident is a catalog bug. **Every catalog row carries at least
   one**, pinned by `seed-data.test.ts`; an English-only row is unreachable from
   a Finnish recipe (idea #3391). Aliases do *not* connect the catalog to
   `products`: product names are brand+descriptor+size strings

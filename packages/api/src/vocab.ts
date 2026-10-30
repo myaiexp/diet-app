@@ -34,7 +34,7 @@ export type ShoppingItemSource = 'generated' | 'manual';
 export type SkippedGenerateReason = 'unknown_unit' | 'recipe_missing' | 'bad_scale';
 
 /** How recipe import bound an extracted ingredient name to a catalog row. */
-export type MatchKind = 'exact' | 'alias' | 'none';
+export type MatchKind = 'exact' | 'alias' | 'ambiguous' | 'none';
 
 export const SOURCE_TYPES = ['manual', 'imported', 'ai', 'forked'] as const;
 export type SourceType = (typeof SOURCE_TYPES)[number];

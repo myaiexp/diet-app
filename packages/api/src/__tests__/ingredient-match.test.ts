@@ -12,7 +12,6 @@ const CANDIDATES: IngredientCandidate[] = [
   { id: 'id-salt', name: 'Salt', aliases: ['sea salt', 'table salt'] },
   { id: 'id-egg', name: 'Egg', aliases: ['kananmuna'] },
   { id: 'id-basalt', name: 'Basalt spice', aliases: null },
-  { id: 'id-salt-b', name: 'Salt', aliases: ['rock salt'] }, // duplicate name for stable pick
 ];
 
 describe('matchIngredientName', () => {
@@ -37,7 +36,7 @@ describe('matchIngredientName', () => {
     expect(m.ingredientName).toBe('Egg');
   });
 
-  test('name exact preferred over alias on another row', () => {
+  test('a name another row aliases is not preferred over that alias', () => {
     const candidates: IngredientCandidate[] = [
       { id: 'id-a', name: 'Sea salt blend', aliases: ['salt'] },
       { id: 'id-b', name: 'Salt', aliases: null },
@@ -45,9 +44,9 @@ describe('matchIngredientName', () => {
     const m = matchIngredientName('salt', candidates);
     expect(m).toEqual({
       rawName: 'salt',
-      ingredientId: 'id-b',
-      ingredientName: 'Salt',
-      match: 'exact',
+      ingredientId: null,
+      ingredientName: null,
+      match: 'ambiguous',
     });
   });
 
@@ -66,12 +65,40 @@ describe('matchIngredientName', () => {
     expect(m.match).toBe('alias');
     expect(m.ingredientId).toBe('id-salt');
   });
+});
 
-  test('stable tie-break when multiple name exact (name ASC, id ASC)', () => {
-    const m = matchIngredientName('Salt', CANDIDATES);
-    // Both id-salt and id-salt-b have name Salt; name ASC ties, id ASC → id-salt
-    expect(m.match).toBe('exact');
-    expect(m.ingredientId).toBe('id-salt');
+describe('matchIngredientName on a string that names two rows', () => {
+  const SPICE = { id: 'id-spice', name: 'paprika', aliases: ['paprikajauhe'] };
+  const PEPPER = { id: 'id-pepper', name: 'bell pepper', aliases: ['paprika', 'capsicum'] };
+
+  test('a row name another row also aliases is ambiguous, in either list order', () => {
+    for (const candidates of [[SPICE, PEPPER], [PEPPER, SPICE]]) {
+      expect(matchIngredientName('Paprika', candidates)).toEqual({
+        rawName: 'Paprika',
+        ingredientId: null,
+        ingredientName: null,
+        match: 'ambiguous',
+      });
+    }
+  });
+
+  test('an alias two rows share is ambiguous', () => {
+    const m = matchIngredientName('kiinankaali', [
+      { id: 'a', name: 'bok choy', aliases: ['kiinankaali'] },
+      { id: 'b', name: 'chinese cabbage', aliases: ['kiinankaali'] },
+    ]);
+    expect(m.match).toBe('ambiguous');
+    expect(m.ingredientId).toBeNull();
+  });
+
+  test('a row aliasing its own name is one row, not two', () => {
+    const m = matchIngredientName('oregano', [{ id: 'o', name: 'oregano', aliases: ['oregano'] }]);
+    expect(m).toMatchObject({ ingredientId: 'o', match: 'exact' });
+  });
+
+  test('the unshared spellings still bind', () => {
+    expect(matchIngredientName('paprikajauhe', [SPICE, PEPPER]).ingredientId).toBe('id-spice');
+    expect(matchIngredientName('bell pepper', [SPICE, PEPPER]).ingredientId).toBe('id-pepper');
   });
 });
 

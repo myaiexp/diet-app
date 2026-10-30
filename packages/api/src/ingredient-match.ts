@@ -29,49 +29,41 @@ export function normalizeIngredientName(raw: string): string {
   return raw.trim().replace(/\s+/g, ' ').toLowerCase();
 }
 
-function compareCandidates(a: IngredientCandidate, b: IngredientCandidate): number {
-  const byName = a.name.localeCompare(b.name);
-  if (byName !== 0) return byName;
-  return a.id.localeCompare(b.id);
-}
-
-/** Pure: match one name against an in-memory candidate list. */
+/**
+ * Pure: match one name against an in-memory candidate list. A string reaching
+ * exactly one row binds to it. A string reaching several is `ambiguous` and binds
+ * to none, a name hit included: "paprika" is the spice's English name and the
+ * Finnish word for bell pepper, and only the reader of the recipe can tell which
+ * was meant. The review screen forces a pick on any unbound line.
+ */
 export function matchIngredientName(
   rawName: string,
   candidates: IngredientCandidate[],
 ): LineMatch {
+  const unbound = (match: MatchKind): LineMatch => ({
+    rawName,
+    ingredientId: null,
+    ingredientName: null,
+    match,
+  });
+
   const needle = normalizeIngredientName(rawName);
-  if (!needle) {
-    return { rawName, ingredientId: null, ingredientName: null, match: 'none' };
-  }
+  if (!needle) return unbound('none');
 
-  const nameHits = candidates
-    .filter((c) => normalizeIngredientName(c.name) === needle)
-    .sort(compareCandidates);
-  if (nameHits.length > 0) {
-    return {
-      rawName,
-      ingredientId: nameHits[0].id,
-      ingredientName: nameHits[0].name,
-      match: 'exact',
-    };
-  }
+  const isName = (c: IngredientCandidate) => normalizeIngredientName(c.name) === needle;
+  const hits = candidates.filter(
+    (c) => isName(c) || (c.aliases ?? []).some((a) => normalizeIngredientName(a) === needle),
+  );
+  if (hits.length === 0) return unbound('none');
+  if (hits.length > 1) return unbound('ambiguous');
 
-  const aliasHits = candidates
-    .filter((c) =>
-      (c.aliases ?? []).some((a) => normalizeIngredientName(a) === needle),
-    )
-    .sort(compareCandidates);
-  if (aliasHits.length > 0) {
-    return {
-      rawName,
-      ingredientId: aliasHits[0].id,
-      ingredientName: aliasHits[0].name,
-      match: 'alias',
-    };
-  }
-
-  return { rawName, ingredientId: null, ingredientName: null, match: 'none' };
+  const [hit] = hits;
+  return {
+    rawName,
+    ingredientId: hit.id,
+    ingredientName: hit.name,
+    match: isName(hit) ? 'exact' : 'alias',
+  };
 }
 
 /** Load catalog candidates and match many names (exact name or alias). */
