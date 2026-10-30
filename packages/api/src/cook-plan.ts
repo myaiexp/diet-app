@@ -3,6 +3,7 @@
 import type { Db } from '@diet-app/db';
 import { mealPlanEntries, recipes, recipeIngredients, pantryItems } from '@diet-app/db';
 import { asc, eq, inArray } from 'drizzle-orm';
+import { todayUtc } from './date.js';
 import { parseServings } from './servings.js';
 import { resolvedRecipeId, servingsScale, toRecipeLine } from './recipe-lines.js';
 import {
@@ -118,7 +119,7 @@ export async function loadCookPlan(
     createdAt: toIso(r.createdAt),
   }));
 
-  const planned = planDeduction(recipeLines, pantryForPlanner, scale);
+  const planned = planDeduction(recipeLines, pantryForPlanner, scale, todayUtc());
   return {
     kind: 'ok',
     entry,

@@ -7,6 +7,9 @@ import {
   type RecipeLine,
 } from '../cook-deduct.js';
 
+// Earlier than every fixture lot, so only the expiry suite below sees a dead one.
+const TODAY = '2026-07-01';
+
 const ROW = (over: Partial<PantryRow> = {}): PantryRow => ({
   id: 'p1',
   ingredientId: 'i1',
@@ -28,7 +31,7 @@ const LINE = (over: Partial<RecipeLine> = {}): RecipeLine => ({
 
 describe('planDeduction', () => {
   test('deducts an exact match from a single row', () => {
-    const { deductions, shortfalls } = planDeduction([LINE()], [ROW()], 1);
+    const { deductions, shortfalls } = planDeduction([LINE()], [ROW()], 1, TODAY);
     expect(shortfalls).toEqual([]);
     expect(deductions[0]!.deducted).toBe(500);
     expect(deductions[0]!.pantryItems).toEqual([
@@ -38,7 +41,7 @@ describe('planDeduction', () => {
 
   test('converts across units within a dimension', () => {
     // recipe wants 500 g; pantry holds 1 kg → 0.5 kg left, still stored in kg
-    const { deductions } = planDeduction([LINE()], [ROW({ quantity: 1, unit: 'kg' })], 1);
+    const { deductions } = planDeduction([LINE()], [ROW({ quantity: 1, unit: 'kg' })], 1, TODAY);
     expect(deductions[0]!.pantryItems[0]).toEqual({
       id: 'p1',
       unit: 'kg',
@@ -53,7 +56,7 @@ describe('planDeduction', () => {
       ROW({ id: 'later', quantity: 400, expiresDate: '2026-09-01' }),
       ROW({ id: 'sooner', quantity: 400, expiresDate: '2026-07-25' }),
     ];
-    const { deductions } = planDeduction([LINE()], rows, 1);
+    const { deductions } = planDeduction([LINE()], rows, 1, TODAY);
     const touched = deductions[0]!.pantryItems;
     expect(touched[0]!.id).toBe('sooner');
     expect(touched[0]).toMatchObject({ after: 0, deleted: true });
@@ -65,20 +68,20 @@ describe('planDeduction', () => {
       ROW({ id: 'sealed', quantity: 600, opened: false }),
       ROW({ id: 'open', quantity: 600, opened: true }),
     ];
-    const { deductions } = planDeduction([LINE()], rows, 1);
+    const { deductions } = planDeduction([LINE()], rows, 1, TODAY);
     expect(deductions[0]!.pantryItems[0]!.id).toBe('open');
   });
 
   test('scales the requirement by servings', () => {
-    const half = planDeduction([LINE()], [ROW()], 0.5);
+    const half = planDeduction([LINE()], [ROW()], 0.5, TODAY);
     expect(half.deductions[0]!.deducted).toBe(250);
-    const double = planDeduction([LINE()], [ROW()], 2);
+    const double = planDeduction([LINE()], [ROW()], 2, TODAY);
     expect(double.deductions[0]!.deducted).toBe(1000);
     expect(double.deductions[0]!.pantryItems[0]).toMatchObject({ after: 0, deleted: true });
   });
 
   test('reports insufficient_stock and still deducts what exists', () => {
-    const { deductions, shortfalls } = planDeduction([LINE()], [ROW({ quantity: 200 })], 1);
+    const { deductions, shortfalls } = planDeduction([LINE()], [ROW({ quantity: 200 })], 1, TODAY);
     expect(deductions[0]!.deducted).toBe(200);
     expect(shortfalls).toEqual([
       {
@@ -92,7 +95,7 @@ describe('planDeduction', () => {
   });
 
   test('reports not_in_pantry when the ingredient has no rows', () => {
-    const { deductions, shortfalls } = planDeduction([LINE()], [], 1);
+    const { deductions, shortfalls } = planDeduction([LINE()], [], 1, TODAY);
     expect(deductions).toEqual([]);
     expect(shortfalls[0]).toMatchObject({ reason: 'not_in_pantry', available: 0 });
   });
@@ -103,13 +106,14 @@ describe('planDeduction', () => {
       [LINE()],
       [ROW({ quantity: 3, unit: 'pcs' })],
       1,
+      TODAY,
     );
     expect(deductions).toEqual([]);
     expect(shortfalls[0]).toMatchObject({ reason: 'unit_mismatch' });
   });
 
   test('reports unit_mismatch with a null dimension for an unknown recipe unit', () => {
-    const { shortfalls } = planDeduction([LINE({ unit: 'handful' })], [ROW()], 1);
+    const { shortfalls } = planDeduction([LINE({ unit: 'handful' })], [ROW()], 1, TODAY);
     expect(shortfalls[0]).toMatchObject({ reason: 'unit_mismatch', dimension: null });
   });
 
@@ -118,6 +122,7 @@ describe('planDeduction', () => {
       [LINE()],
       [ROW({ quantity: 999, unit: 'handful' })],
       1,
+      TODAY,
     );
     expect(deductions).toEqual([]);
     expect(shortfalls[0]).toMatchObject({ reason: 'unit_mismatch', available: 0 });
@@ -125,10 +130,10 @@ describe('planDeduction', () => {
 
   test('optional lines deduct what is there and never report a shortfall', () => {
     const line = LINE({ optional: true });
-    const short = planDeduction([line], [ROW({ quantity: 100 })], 1);
+    const short = planDeduction([line], [ROW({ quantity: 100 })], 1, TODAY);
     expect(short.deductions[0]!.deducted).toBe(100);
     expect(short.shortfalls).toEqual([]);
-    const absent = planDeduction([line], [], 1);
+    const absent = planDeduction([line], [], 1, TODAY);
     expect(absent.shortfalls).toEqual([]);
     expect(absent.deductions).toEqual([]); // nothing taken → no Deduction either
   });
@@ -139,6 +144,7 @@ describe('planDeduction', () => {
       [LINE({ quantity: 0.3 })],
       [ROW({ quantity: 0.3 })],
       1,
+      TODAY,
     );
     expect(deductions[0]!.pantryItems[0]).toMatchObject({ after: 0, deleted: true });
   });
@@ -146,7 +152,7 @@ describe('planDeduction', () => {
   test('handles multiple lines independently', () => {
     const lines = [LINE(), LINE({ ingredientId: 'i2', quantity: 2, unit: 'dl' })];
     const rows = [ROW(), ROW({ id: 'p2', ingredientId: 'i2', quantity: 1, unit: 'l' })];
-    const { deductions, shortfalls } = planDeduction(lines, rows, 1);
+    const { deductions, shortfalls } = planDeduction(lines, rows, 1, TODAY);
     expect(shortfalls).toEqual([]);
     expect(deductions).toHaveLength(2);
     expect(deductions[1]!.pantryItems[0]).toMatchObject({ unit: 'l', after: 0.8 });
@@ -158,7 +164,7 @@ describe('planDeduction', () => {
       LINE({ quantity: 400 }),
       LINE({ quantity: 400 }),
     ];
-    const { deductions, shortfalls } = planDeduction(lines, [ROW({ quantity: 600 })], 1);
+    const { deductions, shortfalls } = planDeduction(lines, [ROW({ quantity: 600 })], 1, TODAY);
     expect(deductions).toHaveLength(2);
     expect(deductions[0]!.deducted).toBe(400);
     expect(deductions[0]!.pantryItems[0]).toMatchObject({ after: 200, deleted: false });
@@ -180,7 +186,7 @@ describe('planDeduction', () => {
       ROW({ id: 'newer', quantity: 600, createdAt: '2026-07-10T00:00:00Z' }),
       ROW({ id: 'older', quantity: 600, createdAt: '2026-07-01T00:00:00Z' }),
     ];
-    const { deductions } = planDeduction([LINE()], rows, 1);
+    const { deductions } = planDeduction([LINE()], rows, 1, TODAY);
     expect(deductions[0]!.pantryItems[0]!.id).toBe('older');
   });
 
@@ -191,7 +197,7 @@ describe('planDeduction', () => {
       ROW({ id: 'p-z', quantity: 400 }),
       ROW({ id: 'p-a', quantity: 400 }),
     ];
-    const { deductions } = planDeduction([LINE()], rows, 1);
+    const { deductions } = planDeduction([LINE()], rows, 1, TODAY);
     const touched = deductions[0]!.pantryItems;
     expect(touched[0]!.id).toBe('p-a');
     expect(touched[0]).toMatchObject({ after: 0, deleted: true });
@@ -204,7 +210,7 @@ describe('planDeduction', () => {
       ROW({ id: 'grams', quantity: 400, unit: 'g' }),
       ROW({ id: 'handfuls', quantity: 3, unit: 'handful' }),
     ];
-    const { deductions, shortfalls } = planDeduction([LINE()], rows, 1);
+    const { deductions, shortfalls } = planDeduction([LINE()], rows, 1, TODAY);
     expect(deductions[0]!.deducted).toBe(400);
     expect(deductions[0]!.pantryItems).toEqual([
       { id: 'grams', unit: 'g', before: 400, after: 0, deleted: true },
@@ -218,5 +224,47 @@ describe('planDeduction', () => {
         reason: 'insufficient_stock',
       },
     ]);
+  });
+});
+
+describe('planDeduction expired lots', () => {
+  const TODAY_LATE = '2026-08-02';
+  const dead = ROW({ id: 'dead', quantity: 800, expiresDate: '2026-08-01' });
+  const live = ROW({ id: 'live', quantity: 800, expiresDate: '2026-08-20' });
+
+  test('skips a lot past its date and draws the edible one, unlike plain FEFO', () => {
+    const { deductions, shortfalls } = planDeduction([LINE()], [dead, live], 1, TODAY_LATE);
+    expect(shortfalls).toEqual([]);
+    expect(deductions[0]!.pantryItems.map((p) => p.id)).toEqual(['live']);
+  });
+
+  test('a lot expiring today is still usable, matching status and shopping', () => {
+    const { deductions } = planDeduction([LINE()], [dead], 1, '2026-08-01');
+    expect(deductions[0]!.pantryItems.map((p) => p.id)).toEqual(['dead']);
+  });
+
+  test('never falls back to an expired lot when edible stock runs short', () => {
+    const small = ROW({ id: 'live', quantity: 100, expiresDate: '2026-08-20' });
+    const { deductions, shortfalls } = planDeduction([LINE()], [dead, small], 1, TODAY_LATE);
+    expect(deductions[0]!.deducted).toBe(100);
+    expect(deductions[0]!.pantryItems.map((p) => p.id)).toEqual(['live']);
+    expect(shortfalls[0]).toMatchObject({ reason: 'insufficient_stock', available: 100 });
+  });
+
+  test('reports only_expired when nothing else of the ingredient exists', () => {
+    const { deductions, shortfalls } = planDeduction([LINE()], [dead], 1, TODAY_LATE);
+    expect(deductions).toEqual([]);
+    expect(shortfalls[0]).toMatchObject({ reason: 'only_expired', available: 0 });
+  });
+
+  test('an expired optional line is silent, like every other optional shortfall', () => {
+    const { shortfalls } = planDeduction([LINE({ optional: true })], [dead], 1, TODAY_LATE);
+    expect(shortfalls).toEqual([]);
+  });
+
+  test('a unit mismatch still outranks expiry: the lot is unusable either way', () => {
+    const volume = ROW({ id: 'dead', unit: 'ml', expiresDate: '2026-08-01' });
+    const { shortfalls } = planDeduction([LINE()], [volume], 1, TODAY_LATE);
+    expect(shortfalls[0]).toMatchObject({ reason: 'unit_mismatch' });
   });
 });

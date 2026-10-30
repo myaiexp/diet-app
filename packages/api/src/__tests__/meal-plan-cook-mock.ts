@@ -45,7 +45,7 @@ export const PANTRY_ROW = {
   ingredientId: ING_ID,
   quantity: '1000',
   unit: 'g',
-  expiresDate: '2026-08-01',
+  expiresDate: '2099-08-01',
   opened: false,
   createdAt: new Date('2026-07-01T00:00:00Z'),
 };

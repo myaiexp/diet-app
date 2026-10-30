@@ -65,6 +65,18 @@ Unit conversion lives in `units.ts` and never crosses dimensions. FEFO deduction
 is pure in `cook-deduct.ts` (`planDeduction`); the cook route loads rows, plans,
 and applies inside one `FOR UPDATE` transaction.
 
+## Cook never spends an expired lot
+
+A lot with `expiresDate` before today's UTC date is not stock. `planDeduction`
+drops it before FEFO runs, for the preview and the commit alike, and never falls
+back to it when edible stock runs short: that is an `insufficient_stock`
+shortfall, and a line with nothing but expired lots is `only_expired`. The lot
+stays in the pantry, where Today offers to clear it out, so spoiled stock is
+never recorded as eaten. This is the same cut shopping generation makes
+(`docs/shopping-lists.md`), with one difference: cook compares against today
+even for a past or future entry, because today is when the food is used. A lot
+expiring today still counts, matching the `use_today` band.
+
 POST and PATCH share `hasContent`: a `recipeId`, a `substituteRecipeId`, or a
 non-empty `freeformNote`. Cook already resolves `substituteRecipeId ?? recipeId`,
 so a substitute-only row (demo Friday dinner) is not empty — including on

@@ -36,7 +36,7 @@ export interface Shortfall {
   dimension: Dimension | null; // null when the recipe line's own unit is unknown
   requested: number;
   available: number;
-  reason: 'not_in_pantry' | 'insufficient_stock' | 'unit_mismatch';
+  reason: 'not_in_pantry' | 'insufficient_stock' | 'unit_mismatch' | 'only_expired';
 }
 
 const EPSILON = 1e-9;
@@ -60,10 +60,17 @@ function sortFefo(rows: PantryRow[]): PantryRow[] {
   });
 }
 
+/**
+ * `today` (YYYY-MM-DD, UTC) is the cook's own date, not the entry's: a lot dated
+ * before it is spoiled, so it is never spent, even when edible stock runs short.
+ * Shopping stops counting the same lot as supply (`aggregateShoppingList`), and
+ * it stays in the pantry for the user to clear out.
+ */
 export function planDeduction(
   lines: RecipeLine[],
   pantryRows: PantryRow[],
   scale: number,
+  today: string,
 ): { deductions: Deduction[]; shortfalls: Shortfall[] } {
   const deductions: Deduction[] = [];
   const shortfalls: Shortfall[] = [];
@@ -93,19 +100,23 @@ export function planDeduction(
 
     const { dimension, value: needBase } = needed;
     const ingredientRows = pantryRows.filter((r) => r.ingredientId === line.ingredientId);
-    const eligible = ingredientRows.filter((r) => {
+    const convertible = ingredientRows.filter((r) => {
       const info = resolveUnit(r.unit);
       return info !== null && info.dimension === dimension;
     });
+    const eligible = convertible.filter((r) => r.expiresDate >= today);
 
     if (eligible.length === 0) {
       if (!line.optional) {
+        let reason: Shortfall['reason'] = 'only_expired';
+        if (ingredientRows.length === 0) reason = 'not_in_pantry';
+        else if (convertible.length === 0) reason = 'unit_mismatch';
         shortfalls.push({
           ingredientId: line.ingredientId,
           dimension,
           requested: round6(needBase),
           available: 0,
-          reason: ingredientRows.length === 0 ? 'not_in_pantry' : 'unit_mismatch',
+          reason,
         });
       }
       continue;

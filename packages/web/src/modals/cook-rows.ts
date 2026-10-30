@@ -21,6 +21,7 @@ export function nameOf(map: Map<string, string>, ingredientId: string): string {
 
 export function shortfallText(s: Shortfall, name: string): string {
   if (s.reason === 'not_in_pantry') return `${name} — not in pantry — buy first`;
+  if (s.reason === 'only_expired') return `${name} — only expired stock — buy fresh`;
   if (s.reason === 'unit_mismatch') {
     return `${name} — units don't convert (mass/volume/count only)`;
   }

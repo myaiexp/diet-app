@@ -9,6 +9,7 @@ import {
   STOCKED_OPTS,
   ENTRY_ID,
   ING_ID,
+  PANTRY_ROW,
   PLANNED_ENTRY,
 } from './meal-plan-cook-mock.js';
 
@@ -81,6 +82,21 @@ describe('GET /meal-plans/:id/cook-preview', () => {
     expect(body.shortfalls).toContainEqual(
       expect.objectContaining({ ingredientId: ING_ID, reason: 'not_in_pantry' }),
     );
+  });
+
+  test('leaves an expired lot out of the plan and names why', async () => {
+    const { db, writes } = makeCookMock({
+      ...stockedOpts,
+      pantryRows: [{ ...PANTRY_ROW, expiresDate: '2000-01-01' }],
+    });
+    const res = await mealPlanCookRoutes(db).request(`/${ENTRY_ID}/cook-preview`);
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.deductions).toEqual([]);
+    expect(body.shortfalls).toContainEqual(
+      expect.objectContaining({ ingredientId: ING_ID, reason: 'only_expired' }),
+    );
+    expect(writes).toEqual([]);
   });
 
   test('previews a freeform entry as an empty plan', async () => {

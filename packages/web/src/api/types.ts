@@ -212,7 +212,7 @@ export interface Shortfall {
   dimension: Dimension | null;
   requested: number;
   available: number;
-  reason: 'not_in_pantry' | 'insufficient_stock' | 'unit_mismatch';
+  reason: 'not_in_pantry' | 'insufficient_stock' | 'unit_mismatch' | 'only_expired';
 }
 
 /** GET /meal-plans/:id/cook-preview — read-only, may be stale by commit time. */

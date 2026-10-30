@@ -1,7 +1,7 @@
 // Cook confirm lot rows: the provenance line's urgency label and opened marker
 
 import { describe, test, expect } from 'vitest';
-import { renderDeduction } from '../modals/cook-rows.js';
+import { renderDeduction, shortfallText } from '../modals/cook-rows.js';
 import type { Deduction, PantryItem } from '../api/types.js';
 
 import { makePantryItem } from './fixtures.js';
@@ -44,5 +44,15 @@ describe('cook lot provenance', () => {
 
   test('an unopened lot carries no opened marker', () => {
     expect(lotText(makePantryItem({ opened: false }))).not.toContain('opened');
+  });
+});
+
+describe('shortfallText', () => {
+  test('names expired-only stock instead of claiming the pantry has none', () => {
+    const text = shortfallText(
+      { ingredientId: 'i1', dimension: 'mass', requested: 100, available: 0, reason: 'only_expired' },
+      'Salmon',
+    );
+    expect(text).toBe('Salmon — only expired stock — buy fresh');
   });
 });
