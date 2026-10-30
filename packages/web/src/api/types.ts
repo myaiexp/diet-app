@@ -88,6 +88,8 @@ export interface PantryCreate {
 
 export interface PantryPatch {
   quantity?: number;
+  /** The quantity this edit was based on; the API 409s if the row has moved on. */
+  expectedQuantity?: number;
   unit?: string;
   location?: PantryLocation;
   addedDate?: string;

@@ -41,10 +41,27 @@ location, but a null result skips the item (`skipped[].reason:
 
 After create, `expiresDate` belongs to the client. Changing `location`,
 `addedDate`, or `opened` leaves the stored date as it is; a client that wants a
-new date sends `expiresDate` itself (the edit modal always sends its date
-field). Opened-driven shelf-life shortening is not implemented. The PATCH
+new date sends `expiresDate` itself. Opened-driven shelf-life shortening is not implemented. The PATCH
 schema is `.strict()`, so `ingredientId` cannot change (wrong ingredient →
 delete + create); an empty body is 400; `updatedAt` is bumped on every write.
+
+## PATCH sends what changed, and a quantity names what it replaces
+
+POST `/cook` deducts under `FOR UPDATE` and cannot be re-run, so a stale
+quantity written back over it loses the deduction for good. Two rules prevent
+that:
+
+- The edit modal diffs its fields against the row it opened with and sends only
+  the changed ones (nothing changed: it closes without a request). Editing the
+  location therefore cannot touch `quantity`.
+- A changed quantity travels with `expectedQuantity`, the value it replaces. The
+  compare sits in the UPDATE's own `WHERE`, so a write queued behind a cook's row
+  lock re-checks against the committed value. A mismatch is a 409 that writes no
+  field; `expectedQuantity` without `quantity` is a 400. On that 409 the modal
+  re-reads the row and compares the next save against it; on a 404 (a cook used
+  the lot up) it closes and drops the row.
+
+`expectedQuantity` is optional, so a client that wants last-write-wins omits it.
 
 ## Status is computed per response, in whole UTC days
 
