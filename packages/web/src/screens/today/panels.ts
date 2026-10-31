@@ -13,7 +13,7 @@ import { SLOTS } from '../../api/types.js';
 import { el, button } from '../../ui/dom.js';
 import { formatQuantity, toNumber } from '../../format/quantity.js';
 import { finnishWeekdayLong, finnishDate, daysUntil, daysRemainingLabel } from '../../format/date.js';
-import { entryTitle, servingsLabel, STATUS_LABEL, isCookable } from '../../format/entry.js';
+import { entryTitle, groupBySlot, servingsLabel, STATUS_LABEL, isCookable } from '../../format/entry.js';
 import { rampColor, statusLabel, applyRamp } from '../../format/expiry.js';
 
 const SPOIL_COUNT = 5;
@@ -112,7 +112,10 @@ function buildEmptySlot(slot: Slot, date: string, handlers: SlotHandlers): HTMLE
   );
 }
 
-/** One row per slot in SLOTS order, each with the state-dependent action. */
+/**
+ * SLOTS order: a row per entry with its state-dependent action, or one empty
+ * row for a slot with no entry.
+ */
 export function buildSlotsPanel(
   dateIso: string,
   todaysEntries: MealPlanEntry[],
@@ -120,8 +123,7 @@ export function buildSlotsPanel(
   recipesById: Map<string, Recipe>,
   handlers: SlotHandlers,
 ): HTMLElement {
-  const bySlot = new Map<Slot, MealPlanEntry>();
-  for (const e of todaysEntries) bySlot.set(e.slot, e);
+  const bySlot = groupBySlot(todaysEntries);
 
   const panel = el(
     'div',
@@ -129,12 +131,13 @@ export function buildSlotsPanel(
     el('div', { class: 'section-header' }, `today · ${finnishWeekdayLong(dateIso)} ${finnishDate(dateIso)}`),
   );
   for (const slot of SLOTS) {
-    const entry = bySlot.get(slot);
-    panel.appendChild(
-      entry
-        ? buildFilledSlot(slot, entry, ratedByEntryId.get(entry.id) === true, recipesById, handlers)
-        : buildEmptySlot(slot, dateIso, handlers),
-    );
+    const inSlot = bySlot.get(slot) ?? [];
+    if (inSlot.length === 0) panel.appendChild(buildEmptySlot(slot, dateIso, handlers));
+    for (const entry of inSlot) {
+      panel.appendChild(
+        buildFilledSlot(slot, entry, ratedByEntryId.get(entry.id) === true, recipesById, handlers),
+      );
+    }
   }
   return panel;
 }

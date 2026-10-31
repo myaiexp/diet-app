@@ -1,22 +1,26 @@
-// CLI shim behind `pnpm --filter @diet-app/db migrate` — guard, then drizzle-kit migrate.
+// CLI shim behind `pnpm --filter @diet-app/db migrate` — guard, then apply the migrations.
 //
 // All the policy is in src/migrate-guard.ts + src/destructive-ddl.ts, and the git/pg
 // reads are in src/migrate-guard-io.ts; this file wires them to the journal on disk and
-// hands off to the real binary. The push-to-deploy hook deliberately calls drizzle-kit
+// applies through drizzle-orm's migrator, not the drizzle-kit binary, so a failed statement
+// prints its Postgres error instead of exiting 1 silently (src/apply-migrations.ts). Journal
+// drift is reported, never repaired here: this command can point at production, whose
+// migration history needs a person looking. The push-to-deploy hook deliberately calls drizzle-kit
 // directly instead of coming through here — it migrates from the main checkout moments
 // after landing the branch, which is the exact case this guard exists to route work TO,
 // and a node shim in that path could only ever wedge a deploy.
 //
-// Usage: pnpm --filter @diet-app/db migrate [--force] [drizzle-kit args…]
+// Usage: pnpm --filter @diet-app/db migrate [--force]
 
-import { spawnSync } from 'node:child_process';
-import { existsSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
 import pg from 'pg';
 import drizzleConfig from '../drizzle.config.js';
 import { decideMigrate, pendingMigrations, renderRefusal } from '../src/migrate-guard.js';
 import { isMainCheckout, lastAppliedWhen } from '../src/migrate-guard-io.js';
+import { applyMigrations, describeMigrationError, openMigrationDb } from '../src/apply-migrations.js';
+import { findJournalDrift, readApplied, readJournal, renderDrift } from '../src/journal-drift.js';
 
 const PKG_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const REPO_ROOT = join(PKG_ROOT, '..', '..');
@@ -30,10 +34,14 @@ interface JournalEntry {
 async function main(): Promise<void> {
   const argv = process.argv.slice(2);
   const force = argv.includes('--force');
-  const passthrough = argv.filter((a) => a !== '--force');
+  const unknown = argv.filter((a) => a !== '--force');
+  if (unknown.length > 0) {
+    console.error(`✖  unknown argument: ${unknown.join(' ')}. Usage: migrate [--force]`);
+    process.exit(1);
+  }
 
-  // The same DSN drizzle-kit itself will use — imported rather than re-derived, so the
-  // guard can never inspect a different database than the one about to be migrated.
+  // The DSN `generate` and the deploy's drizzle-kit use — imported rather than re-derived,
+  // so the guard can never inspect a different database than the one about to be migrated.
   const url = (drizzleConfig as { dbCredentials?: { url?: string } }).dbCredentials?.url;
   if (!url) {
     console.error(
@@ -52,7 +60,7 @@ async function main(): Promise<void> {
   } catch (err) {
     console.error(`✖  Could not read drizzle.__drizzle_migrations: ${(err as Error).message}`);
     console.error(
-      '   drizzle-kit would fail on the same connection. Fix it, or bypass with --force.',
+      '   The migrator would fail on the same connection. Fix it, or bypass with --force.',
     );
     process.exit(1);
   }
@@ -68,23 +76,25 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
-  // pnpm links a package's own devDependency into packages/db/node_modules/.bin; the
-  // repo-root bin is the fallback for a hoisted install. Resolved rather than assumed,
-  // because a missing binary here would read as "migrate silently did nothing".
-  const bin = [
-    join(PKG_ROOT, 'node_modules', '.bin', 'drizzle-kit'),
-    join(REPO_ROOT, 'node_modules', '.bin', 'drizzle-kit'),
-  ].find((p) => existsSync(p));
-  if (!bin) {
-    console.error('✖  drizzle-kit binary not found — run pnpm install.');
-    process.exit(1);
+  const migrationsFolder = join(PKG_ROOT, 'drizzle');
+  const db = openMigrationDb(url);
+  try {
+    await applyMigrations(db, migrationsFolder);
+    console.log('✓ migrations applied');
+  } catch (err) {
+    console.error(`✖  migrate failed: ${describeMigrationError(err)}`);
+    const drifted = findJournalDrift(readJournal(migrationsFolder), await readApplied(db.$client));
+    if (drifted.length > 0) {
+      console.error(
+        `\n   Likely cause — recorded times differ from the journal, so the migrator re-ran\n` +
+          `   SQL this database already has:\n${renderDrift(drifted)}\n` +
+          '   Fix: UPDATE drizzle.__drizzle_migrations SET created_at = <journal when> WHERE hash = <row hash>.',
+      );
+    }
+    process.exitCode = 1;
+  } finally {
+    await db.$client.end();
   }
-
-  const run = spawnSync(bin, ['migrate', ...passthrough], {
-    cwd: PKG_ROOT,
-    stdio: 'inherit',
-  });
-  process.exit(run.status ?? 1);
 }
 
 main().catch((err) => {

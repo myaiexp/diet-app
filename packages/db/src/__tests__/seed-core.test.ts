@@ -37,7 +37,7 @@ function makeMockDb({ existingProfiles = [] as unknown[] } = {}) {
             onConflictDoUpdate(arg: { target: unknown; set: Record<string, unknown> }) {
               calls.onConflictTarget = arg.target;
               calls.onConflictSet = arg.set;
-              return Promise.resolve();
+              return { returning: () => Promise.resolve(rows as unknown[]) };
             },
           };
         },
@@ -84,7 +84,7 @@ describe('seedDatabase', () => {
     expect(calls.ingredientUpsertRows).toHaveLength(2);
     expect(calls.onConflictTarget).toBe(ingredients.name);
     expect(calls.profileInserted).toBe(true);
-    expect(result).toEqual({ ingredientCount: 2, profileCreated: true });
+    expect(result).toEqual({ ingredientCount: 2, ingredientsChanged: 2, profileCreated: true });
   });
 
   test('skips profile creation when one already exists', async () => {
@@ -101,6 +101,7 @@ describe('seedDatabase', () => {
 
     expect(calls.ingredientUpsertRows).toBeNull();
     expect(result.ingredientCount).toBe(0);
+    expect(result.ingredientsChanged).toBe(0);
   });
 
   test('does not overwrite isStaple on re-seed', async () => {

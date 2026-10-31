@@ -67,8 +67,9 @@ mutating fetches, even with no body.
   retired: it was a second, edge-unauthenticated door to the same API.
 - **Deployment**: Forgejo git hooks (push to deploy) → `diet-app-api.service`
   (systemd, user `mase`). `scripts/post-deploy.sh` then builds `@diet-app/web`
-  and rsyncs `packages/web/dist/` → `/var/www/diet.mase.fi/` (mase-owned), so a
-  `deploy` ships frontend and API together.
+  and rsyncs `packages/web/dist/` → `/var/www/diet.mase.fi/` (mase-owned), then
+  runs the catalog `seed`, so a `deploy` ships frontend, API and ingredient
+  catalog together.
 - **systemd unit**: committed at `systemd/diet-app-api.service`; live copy
   `/etc/systemd/system/diet-app-api.service`. After editing: `sudo cp` that
   file into place, `daemon-reload`, restart. The process is sandboxed

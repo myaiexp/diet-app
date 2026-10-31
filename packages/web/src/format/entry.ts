@@ -1,6 +1,6 @@
-// Meal-plan entry titles, servings label, status pills, and which statuses still cook.
+// Meal-plan entry titles, servings label, status pills, which statuses still cook, and slot grouping.
 
-import type { EntryStatus, MealPlanEntry, Recipe } from '../api/types.js';
+import type { EntryStatus, MealPlanEntry, Recipe, Slot } from '../api/types.js';
 import { toNumber } from './quantity.js';
 
 export const STATUS_LABEL: Record<EntryStatus, { text: string; cls: string }> = {
@@ -13,6 +13,22 @@ export const STATUS_LABEL: Record<EntryStatus, { text: string; cls: string }> = 
 /** Still demand — shopping includes it, and POST /cook accepts it. Skipped is a no. */
 export function isCookable(status: EntryStatus): boolean {
   return status === 'planned' || status === 'substituted';
+}
+
+/**
+ * A slot holds zero or more entries: `(date, slot)` is deliberately not unique,
+ * since several snacks a day are normal. Every screen that lays entries out by
+ * slot groups through here so none keeps only the last one and hides a meal
+ * that shopping and cook still act on. Order within a slot is `entries` order.
+ */
+export function groupBySlot(entries: MealPlanEntry[]): Map<Slot, MealPlanEntry[]> {
+  const bySlot = new Map<Slot, MealPlanEntry[]>();
+  for (const entry of entries) {
+    const inSlot = bySlot.get(entry.slot);
+    if (inSlot) inSlot.push(entry);
+    else bySlot.set(entry.slot, [entry]);
+  }
+  return bySlot;
 }
 
 /**

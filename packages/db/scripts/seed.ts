@@ -20,7 +20,7 @@ async function main() {
   const db = createDb(connectionString);
   try {
     const result = await seedDatabase(db, rawIngredients);
-    console.log(`Upserted ${result.ingredientCount} ingredients`);
+    console.log(`Catalog holds ${result.ingredientCount} ingredients; ${result.ingredientsChanged} inserted or changed`);
     console.log(
       result.profileCreated
         ? 'Created default user profile'

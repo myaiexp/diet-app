@@ -3,7 +3,7 @@
 import { sql } from 'drizzle-orm';
 import { ingredients, userProfile } from './schema/index.js';
 import type { Db } from './connection.js';
-import { excludedColumns } from './upsert.js';
+import { differsFromExcluded, excludedColumns } from './upsert.js';
 
 // Insert-row shape for the ingredients table; typing the seed rows makes
 // column-name typos a compile error instead of a silently-dropped column.
@@ -11,8 +11,25 @@ export type IngredientSeedRow = typeof ingredients.$inferInsert;
 
 export interface SeedResult {
   ingredientCount: number;
+  /** Rows actually inserted or rewritten; 0 when the catalog already matched. */
+  ingredientsChanged: number;
   profileCreated: boolean;
 }
+
+// isStaple is deliberately absent: it is user-owned, toggled through
+// PATCH /api/ingredients/:id, and the JSON only carries an initial guess.
+// Refreshing it on a re-seed would silently reset all 462 flags and wipe the
+// user's curation. It stays in the .values() insert shape so a *new* ingredient
+// still gets that guess. Every column here is catalog data that must keep
+// refreshing.
+const CATALOG_COLUMNS = {
+  aliases: ingredients.aliases,
+  category: ingredients.category,
+  defaultUnit: ingredients.defaultUnit,
+  nutritionPer100g: ingredients.nutritionPer100g,
+  shelfLife: ingredients.shelfLife,
+  tags: ingredients.tags,
+};
 
 export function resolveConnectionString(env: NodeJS.ProcessEnv): string {
   const url = env.DATABASE_URL;
@@ -26,13 +43,16 @@ export function resolveConnectionString(env: NodeJS.ProcessEnv): string {
 // instead of deleting them — a delete would fail on the recipe_ingredients /
 // pantry_items foreign keys (no ON DELETE CASCADE) and wipe dependent data.
 // Wrapped in a transaction so the ingredient and profile writes are atomic.
+// Every deploy runs this (scripts/post-deploy.sh), so a row that already matches
+// the catalog is skipped rather than rewritten with a new updated_at.
 export async function seedDatabase(
   db: Db,
   rawIngredients: IngredientSeedRow[],
 ): Promise<SeedResult> {
   return db.transaction(async (tx) => {
+    let ingredientsChanged = 0;
     if (rawIngredients.length > 0) {
-      await tx
+      const changed = await tx
         .insert(ingredients)
         .values(
           rawIngredients.map((row): IngredientSeedRow => ({
@@ -48,26 +68,11 @@ export async function seedDatabase(
         )
         .onConflictDoUpdate({
           target: ingredients.name,
-          // isStaple is deliberately absent here: it is user-owned,
-          // toggled through PATCH /api/ingredients/:id, and the JSON only
-          // carries an initial guess. Refreshing it on every re-seed — the
-          // idempotent path run whenever ingredient data is regenerated —
-          // would silently reset all 462 flags and wipe the user's curation.
-          // It stays in the .values() insert shape so a *new* ingredient still
-          // gets that guess. Every other column here is catalog data that must
-          // keep refreshing.
-          set: {
-            ...excludedColumns({
-              aliases: ingredients.aliases,
-              category: ingredients.category,
-              defaultUnit: ingredients.defaultUnit,
-              nutritionPer100g: ingredients.nutritionPer100g,
-              shelfLife: ingredients.shelfLife,
-              tags: ingredients.tags,
-            }),
-            updatedAt: sql`now()`,
-          },
-        });
+          set: { ...excludedColumns(CATALOG_COLUMNS), updatedAt: sql`now()` },
+          setWhere: differsFromExcluded(CATALOG_COLUMNS),
+        })
+        .returning({ id: ingredients.id });
+      ingredientsChanged = changed.length;
     }
 
     const existingProfiles = await tx.select().from(userProfile).limit(1);
@@ -80,6 +85,6 @@ export async function seedDatabase(
       });
     }
 
-    return { ingredientCount: rawIngredients.length, profileCreated };
+    return { ingredientCount: rawIngredients.length, ingredientsChanged, profileCreated };
   });
 }

@@ -1,4 +1,4 @@
-// Meal plan week screen: 7x4 grid, week navigation, and the cook / add-entry
+// Meal plan week screen: 7-day slot grid, week navigation, and the cook / add-entry
 // wiring. Slot order and title/status rendering live in cell.ts, and the
 // create affordance in modals/add-entry.ts — reused by the Today screen.
 //
@@ -9,7 +9,7 @@
 
 import '../../css/plan.css';
 import type { Screen, ScreenContext } from '../../screen.js';
-import type { MealPlanEntry, Recipe, Slot } from '../../api/types.js';
+import type { MealPlanEntry, Recipe } from '../../api/types.js';
 import { SLOTS } from '../../api/types.js';
 import { getWeek } from '../../api/meal-plans.js';
 import { listAllRecipes } from '../../api/recipes.js';
@@ -18,6 +18,7 @@ import { loadInto } from '../../ui/async.js';
 import { say } from '../../ui/toast.js';
 import { openCookFlow } from '../../modals/cook-flow.js';
 import { mondayOf, addDays, isoToday, isoWeekNumber } from '../../format/date.js';
+import { groupBySlot } from '../../format/entry.js';
 import { openAddEntry } from '../../modals/add-entry.js';
 import { openEditEntry } from '../../modals/plan-edit.js';
 import { buildDayColumn, type CellHandlers } from './cell.js';
@@ -56,7 +57,9 @@ export function planScreen(): Screen {
   function updateToolbar(): void {
     weekLabelEl.textContent = `vk ${isoWeekNumber(monday)} · ${weekRangeLabel(monday)}`;
     const cooked = entries.filter((e) => e.status === 'cooked').length;
-    statsEl.textContent = `${entries.length} of ${TOTAL_SLOTS} slots filled · ${cooked} cooked`;
+    // A slot can hold several entries, so entries.length could pass TOTAL_SLOTS.
+    const filled = new Set(entries.map((e) => `${e.date}|${e.slot}`)).size;
+    statsEl.textContent = `${filled} of ${TOTAL_SLOTS} slots filled · ${cooked} cooked`;
   }
 
   function refreshEntry(updated: MealPlanEntry): void {
@@ -86,8 +89,7 @@ export function planScreen(): Screen {
     const grid = el('div', { class: 'plan-grid hairline-grid', style: 'min-width: 1050px' });
     for (let i = 0; i < DAY_COUNT; i++) {
       const date = addDays(monday, i);
-      const bySlot = new Map<Slot, MealPlanEntry>();
-      for (const e of entries) if (e.date === date) bySlot.set(e.slot, e);
+      const bySlot = groupBySlot(entries.filter((e) => e.date === date));
       grid.appendChild(buildDayColumn(date, bySlot, recipesById, handlers, date === today));
     }
     const wrap = el('div', { class: 'plan-grid-wrap' }, grid);

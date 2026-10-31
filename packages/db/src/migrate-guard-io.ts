@@ -61,7 +61,7 @@ export interface MigrationsClient {
 }
 
 /** Postgres codes that mean "never migrated": undefined_table, invalid_schema_name. */
-const FRESH_DATABASE_CODES = new Set(['42P01', '3F000']);
+export const FRESH_DATABASE_CODES = new Set(['42P01', '3F000']);
 
 /**
  * The journal's `when` of the newest APPLIED migration, or null on a database that has
