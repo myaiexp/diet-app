@@ -16,8 +16,7 @@ export interface RealDb {
 }
 
 /**
- * Call once at the top level of a real-Postgres suite file (routes.test.ts,
- * rollback-*-sql.test.ts). Gated on TEST_DATABASE_URL: when it is absent the
+ * Call once at the top level of a real-Postgres suite file (*-sql.test.ts). Gated on TEST_DATABASE_URL: when it is absent the
  * suite's `describe.skipIf(!hasDb)` blocks skip rather than crashing at import,
  * so the mock suites in this dir still run Postgres-free.
  */
@@ -33,7 +32,7 @@ export function useRealDb(): RealDb {
   const db = hasDb ? createDb(url!) : null;
 
   // LOUD GATE: `describe.skipIf` alone reports quiet skips, which is how
-  // routes.test.ts went 4 commits without ever executing. An unset
+  // the first such suite went 4 commits without ever executing. An unset
   // TEST_DATABASE_URL fails the run; opting out has to be deliberate:
   // DIET_APP_SKIP_DB_TESTS=1. The db package has the same gate over its
   // import-products-sql tests.

@@ -21,7 +21,7 @@ import {
 const { db, hasDb } = useRealDb();
 silenceInjectedFaults();
 
-// Mondays of their own, clear of the weeks routes.test.ts uses.
+// Mondays of their own, clear of the weeks the shopping-list-*-sql suites use.
 const GENERATE_WEEK = '2027-03-01';
 const COMPLETE_WEEK = '2027-03-08';
 const DELETE_WEEK = '2027-03-15';

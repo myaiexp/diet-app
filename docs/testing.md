@@ -67,8 +67,13 @@ totals; don't lower it to make a run pass. Per-file detail is written to
 
 The real-Postgres suites share one gate.
 
-- `packages/api` `routes.test.ts` — 22 `test()` cases under
-  `describe.skipIf(!hasDb)`, plus the loud gate.
+- `packages/api` real-schema smokes, 22 cases plus a loud gate per file, split
+  by resource: `{ingredients,recipes,pantry,profile,meal-plan-cook,
+  meal-plan-cook-servings,shopping-list-flow,shopping-list-merge}-sql.test.ts`.
+  Deterministic 200-path and field-shape coverage lives in the mock suites;
+  these are the only cover for the SQL itself (tags `@>`, unnest, ON CONFLICT,
+  relational `with:`, numeric FEFO math). Write-path cases mutate `dietapp_test`
+  and clean up in `try`/`finally`.
 - `packages/api` `shopping-list-quantity-sql.test.ts` — 2 cases: an edited
   generated quantity survives regeneration and is what `/complete` files, and
   a manual row keeps `quantityNeeded` equal to `netToBuy` through to
