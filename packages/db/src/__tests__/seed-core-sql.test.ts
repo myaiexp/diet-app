@@ -58,6 +58,13 @@ afterAll(async () => {
   await suiteLock?.release();
 });
 
+// A scoped `vitest run` never reaches the other files' gates, so this file has its own.
+describe('integration DB gate', () => {
+  test.skipIf(process.env.DIET_APP_SKIP_DB_TESTS === '1')('TEST_DATABASE_URL is configured', () => {
+    expect(hasDb, 'TEST_DATABASE_URL is not set; see docs/testing.md').toBe(true);
+  });
+});
+
 describe.skipIf(!hasDb).sequential('seedDatabase re-seed', () => {
   test('counts a new row as changed', async () => {
     const result = await seedDatabase(db!, [row]);

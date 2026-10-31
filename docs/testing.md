@@ -93,6 +93,12 @@ The real-Postgres suites share one gate.
 - `packages/db` `src/__tests__/test-lock.test.ts` — 3 cases for the advisory
   lock below, plus its own loud gate (a scoped `vitest run test-lock` never
   reaches the other files' gates).
+- `packages/db` `src/__tests__/seed-core-sql.test.ts` — 4 cases for what a
+  re-seed touches (new row, unchanged row, changed row keeping `isStaple`, null
+  column), plus its own loud gate.
+- `packages/db` `src/__tests__/apply-migrations-sql.test.ts` — 3 cases for the
+  migrator and journal drift, plus its own loud gate. Creates and drops its own
+  database, so its role needs `CREATEDB`, which `setup:test-db` needs anyway.
 
 These case counts are the only copy — CLAUDE.md and `.env.example` point here,
 so a new DB-backed case updates this list alone.
@@ -146,8 +152,9 @@ prod (`DATABASE_URL` → `dietapp`), re-provision the test DB with
 
 ### The migrate guard
 
-`migrate` is not `drizzle-kit migrate` directly — it is `scripts/db-migrate.ts`,
-which refuses when all three hold: the migrations are pending, they contain
+`migrate` is not `drizzle-kit migrate` — it is `scripts/db-migrate.ts`, which
+applies through drizzle-orm's migrator (`src/apply-migrations.ts`) because the
+binary exits 1 with no message when a statement fails. It refuses when all three hold: the migrations are pending, they contain
 destructive DDL, and the checkout is not the main one (git unable to answer
 counts as not-main). There is ONE database and helm copies
 the `.env` naming it into every worktree, so a `DROP COLUMN` applied from a
@@ -173,6 +180,16 @@ inherited `GIT_*` location vars so a hook's `GIT_DIR` can't make a worktree
 answer as main, and `lastAppliedWhen` reads only `42P01`/`3F000` as a fresh
 database and rethrows every other error. Either failing the other way would make
 the guard report `run` without looking.
+
+### Journal drift
+
+drizzle's migrator applies every journal entry whose `when` exceeds the newest
+`created_at` in `drizzle.__drizzle_migrations`, and never compares hashes. A
+migration regenerated after a database applied it gets a new `when`, so the
+migrator re-runs SQL that database already has and fails on `already exists`.
+`src/journal-drift.ts` finds these: a row whose hash matches a journal entry but
+whose time differs. `setup:test-db` repairs them (`scripts/migrate-test-db.ts`).
+`migrate` only reports them after a failure, since it can point at production.
 
 ## Catalog seed
 

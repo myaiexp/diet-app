@@ -65,8 +65,10 @@ fi
 export DATABASE_URL="$TEST_URL"
 cd "$DB_PKG"
 
+# Not drizzle-kit: it exits 1 with no message when a statement fails, which under
+# set -e would end this script silently. This also repairs journal drift.
 echo "==> Migrating..."
-pnpm exec drizzle-kit migrate
+pnpm exec tsx scripts/migrate-test-db.ts
 
 echo "==> Seeding ingredients + default profile..."
 pnpm exec tsx scripts/seed.ts
