@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Build the web frontend and publish it to the diet.mase.fi docroot.
+# Build the web frontend, publish it to the diet.mase.fi docroot, and apply the
+# committed ingredient catalog to the database.
 #
 # `deploy` runs this from the main checkout after the push has landed and the
 # API service has restarted, so the tree here is already at the deployed commit
@@ -26,3 +27,12 @@ fi
 rsync -a --delete packages/web/dist/ "$DOCROOT/"
 
 echo "✓ published $(find packages/web/dist -type f | wc -l) files to $DOCROOT"
+
+# This is the only step that carries packages/db/data/ingredients.json to
+# production. It runs on every deploy rather than when the file changed: deploy
+# passes no commit range, and a deploy that failed before this line would hide
+# the change from the next one. Unchanged rows are skipped and `isStaple` is
+# never rewritten. `seed`, not `db:seed`, which regenerates that tracked file in
+# the main checkout. It runs last so a database failure still fails the deploy
+# without holding back the frontend.
+pnpm --filter @diet-app/db seed

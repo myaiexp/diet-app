@@ -184,7 +184,10 @@ deletes, since `recipe_ingredients` / `pantry_items` reference the rows without
 cascade. `isStaple` is written on insert but deliberately left out of the
 `ON CONFLICT DO UPDATE` set: it is user-curated through
 `PATCH /api/ingredients/:id`, so a re-seed must not reset it
-(`seed-core.test.ts` pins this). The catalog source is also where the
+(`seed-core.test.ts` pins this). `scripts/post-deploy.sh` runs `seed` on every
+deploy, so a committed catalog edit reaches production without a manual step;
+a row that already matches is skipped and keeps its `updatedAt`
+(`seed-core-sql.test.ts`). The catalog source is also where the
 "every row has a Finnish alias" rule lives (`seed-data.test.ts`).
 
 ## Demo data
