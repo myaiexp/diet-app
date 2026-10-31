@@ -85,6 +85,9 @@
 - Server-computed values are rendered, not recomputed: pantry `status`
   (`docs/pantry.md`), scaled recipes via `GET /recipes/:id?servings=N`, the
   cook preview's FEFO lots (`docs/cook-flow.md`), and `expiresDate` on create.
+- A meal-plan slot holds zero or more entries — `(date, slot)` is deliberately
+  not unique — so anything laying entries out by slot goes through
+  `groupBySlot` (`format/entry.ts`) and renders all of them.
 - Contract vocabularies — enum tuples (`SLOTS`, `LOCATIONS`, statuses…), the
   servings cap and `clampServings`, `Dimension`/`baseUnit` — come from the
   API's `packages/api/src/vocab.ts`, imported as `@diet-app/api/vocab` (Vite

@@ -60,10 +60,13 @@ function buildEmptyCell(date: string, slot: Slot, handlers: CellHandlers): HTMLE
   return cell;
 }
 
-/** One day's header + its 4 slot cells, in SLOTS order (breakfast..snack). */
+/**
+ * One day's header + its slots in SLOTS order (breakfast..snack): a cell per
+ * entry in the slot, or one empty cell when it has none.
+ */
 export function buildDayColumn(
   date: string,
-  entriesBySlot: Map<Slot, MealPlanEntry>,
+  entriesBySlot: Map<Slot, MealPlanEntry[]>,
   recipesById: Map<string, Recipe>,
   handlers: CellHandlers,
   isToday: boolean,
@@ -76,12 +79,11 @@ export function buildDayColumn(
   );
   const column = el('div', { class: 'plan-day' }, head);
   for (const slot of SLOTS) {
-    const entry = entriesBySlot.get(slot);
-    column.appendChild(
-      entry
-        ? buildFilledCell(date, slot, entry, recipesById, handlers)
-        : buildEmptyCell(date, slot, handlers),
-    );
+    const inSlot = entriesBySlot.get(slot) ?? [];
+    if (inSlot.length === 0) column.appendChild(buildEmptyCell(date, slot, handlers));
+    for (const entry of inSlot) {
+      column.appendChild(buildFilledCell(date, slot, entry, recipesById, handlers));
+    }
   }
   return column;
 }

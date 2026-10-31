@@ -157,6 +157,62 @@ describe('plan screen layout', () => {
   });
 });
 
+describe('several entries in one slot', () => {
+  // cook-flow-design rejects a unique (date, slot) — several snacks a day are
+  // normal — so a cell that kept only the last entry hid a meal that shopping
+  // and cook still act on.
+  const snacks = [
+    makeEntry({ id: 'e-snack-1', date: MONDAY, slot: 'snack', status: 'planned', freeformNote: 'Rahka' }),
+    makeEntry({ id: 'e-snack-2', date: MONDAY, slot: 'snack', status: 'skipped', freeformNote: 'Omena' }),
+  ];
+
+  async function mountPlan(entries: MealPlanEntry[]): Promise<HTMLElement> {
+    fetchMock.mockImplementation(buildRouter({ entries }));
+    const root = mountRoot();
+    await planScreen().mount(root, makeCtx());
+    return root;
+  }
+
+  test('every entry gets its own cell, inside its slot and in API order', async () => {
+    const root = await mountPlan(snacks);
+
+    const monday = root.querySelector('.plan-day')!;
+    const cells = [...monday.querySelectorAll(`.plan-cell[data-date="${MONDAY}"]`)];
+    expect(cells.map((c) => c.getAttribute('data-slot'))).toEqual([
+      'breakfast',
+      'lunch',
+      'dinner',
+      'snack',
+      'snack',
+    ]);
+    expect(
+      [...monday.querySelectorAll('.plan-cell-title')].map((t) => t.textContent),
+    ).toEqual(['Rahka', 'Omena']);
+  });
+
+  test('each cell opens its own entry', async () => {
+    const root = await mountPlan(snacks);
+
+    root.querySelector<HTMLButtonElement>('.plan-cell[data-status="skipped"]')!.click();
+    await vi.waitFor(() => expect(document.querySelector('.plan-edit-save')).not.toBeNull());
+    closeModal();
+
+    root.querySelector<HTMLButtonElement>('.plan-cell[data-status="planned"]')!.click();
+    await vi.waitFor(() =>
+      expect(
+        fetchMock.mock.calls.some(([u]) => pathOf(String(u)) === '/api/meal-plans/e-snack-1/cook-preview'),
+      ).toBe(true),
+    );
+  });
+
+  test('the fill count counts occupied slots, not entries', async () => {
+    const dinner = makeEntry({ id: 'e-dinner', date: MONDAY, slot: 'dinner', status: 'cooked', freeformNote: 'Keitto' });
+    const root = await mountPlan([...snacks, dinner]);
+
+    expect(root.querySelector('.plan-fill-stats')?.textContent).toBe('2 of 28 slots filled · 1 cooked');
+  });
+});
+
 describe('plan week navigation', () => {
   function weekRouter() {
     return buildRouter({

@@ -95,6 +95,27 @@ describe('today slots', () => {
     expect(snack!.querySelector('button')?.textContent).toBe('fill');
   });
 
+  test('two entries in one slot each get a row and their own action', async () => {
+    const entries = [
+      makeEntry({ id: 'e-snack-1', slot: 'snack', status: 'planned', freeformNote: 'Rahka' }),
+      makeEntry({ id: 'e-snack-2', slot: 'snack', status: 'cooked', freeformNote: 'Omena' }),
+    ];
+    fetchMock.mockImplementation(buildRouter({ entries }));
+
+    const root = mountRoot();
+    await todayScreen().mount(root, makeCtx());
+
+    const rows = [...root.querySelectorAll('.today-slot-row')];
+    expect(rows).toHaveLength(5);
+    const [first, second] = rows.slice(3);
+    expect(first!.querySelector('.today-slot-name')?.textContent).toBe('snack');
+    expect(first!.querySelector('.row-title')?.textContent).toBe('Rahka');
+    expect(first!.querySelector('button')?.textContent).toBe('cook →');
+    expect(second!.querySelector('.today-slot-name')?.textContent).toBe('snack');
+    expect(second!.querySelector('.row-title')?.textContent).toBe('Omena');
+    expect(second!.querySelector('button')?.textContent).toBe('rate');
+  });
+
   test('cook → opens the cook modal and a successful cook flips the slot', async () => {
     const entries = [
       makeEntry({ id: 'e-planned', slot: 'dinner', status: 'planned', freeformNote: 'Lohikeitto' }),
