@@ -1,83 +1,18 @@
-// Mock-based tests for GET/POST/PATCH /meal-plans/:id/feedback
+// POST/GET /meal-plans/:id/feedback: create, read, constraint races
 
-import { describe, test, expect, vi } from 'vitest';
+import { describe, test, expect } from 'vitest';
 import { mealPlanFeedbackRoutes } from '../routes/meal-plan-feedback.js';
 import { mealPlansRoutes } from '../routes/meal-plans.js';
-import { makeDbMock, mergedRow, pgError } from './db-mock.js';
-
-const ENTRY_ID = '11111111-1111-4111-8111-111111111111';
-const FB_ID = '22222222-2222-4222-8222-222222222222';
-
-const COOKED_ENTRY = {
-  id: ENTRY_ID,
-  status: 'cooked',
-  recipeId: null,
-  freeformNote: 'x',
-};
-
-const PLANNED_ENTRY = { ...COOKED_ENTRY, status: 'planned' };
-
-const FEEDBACK = {
-  id: FB_ID,
-  mealPlanEntryId: ENTRY_ID,
-  rating: 'thumbs_up',
-  effortCheck: 'felt_right',
-  makeAgain: 'yes',
-  usedAsIs: true,
-  changesNote: null,
-};
-
-const VALID_CREATE = {
-  rating: 'thumbs_up',
-  effortCheck: 'felt_right',
-  makeAgain: 'yes',
-  usedAsIs: true,
-};
-
-type MockOpts = {
-  entry?: unknown | null;
-  feedback?: unknown | null;
-  insertRow?: unknown;
-  updateRow?: unknown;
-  /** Full RETURNING array for UPDATE — use [] for the delete-between-read race. */
-  updateRows?: unknown[];
-  /** Driver-shaped error thrown at the handler's write (FK / unique races). */
-  throwOnWrite?: unknown;
-};
-
-function makeWriteMock(opts: MockOpts = {}) {
-  return makeDbMock({
-    insertRows: (recorded, record) =>
-      opts.insertRow ? [opts.insertRow] : mergedRow(FEEDBACK)(recorded, record),
-    updateRows:
-      opts.updateRows !== undefined
-        ? () => opts.updateRows!
-        : opts.updateRow
-          ? () => [opts.updateRow]
-          : mergedRow(FEEDBACK),
-    throwOnWrite: () => opts.throwOnWrite,
-    query: {
-      mealPlanEntries: {
-        findFirst: vi.fn(async () =>
-          opts.entry === undefined ? COOKED_ENTRY : opts.entry,
-        ),
-      },
-      cookFeedback: {
-        findFirst: vi.fn(async () =>
-          opts.feedback === undefined ? null : opts.feedback,
-        ),
-      },
-    },
-  });
-}
-
-function json(method: string, body?: unknown) {
-  return {
-    method,
-    headers: { 'Content-Type': 'application/json' },
-    body: body === undefined ? undefined : JSON.stringify(body),
-  };
-}
+import { pgError } from './db-mock.js';
+import {
+  ENTRY_ID,
+  FB_ID,
+  PLANNED_ENTRY,
+  FEEDBACK,
+  VALID_CREATE,
+  json,
+  makeWriteMock,
+} from './meal-plan-feedback-test-helpers.js';
 
 describe('mealPlanFeedbackRoutes', () => {
   test('POST creates feedback for a cooked entry', async () => {
@@ -211,153 +146,6 @@ describe('mealPlanFeedbackRoutes', () => {
     );
     expect(resMiss.status).toBe(404);
     expect(await resMiss.json()).toEqual({ error: 'Not found' });
-  });
-
-  test('PATCH enforces the usedAsIs rule against the merged row', async () => {
-    const stored = { ...FEEDBACK, usedAsIs: true, changesNote: null };
-
-    const bad = makeWriteMock({ feedback: stored });
-    const resBad = await mealPlanFeedbackRoutes(bad.db).request(
-      `/${ENTRY_ID}/feedback`,
-      json('PATCH', { usedAsIs: false }),
-    );
-    expect(resBad.status).toBe(400);
-    expect((await resBad.json()).error).toBe('Validation failed');
-    expect(bad.updates).toHaveLength(0);
-
-    const ok = makeWriteMock({
-      feedback: stored,
-      updateRow: { ...stored, usedAsIs: false, changesNote: 'less salt' },
-    });
-    const resOk = await mealPlanFeedbackRoutes(ok.db).request(
-      `/${ENTRY_ID}/feedback`,
-      json('PATCH', { usedAsIs: false, changesNote: 'less salt' }),
-    );
-    expect(resOk.status).toBe(200);
-    expect(ok.updates[0]).toMatchObject({
-      usedAsIs: false,
-      changesNote: 'less salt',
-    });
-  });
-
-  test('PATCH usedAsIs true auto-clears a stored changesNote', async () => {
-    const stored = {
-      ...FEEDBACK,
-      usedAsIs: false,
-      changesNote: 'extra garlic',
-    };
-    const { db, updates } = makeWriteMock({
-      feedback: stored,
-      updateRow: { ...stored, usedAsIs: true, changesNote: null },
-    });
-    const res = await mealPlanFeedbackRoutes(db).request(
-      `/${ENTRY_ID}/feedback`,
-      json('PATCH', { usedAsIs: true }),
-    );
-    expect(res.status).toBe(200);
-    expect(updates[0]).toMatchObject({ usedAsIs: true, changesNote: null });
-  });
-
-  test('PATCH rejects usedAsIs true sent together with a note', async () => {
-    // The auto-clear only applies to a note the patch didn't mention — an
-    // explicit note alongside usedAsIs:true is a contradiction, not something
-    // to quietly repair into a null.
-    const { db, updates } = makeWriteMock({
-      feedback: { ...FEEDBACK, usedAsIs: false, changesNote: 'extra garlic' },
-    });
-    const res = await mealPlanFeedbackRoutes(db).request(
-      `/${ENTRY_ID}/feedback`,
-      json('PATCH', { usedAsIs: true, changesNote: 'more salt' }),
-    );
-    expect(res.status).toBe(400);
-    expect((await res.json()).details.formErrors).toEqual([
-      'changesNote must be absent when usedAsIs is true',
-    ]);
-    expect(updates).toHaveLength(0);
-  });
-
-  test('PATCH writes the pair it validated, even when the body names neither field', async () => {
-    // The invariant the handler enforces is on the *merged* pair, so the write
-    // has to carry that same pair — validating one thing and persisting another
-    // is how the 1:1 rule would drift out of sync.
-    const stored = { ...FEEDBACK, usedAsIs: false, changesNote: 'extra garlic' };
-    const { db, updates } = makeWriteMock({ feedback: stored });
-    const res = await mealPlanFeedbackRoutes(db).request(
-      `/${ENTRY_ID}/feedback`,
-      json('PATCH', { rating: 'thumbs_down' }),
-    );
-    expect(res.status).toBe(200);
-    expect(updates[0]).toMatchObject({
-      rating: 'thumbs_down',
-      usedAsIs: false,
-      changesNote: 'extra garlic',
-    });
-  });
-
-  test('PATCH returns 404 when the row is gone between read and update', async () => {
-    const { db } = makeWriteMock({ feedback: FEEDBACK, updateRows: [] });
-    const res = await mealPlanFeedbackRoutes(db).request(
-      `/${ENTRY_ID}/feedback`,
-      json('PATCH', { rating: 'thumbs_down' }),
-    );
-    expect(res.status).toBe(404);
-    expect(await res.json()).toEqual({ error: 'Not found' });
-  });
-
-  test('PATCH rejects an empty body and unknown keys', async () => {
-    const empty = makeWriteMock({ feedback: FEEDBACK });
-    const resEmpty = await mealPlanFeedbackRoutes(empty.db).request(
-      `/${ENTRY_ID}/feedback`,
-      json('PATCH', {}),
-    );
-    expect(resEmpty.status).toBe(400);
-    expect((await resEmpty.json()).details.formErrors).toEqual([
-      'Empty patch body',
-    ]);
-
-    const unknown = makeWriteMock({ feedback: FEEDBACK });
-    const resUnknown = await mealPlanFeedbackRoutes(unknown.db).request(
-      `/${ENTRY_ID}/feedback`,
-      json('PATCH', { rating: 'thumbs_up', extra: 1 }),
-    );
-    expect(resUnknown.status).toBe(400);
-    expect((await resUnknown.json()).error).toBe('Validation failed');
-  });
-
-  test('all three routes reject a malformed :id before touching the db', async () => {
-    let touched = false;
-    const db = {
-      query: {
-        mealPlanEntries: {
-          findFirst: async () => {
-            touched = true;
-            return null;
-          },
-        },
-        cookFeedback: {
-          findFirst: async () => {
-            touched = true;
-            return null;
-          },
-        },
-      },
-    } as any;
-    const app = mealPlanFeedbackRoutes(db);
-    for (const [method, path] of [
-      ['GET', '/not-a-uuid/feedback'],
-      ['POST', '/not-a-uuid/feedback'],
-      ['PATCH', '/not-a-uuid/feedback'],
-    ] as const) {
-      const res = await app.request(
-        path,
-        method === 'GET'
-          ? { method }
-          : json(method, method === 'POST' ? VALID_CREATE : { rating: 'thumbs_up' }),
-      );
-      expect(res.status, method).toBe(400);
-      expect(await res.json()).toEqual({ error: 'Invalid id format' });
-    }
-    expect(touched).toBe(false);
   });
 
   test('is mounted on mealPlansRoutes', async () => {

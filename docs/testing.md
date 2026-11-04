@@ -198,6 +198,29 @@ migrator re-runs SQL that database already has and fails on `already exists`.
 whose time differs. `setup:test-db` repairs them (`scripts/migrate-test-db.ts`).
 `migrate` only reports them after a failure, since it can point at production.
 
+### Parallel sessions and the migration chain
+
+Numbering is first-come: two branches that each run `generate` both get the next
+index, and git reports the clash as a conflict in `meta/_journal.json`. Resolve it
+by keeping master's migration as it is, deleting your branch's own (its `.sql`,
+its `meta/NNNN_snapshot.json`, its journal entry), rebasing, and running
+`generate` again — never by renumbering by hand. A hand-renumbered entry keeps
+its older `when`, and the migrator's `when` gate (above) then skips it on every
+database that applied the one before it, while still reporting success. The same
+skip happens without a conflict when a later-generated migration was applied from
+a worktree before an earlier one landed.
+
+Two checks catch it. `src/__tests__/migration-chain.test.ts` runs
+`src/migration-chain.ts` against the real `drizzle/` folder: idx and tag number
+match position, `when` strictly increases, every entry has its `.sql` and
+snapshot (and nothing extra), and each snapshot's `prevId` is the previous one's
+`id`. `src/skipped-migrations.ts` finds journal entries whose hash no row records
+but whose `when` is at or below the newest applied `created_at`. `migrate`
+refuses on either, `--force` included, and `pnpm --filter @diet-app/db
+migrate:check` (read-only) runs both from `scripts/post-deploy.sh`, after the
+deploy hook's own `drizzle-kit migrate`, so a deploy that left the schema behind
+its code fails.
+
 ## Catalog seed
 
 `pnpm --filter @diet-app/db db:seed` regenerates `packages/db/data/ingredients.json`

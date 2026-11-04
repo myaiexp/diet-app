@@ -9,6 +9,7 @@
     "typecheck": "tsc -p tsconfig.typecheck.json",
     "generate": "drizzle-kit generate",
     "migrate": "tsx scripts/db-migrate.ts",
+    "migrate:check": "tsx scripts/migrate-check.ts",
     "studio": "drizzle-kit studio",
     "seed": "tsx scripts/seed.ts",
     "import-products": "tsx scripts/import-products-cli.ts",
