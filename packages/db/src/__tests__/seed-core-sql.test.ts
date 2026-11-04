@@ -10,13 +10,13 @@ import { fileURLToPath } from 'url';
 import { eq, like } from 'drizzle-orm';
 import { createDb } from '../connection.js';
 import { acquireDbTestLock, type DbTestLock } from '../test-lock.js';
-import { assertTestDbUrl } from '../test-db-url.js';
+import { assertTestDbUrl, testDatabaseUrl } from '../test-db-url.js';
 import { ingredients } from '../schema/index.js';
 import { seedDatabase, type IngredientSeedRow } from '../seed-core.js';
 
 config({ path: fileURLToPath(new URL('../../../../.env', import.meta.url)), quiet: true });
 
-const TEST_DB_URL = process.env.TEST_DATABASE_URL;
+const TEST_DB_URL = testDatabaseUrl();
 
 // SAFETY: same guard as the api suite — the database name must end in `_test`.
 if (TEST_DB_URL) assertTestDbUrl(TEST_DB_URL);
@@ -61,7 +61,7 @@ afterAll(async () => {
 // A scoped `vitest run` never reaches the other files' gates, so this file has its own.
 describe('integration DB gate', () => {
   test.skipIf(process.env.DIET_APP_SKIP_DB_TESTS === '1')('TEST_DATABASE_URL is configured', () => {
-    expect(hasDb, 'TEST_DATABASE_URL is not set; see docs/testing.md').toBe(true);
+    expect(hasDb, 'TEST_DATABASE_URL (or DATABASE_URL_TEST) is not set; see docs/testing.md').toBe(true);
   });
 });
 

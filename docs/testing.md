@@ -108,7 +108,9 @@ The real-Postgres suites share one gate.
 These case counts are the only copy — CLAUDE.md and `.env.example` point here,
 so a new DB-backed case updates this list alone.
 
-All of them need `TEST_DATABASE_URL` pointing at `dietapp_test`. The database
+All of them need `TEST_DATABASE_URL` pointing at `dietapp_test`; when it is
+unset they read `DATABASE_URL_TEST`, the variable helm's remote test hosts
+export (`testDatabaseUrl`), and never `DATABASE_URL`. The database
 name — the URL path, not the user, password or query string — must end in
 `_test`. `assertTestDbUrl` (`packages/db/src/test-db-url.ts`) refuses anything
 else before a connection opens. Provision with

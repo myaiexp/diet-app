@@ -7,21 +7,29 @@ import { config } from 'dotenv';
 config({ path: fileURLToPath(new URL('../../../../.env', import.meta.url)), quiet: true });
 
 import { afterAll, beforeAll, describe, expect, test } from 'vitest';
-import { createDb, acquireDbTestLock, assertTestDbUrl, type Db, type DbTestLock } from '@diet-app/db';
+import {
+  createDb,
+  acquireDbTestLock,
+  assertTestDbUrl,
+  testDatabaseUrl,
+  type Db,
+  type DbTestLock,
+} from '@diet-app/db';
 
 export interface RealDb {
-  /** Null when TEST_DATABASE_URL is unset; every case then skips on `hasDb`. */
+  /** Null when no test database URL is set; every case then skips on `hasDb`. */
   db: Db | null;
   hasDb: boolean;
 }
 
 /**
- * Call once at the top level of a real-Postgres suite file (*-sql.test.ts). Gated on TEST_DATABASE_URL: when it is absent the
+ * Call once at the top level of a real-Postgres suite file (*-sql.test.ts). Gated on
+ * testDatabaseUrl() (TEST_DATABASE_URL, else DATABASE_URL_TEST): when it is absent the
  * suite's `describe.skipIf(!hasDb)` blocks skip rather than crashing at import,
  * so the mock suites in this dir still run Postgres-free.
  */
 export function useRealDb(): RealDb {
-  const url = process.env.TEST_DATABASE_URL;
+  const url = testDatabaseUrl();
 
   // SAFETY: the database name itself (the URL path) must end in `_test`.
   // `_test` in the user, password or query string does not make `dietapp`
@@ -41,7 +49,7 @@ export function useRealDb(): RealDb {
     test.skipIf(skipDbTests)('TEST_DATABASE_URL is configured', () => {
       expect(
         hasDb,
-        'TEST_DATABASE_URL is not set, so the real-Postgres integration suites ' +
+        'TEST_DATABASE_URL (or DATABASE_URL_TEST) is not set, so the real-Postgres integration suites ' +
           'would skip silently. Provision the DB with ' +
           '`pnpm --filter @diet-app/db setup:test-db`, then add TEST_DATABASE_URL ' +
           'to the repo-root .env (see .env.example). To run the mock suites ' +

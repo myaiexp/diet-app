@@ -11,7 +11,7 @@ import { fileURLToPath } from 'url';
 import { and, eq, inArray } from 'drizzle-orm';
 import { createDb } from '../connection.js';
 import { acquireDbTestLock, type DbTestLock } from '../test-lock.js';
-import { assertTestDbUrl } from '../test-db-url.js';
+import { assertTestDbUrl, testDatabaseUrl } from '../test-db-url.js';
 import { products } from '../schema/index.js';
 import { importProducts, type ExportedProduct } from '../import-products.js';
 
@@ -19,7 +19,7 @@ import { importProducts, type ExportedProduct } from '../import-products.js';
 // the api integration suite does — otherwise the gate below fires spuriously.
 config({ path: fileURLToPath(new URL('../../../../.env', import.meta.url)), quiet: true });
 
-const TEST_DB_URL = process.env.TEST_DATABASE_URL;
+const TEST_DB_URL = testDatabaseUrl();
 
 // SAFETY: same guard as the api suite — the database name must end in `_test`.
 if (TEST_DB_URL) assertTestDbUrl(TEST_DB_URL);
@@ -47,7 +47,7 @@ describe('integration DB gate', () => {
   test.skipIf(SKIP_DB_TESTS)('TEST_DATABASE_URL is configured', () => {
     expect(
       hasDb,
-      'TEST_DATABASE_URL is not set, so the real-Postgres upsert test would skip ' +
+      'TEST_DATABASE_URL (or DATABASE_URL_TEST) is not set, so the real-Postgres upsert test would skip ' +
         'silently — and upsert behaviour has no other cover. Provision with ' +
         '`pnpm --filter @diet-app/db setup:test-db`. To run mock suites without ' +
         'Postgres on purpose, set DIET_APP_SKIP_DB_TESTS=1.',
