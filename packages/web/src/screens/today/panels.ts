@@ -93,11 +93,11 @@ function buildFilledSlot(
     el('span', { class: status.cls }, status.text),
   );
   if (entry.status === 'cooked' && !rated) {
-    row.appendChild(button('btn btn-sm', 'rate', () => handlers.onRate(entry)));
+    row.appendChild(button('btn', 'rate', () => handlers.onRate(entry)));
   } else if (isCookable(entry.status)) {
     // Substituted is still to-cook (shopping demand); skipped has no CTA —
     // un-skip from Plan. Plan itself reopens substituted for edit, never cook.
-    row.appendChild(button('btn btn-primary btn-sm', 'cook →', () => handlers.onCook(entry)));
+    row.appendChild(button('btn btn-primary', 'cook →', () => handlers.onCook(entry)));
   }
   return row;
 }
@@ -108,7 +108,7 @@ function buildEmptySlot(slot: Slot, date: string, handlers: SlotHandlers): HTMLE
     { class: 'row today-slot-row' },
     el('span', { class: 'today-slot-name' }, slot),
     el('div', { class: 'row-main' }, el('span', { class: 'today-slot-empty' }, 'empty')),
-    button('btn btn-sm', 'fill', () => handlers.onEmpty(date, slot)),
+    button('btn', 'fill', () => handlers.onEmpty(date, slot)),
   );
 }
 
@@ -193,8 +193,8 @@ export function buildSpoilingPanel(pantryItems: PantryItem[], navigate: (r: Rout
     el(
       'div',
       { class: 'today-spoiling-footer flex gap-2' },
-      button('btn btn-primary btn-sm', '+ add to pantry', () => navigate('/pantry')),
-      button('btn btn-ghost btn-sm', 'waste report', () => navigate('/waste')),
+      button('btn btn-primary', '+ add to pantry', () => navigate('/pantry')),
+      button('btn', 'waste report', () => navigate('/waste')),
     ),
   );
   return panel;

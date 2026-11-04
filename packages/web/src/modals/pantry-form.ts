@@ -184,7 +184,7 @@ export function openEditItemModal(
   }
 
   const footer = modalFooter({ label: 'save', onClick: () => void submit() }, [
-    button('btn btn-ghost', 'delete', () => void remove()),
+    button('btn', 'delete', () => void remove()),
   ]);
 
   openModal({ title: `Edit ${ingredient?.name ?? 'pantry item'}`, body, footer, width: 380 });

@@ -145,7 +145,7 @@ interface TextChipConfig {
 function buildTextChipPanel(cfg: TextChipConfig): HTMLElement {
   const list = el('div', { class: 'flex gap-2 bar-wrap' });
   const addSlot = el('div', {});
-  const addButton = button('btn btn-ghost btn-sm', '+ add', () => showAddForm());
+  const addButton = button('btn chip-add-btn', '+ add', () => showAddForm());
   const renderChips = (): void =>
     list.replaceChildren(...cfg.values.map((v) => chipEl(v, () => void commit(cfg.values.filter((x) => x !== v)))));
 
@@ -193,7 +193,7 @@ function buildDislikedPanel(profile: UserProfile, names: Map<string, string>, on
   const list = el('div', { class: 'flex gap-2 bar-wrap' },
     ...ids.map((id) => chipEl(names.get(id) ?? id, () => void commit(ids.filter((x) => x !== id)))));
   const addSlot = el('div', {});
-  const addButton = button('btn btn-ghost btn-sm', '+ add', () => showAddForm());
+  const addButton = button('btn chip-add-btn', '+ add', () => showAddForm());
   let detachSearch: (() => void) | null = null;
 
   function stopSearch(): void {

@@ -117,13 +117,13 @@ describe('attachIngredientSearch', () => {
     const input = el('input', { class: 'input', type: 'text' }) as HTMLInputElement;
     const results = el('div');
     attachIngredientSearch(input, results, vi.fn(), {
-      renderResult: (ing, pick) => button('btn btn-sm', ing.name, pick),
+      renderResult: (ing, pick) => button('btn picker-result', ing.name, pick),
     });
     input.value = 'peruna';
     input.dispatchEvent(new Event('input', { bubbles: true }));
     await flush(SEARCH_DEBOUNCE_MS);
     expect(results.querySelector('.pantry-search-result')).toBeNull();
-    expect(results.querySelector('.btn-sm')?.textContent).toBe('Potato');
+    expect(results.querySelector('.picker-result')?.textContent).toBe('Potato');
   });
 
   test('immediate searches the current value without waiting for input', async () => {

@@ -55,9 +55,9 @@ export function openCookConfirm(opts: CookConfirmOptions): void {
   const stepRow = el(
     'div',
     { class: 'cook-stepper' },
-    button('btn btn-sm cook-step-minus', '−', () => changeServings(-1)),
+    button('btn cook-step-minus', '−', () => changeServings(-1)),
     stepValue,
-    button('btn btn-sm cook-step-plus', '+', () => changeServings(1)),
+    button('btn cook-step-plus', '+', () => changeServings(1)),
     el('span', { class: 'helper cook-step-note' }, 'quantities above rescale live'),
   );
 
@@ -71,7 +71,7 @@ export function openCookConfirm(opts: CookConfirmOptions): void {
     stepRow,
   );
 
-  const cancelBtn = button('btn btn-ghost cook-cancel', 'cancel', () => closeModal());
+  const cancelBtn = button('btn cook-cancel', 'cancel', () => closeModal());
   const skipBtn = button('btn cook-skip', 'mark skipped', () => void handleSkip());
   const commitBtn = button('btn btn-primary cook-commit', 'deduct & mark cooked', () =>
     void handleCommit(),

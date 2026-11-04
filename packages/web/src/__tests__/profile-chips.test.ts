@@ -21,7 +21,7 @@ function chipPanel(root: HTMLElement, header: string): HTMLElement {
 }
 
 function startAdd(panel: HTMLElement): HTMLInputElement {
-  const button = panel.querySelector<HTMLButtonElement>('.btn-ghost');
+  const button = panel.querySelector<HTMLButtonElement>('.chip-add-btn');
   if (!button) throw new Error('add button missing');
   button.click();
   const input = panel.querySelector('input');
@@ -83,7 +83,7 @@ describe('profile text-chip add form', () => {
 
     expect(patchCalls).toHaveLength(0);
     expect(panel.querySelector('input')).toBeNull();
-    expect(panel.querySelector('.btn-ghost')?.textContent).toBe('+ add');
+    expect(panel.querySelector('.chip-add-btn')?.textContent).toBe('+ add');
   });
 
   test('Escape sends no PATCH and restores the add button', async () => {
@@ -96,7 +96,7 @@ describe('profile text-chip add form', () => {
 
     expect(patchCalls).toHaveLength(0);
     expect(panel.querySelector('input')).toBeNull();
-    expect(panel.querySelector('.btn-ghost')?.textContent).toBe('+ add');
+    expect(panel.querySelector('.chip-add-btn')?.textContent).toBe('+ add');
   });
 
   test('the kitchen panel writes kitchenEquipment, not dietaryRestrictions', async () => {

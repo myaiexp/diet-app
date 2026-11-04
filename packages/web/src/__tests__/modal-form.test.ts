@@ -17,7 +17,7 @@ describe('modalFooter', () => {
   test('leading actions, then cancel, then the primary with its extra class', () => {
     const onClick = vi.fn();
     const footer = modalFooter({ label: 'save', class: 'plan-edit-save', onClick }, [
-      button('btn btn-ghost', 'delete', () => {}),
+      button('btn', 'delete', () => {}),
     ]);
     const buttons = [...footer.querySelectorAll('button')];
     expect(buttons.map((b) => b.textContent)).toEqual(['delete', 'cancel', 'save']);
@@ -30,7 +30,7 @@ describe('modalFooter', () => {
     const footer = modalFooter({ label: 'save', onClick: () => {} });
     openModal({ title: 't', body: el('div', {}), footer });
     expect(isModalOpen()).toBe(true);
-    footer.querySelector<HTMLButtonElement>('.btn-ghost')!.click();
+    [...footer.querySelectorAll<HTMLButtonElement>('button')].find((b) => b.textContent === 'cancel')!.click();
     expect(isModalOpen()).toBe(false);
   });
 });

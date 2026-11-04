@@ -247,7 +247,7 @@ export function mountReview(root: HTMLElement, ctx: ScreenContext, draft: Recipe
       limit: 20,
       searchingText: 'searching…',
       emptyText: 'no catalog matches',
-      renderResult: (ing, pick) => button('btn btn-sm', ing.name, pick),
+      renderResult: (ing, pick) => button('btn import-candidate-pick', ing.name, pick),
     });
 
     const node = el(
@@ -256,7 +256,7 @@ export function mountReview(root: HTMLElement, ctx: ScreenContext, draft: Recipe
       query, results,
       button('btn btn-primary', `create "${line.raw}"`, () => {}, { disabled: true }),
       el('p', { class: 'helper' }, "new catalog ingredients aren't creatable yet"),
-      button('btn btn-ghost', 'skip line', () => {
+      button('btn', 'skip line', () => {
         const at = lines.indexOf(line);
         if (at >= 0) lines.splice(at, 1);
         renderAll();

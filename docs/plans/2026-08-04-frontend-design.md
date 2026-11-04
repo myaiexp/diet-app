@@ -171,7 +171,9 @@ structural (two surface steps + `--border-overlay` rim + `rgba(0,0,0,.6)` backdr
 Keyframes used: `shimmer` (skeletons, `1.4s ease-in-out infinite`, opacity `.35 → .7`),
 plus base.css's `spin`, `pulse`, `toast-in`.
 
-Control heights: buttons `22px` (`--btn-h`), `.btn-sm` `18px`, inputs `22px`. **Overridden
+Control heights: buttons `22px` (`--btn-h`), inputs `22px`. Where this doc says `.btn-sm` or
+`.btn-ghost`, the app uses plain `.btn`: base.css deprecates both (mase.fi buttons card,
+Legacy), and `deprecated-classes.test.ts` fails on any use. **Overridden
 upward for touch:** any control on a phone-first surface gets `26–34px`, and tap rows get
 `min-height: 46–54px` (see Responsive).
 

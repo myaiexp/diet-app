@@ -130,7 +130,7 @@ export function shoppingScreen(): Screen {
         'div',
         { class: 'shopping-notice' },
         el('span', {}, text),
-        button('btn btn-ghost btn-sm', 'dismiss', () => dismissNotice(i)),
+        button('btn', 'dismiss', () => dismissNotice(i)),
       ),
     );
   }
@@ -211,7 +211,7 @@ export function shoppingScreen(): Screen {
           // An earlier week's draft would regenerate past meals; the carry-over
           // notice offers this week's instead.
           currentList.status === 'draft' && !isEarlierWeek(currentList)
-            ? button('btn btn-ghost', 'regenerate', () =>
+            ? button('btn', 'regenerate', () =>
                 void runGenerate(
                   currentList.weekStarting,
                   { onGenerated: handleGenerated },

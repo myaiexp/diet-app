@@ -17,7 +17,7 @@ export function modalFooter(primary: FooterAction, leading: HTMLElement[] = []):
     'div',
     { class: 'flex gap-2' },
     ...leading,
-    button('btn btn-ghost', 'cancel', () => closeModal()),
+    button('btn', 'cancel', () => closeModal()),
     button(primary.class ? `btn btn-primary ${primary.class}` : 'btn btn-primary', primary.label, () =>
       primary.onClick(),
     ),

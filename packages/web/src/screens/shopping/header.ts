@@ -128,7 +128,7 @@ export function buildShoppingHeader(
     );
     actions.append(
       optionalChip,
-      button('btn btn-ghost btn-sm', 'regenerate', () =>
+      button('btn', 'regenerate', () =>
         void runGenerate(list.weekStarting, handlers, state.includeOptional, isStale),
       ),
     );
@@ -137,12 +137,12 @@ export function buildShoppingHeader(
   }
   if (list.status !== 'done' && boughtCount > 0) {
     actions.appendChild(
-      button('btn btn-primary btn-sm', 'complete', () => openCompleteConfirm(list, handlers, isStale)),
+      button('btn btn-primary', 'complete', () => openCompleteConfirm(list, handlers, isStale)),
     );
   }
   if (list.status !== 'done') {
     actions.appendChild(
-      button('btn btn-primary btn-sm', '+ add', () =>
+      button('btn btn-primary', '+ add', () =>
         openAddShoppingItemModal(list.id, { onCreated: handlers.onItemCreated }),
       ),
     );

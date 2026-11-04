@@ -116,7 +116,7 @@ export function pantryScreen(): Screen {
     if (hasMore) {
       tailEl.appendChild(
         button(
-          'btn btn-ghost',
+          'btn',
           loadingMore ? 'loading…' : 'load more',
           () => void loadMore(),
           { disabled: loadingMore },
@@ -202,7 +202,7 @@ export function pantryScreen(): Screen {
         searchResults.replaceChildren();
         openAdd(ing);
       });
-      const addBtn = button('btn btn-primary btn-sm', '+ add', () => openAdd());
+      const addBtn = button('btn btn-primary', '+ add', () => openAdd());
 
       chipsEl = el('div', { class: 'bar-wrap flex gap-2' });
       const bar = el(
