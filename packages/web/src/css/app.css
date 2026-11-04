@@ -130,7 +130,6 @@
   .tabbar { display: flex; background: var(--bg); border-top: 1px solid var(--border); }
   /* Touch: base.css sizes controls for a mouse. */
   .btn, .input, .select { height: 28px; }
-  .btn-sm { height: 26px; }
 }
 
 /* ===== Shared surfaces ===== */

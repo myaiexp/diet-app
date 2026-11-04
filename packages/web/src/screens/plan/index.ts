@@ -129,12 +129,12 @@ export function planScreen(): Screen {
       monday = mondayOf(isoToday());
       entries = [];
 
-      const prevBtn = button('btn btn-sm', '←', () => changeWeek(-7), { 'aria-label': 'previous week' });
-      const nextBtn = button('btn btn-sm', '→', () => changeWeek(7), { 'aria-label': 'next week' });
+      const prevBtn = button('btn', '←', () => changeWeek(-7), { 'aria-label': 'previous week' });
+      const nextBtn = button('btn', '→', () => changeWeek(7), { 'aria-label': 'next week' });
       weekLabelEl = el('span', { class: 'plan-week-label' }, '');
       statsEl = el('span', { class: 'helper plan-fill-stats' }, '');
-      const suggestBtn = button('btn btn-primary btn-sm', 'fill with AI', () => ctx.navigate('/suggest'));
-      const shoppingBtn = button('btn btn-ghost btn-sm', 'shopping list →', () => ctx.navigate('/shopping'));
+      const suggestBtn = button('btn btn-primary', 'fill with AI', () => ctx.navigate('/suggest'));
+      const shoppingBtn = button('btn', 'shopping list →', () => ctx.navigate('/shopping'));
 
       const toolbar = el(
         'div',

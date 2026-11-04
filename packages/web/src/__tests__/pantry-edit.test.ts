@@ -59,7 +59,7 @@ function clickSave(): void {
 }
 
 function clickDelete(): void {
-  const btn = [...document.querySelectorAll<HTMLButtonElement>('.modal-foot .btn-ghost')].find(
+  const btn = [...document.querySelectorAll<HTMLButtonElement>('.modal-foot .btn')].find(
     (b) => b.textContent === 'delete',
   );
   if (!btn) throw new Error('delete button missing');

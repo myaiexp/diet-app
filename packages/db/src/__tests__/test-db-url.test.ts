@@ -1,8 +1,8 @@
 // The test-database URL guard rejects production even when "_test" appears
-// somewhere other than the database name.
+// somewhere other than the database name; the URL resolver reads only test variables.
 
 import { describe, expect, test } from 'vitest';
-import { assertTestDbUrl, resolveDbName } from '../test-db-url.js';
+import { assertTestDbUrl, resolveDbName, testDatabaseUrl } from '../test-db-url.js';
 
 const REFUSED: Array<[string, string]> = [
   ['the user is dietapp_test and the database is prod', 'postgresql://dietapp_test@/dietapp?host=/var/run/postgresql'],
@@ -40,5 +40,30 @@ describe('assertTestDbUrl', () => {
       expect(String(err)).not.toContain('supersecret');
       expect(String(err)).not.toContain(url);
     }
+  });
+});
+
+describe('testDatabaseUrl', () => {
+  const OURS = 'postgresql://mase@/dietapp_test?host=/var/run/postgresql';
+  const LADDER = 'postgresql://mase@/diet_app_test?host=/var/run/postgresql';
+
+  test('reads TEST_DATABASE_URL, the project variable', () => {
+    expect(testDatabaseUrl({ TEST_DATABASE_URL: OURS })).toBe(OURS);
+  });
+
+  test('falls back to DATABASE_URL_TEST, the variable helm remote test hosts export', () => {
+    expect(testDatabaseUrl({ DATABASE_URL_TEST: LADDER })).toBe(LADDER);
+  });
+
+  test('TEST_DATABASE_URL wins when both are set', () => {
+    expect(testDatabaseUrl({ TEST_DATABASE_URL: OURS, DATABASE_URL_TEST: LADDER })).toBe(OURS);
+  });
+
+  test('an empty TEST_DATABASE_URL does not hide DATABASE_URL_TEST', () => {
+    expect(testDatabaseUrl({ TEST_DATABASE_URL: '', DATABASE_URL_TEST: LADDER })).toBe(LADDER);
+  });
+
+  test('never falls back to DATABASE_URL, which is production', () => {
+    expect(testDatabaseUrl({ DATABASE_URL: 'postgresql://mase@/dietapp' })).toBeUndefined();
   });
 });

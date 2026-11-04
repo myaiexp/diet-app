@@ -109,7 +109,7 @@ export function importScreen(): Screen {
       panel.appendChild(el('div', { class: 'shimmer', style: `width:${w}%` }));
     }
     panel.appendChild(
-      button('btn btn-ghost', 'cancel', () => {
+      button('btn', 'cancel', () => {
         token += 1;
         stage = 'paste';
         render();

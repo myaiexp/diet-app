@@ -6,7 +6,8 @@
 #   pnpm --filter @diet-app/db setup:test-db
 #   # or: bash packages/db/scripts/setup-test-db.sh
 #
-# Override the target with TEST_DATABASE_URL (must end with _test).
+# Override the target with TEST_DATABASE_URL, else DATABASE_URL_TEST (helm's remote
+# test hosts export that one); either must end with _test.
 
 set -euo pipefail
 
@@ -16,7 +17,7 @@ REPO_ROOT="$(cd "$DB_PKG/../.." && pwd)"
 
 # Default matches .env.example — peer auth as mase on the local socket.
 DEFAULT_TEST_URL='postgresql://mase@/dietapp_test?host=/var/run/postgresql'
-TEST_URL="${TEST_DATABASE_URL:-$DEFAULT_TEST_URL}"
+TEST_URL="${TEST_DATABASE_URL:-${DATABASE_URL_TEST:-$DEFAULT_TEST_URL}}"
 
 # App role that owns prod connections; tables are often created by mase (peer
 # auth) so dietapp needs explicit DML grants or every query 500s.

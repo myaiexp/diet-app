@@ -202,7 +202,7 @@ export function createRecipeDetail(container: HTMLElement, deps: DetailDeps): De
     const linesBox = el('div', { class: 'edit-lines' });
     for (const line of lines) {
       const row = el('div', { class: 'edit-ingredient-row' }, el('span', { class: 'edit-ingredient-name' }, line.name), line.qty, line.unit,
-        button('btn btn-ghost btn-sm', 'remove', () => { line.removed = true; row.remove(); }));
+        button('btn', 'remove', () => { line.removed = true; row.remove(); }));
       linesBox.appendChild(row);
     }
     const saveErr = errorBox();
@@ -278,8 +278,8 @@ export function createRecipeDetail(container: HTMLElement, deps: DetailDeps): De
     const footer = el('div', { class: 'recipe-footer' },
       button('btn btn-primary add-to-plan-btn', 'add to plan', () => say('Add it from the meal plan grid.')),
       button('btn cook-now-btn', 'cook now', () => say('Cook it from a planned meal-plan entry.')),
-      button('btn btn-ghost fork-btn', 'fork', () => void handleFork()),
-      button('btn btn-ghost edit-btn', 'edit', () => void openEditModal()));
+      button('btn fork-btn', 'fork', () => void handleFork()),
+      button('btn edit-btn', 'edit', () => void openEditModal()));
 
     container.replaceChildren(header, el('p', { class: 'recipe-subline' }, subParts.join(' · ')), statStrip, scaler,
       el('div', { class: 'recipe-body' }, ingredientsCol, stepsCol), footer);

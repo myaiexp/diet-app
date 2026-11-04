@@ -45,7 +45,7 @@ export function buildPantryRow(
   const statusLineEl = el('div', { class: 'pantry-status-line' }, expiryStatusLine(item.status, days));
   statusLineEl.style.color = ramp.text;
 
-  const editBtn = button('btn btn-ghost pantry-edit-btn', '⋯', onEdit, {
+  const editBtn = button('btn pantry-edit-btn', '⋯', onEdit, {
     'aria-label': `edit ${name}`,
   });
 

@@ -13,7 +13,7 @@ export {
   type DbTestLock,
   type DbTestLockOptions,
 } from './test-lock.js';
-export { assertTestDbUrl, resolveDbName } from './test-db-url.js';
+export { assertTestDbUrl, resolveDbName, testDatabaseUrl } from './test-db-url.js';
 export {
   seedDatabase,
   resolveConnectionString,

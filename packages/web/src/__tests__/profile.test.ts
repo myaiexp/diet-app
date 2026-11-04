@@ -150,7 +150,7 @@ describe('profile screen', () => {
     await profileScreen().mount(root, makeCtx());
 
     const panel = chipPanel(root, 'disliked ingredients');
-    panel.querySelector<HTMLButtonElement>('.btn-ghost')!.click();
+    panel.querySelector<HTMLButtonElement>('.chip-add-btn')!.click();
     const input = panel.querySelector<HTMLInputElement>('.pantry-search-wrap input')!;
     input.value = 'liver';
     input.dispatchEvent(new Event('input', { bubbles: true }));

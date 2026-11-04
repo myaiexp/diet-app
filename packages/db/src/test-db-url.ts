@@ -1,4 +1,15 @@
-// Parse a Postgres URL's database name, and refuse a test run that is not *_test
+// Resolve the test database URL, parse its database name, and refuse a run that is not *_test
+
+/**
+ * The test database URL, or undefined when none is configured. TEST_DATABASE_URL is
+ * the project's own variable (the repo-root .env sets it); DATABASE_URL_TEST is what
+ * helm's remote test hosts export (scripts/test-suite-lib/remote-scripts.sh), so a
+ * remote run reaches its local `<repo>_test` without a .env. DATABASE_URL is never
+ * read: that one is production.
+ */
+export function testDatabaseUrl(env: NodeJS.ProcessEnv = process.env): string | undefined {
+  return env.TEST_DATABASE_URL || env.DATABASE_URL_TEST || undefined;
+}
 
 /**
  * Database name from a postgres URL path. Mirrors scripts/setup-test-db.sh:
@@ -15,14 +26,14 @@ export function resolveDbName(connectionString: string): string {
 }
 
 /**
- * Hard-stop a suite whose TEST_DATABASE_URL is not a `*_test` database.
+ * Hard-stop a suite whose test database URL is not a `*_test` database.
  * The thrown error names the database only: the URL itself can carry a password.
  */
 export function assertTestDbUrl(url: string): void {
   const name = resolveDbName(url);
   if (name.endsWith('_test')) return;
   throw new Error(
-    `Refusing to run tests: TEST_DATABASE_URL database is "${name || '(none)'}", ` +
+    `Refusing to run tests: the test database is "${name || '(none)'}", ` +
       'which does not end in "_test". Point it at dietapp_test.',
   );
 }

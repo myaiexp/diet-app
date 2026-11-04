@@ -283,13 +283,13 @@ describe('recipe import screen', () => {
     await waitForReview(root);
     await vi.waitFor(() => {
       expect(
-        [...root.querySelectorAll('.import-candidate-results .btn-sm')].some(
+        [...root.querySelectorAll('.import-candidate-results .import-candidate-pick')].some(
           (b) => b.textContent === 'Mushroom, button',
         ),
       ).toBe(true);
     });
 
-    [...root.querySelectorAll<HTMLButtonElement>('.import-candidate-results .btn-sm')]
+    [...root.querySelectorAll<HTMLButtonElement>('.import-candidate-results .import-candidate-pick')]
       .find((b) => b.textContent === 'Mushroom, button')!
       .click();
 
@@ -315,7 +315,7 @@ describe('recipe import screen', () => {
     submit(root);
     await waitForReview(root);
     await vi.waitFor(() => {
-      const names = [...root.querySelectorAll('.import-candidate-results .btn-sm')].map((b) => b.textContent);
+      const names = [...root.querySelectorAll('.import-candidate-results .import-candidate-pick')].map((b) => b.textContent);
       expect(names).toContain('Mushroom, button');
     });
   });
@@ -344,13 +344,13 @@ describe('recipe import screen', () => {
     await waitForReview(root);
     await vi.waitFor(() => {
       expect(
-        [...root.querySelectorAll('.import-candidate-results .btn-sm')].some(
+        [...root.querySelectorAll('.import-candidate-results .import-candidate-pick')].some(
           (b) => b.textContent === 'Mushroom, button',
         ),
       ).toBe(true);
     });
 
-    const pick = [...root.querySelectorAll<HTMLButtonElement>('.import-candidate-results .btn-sm')].find(
+    const pick = [...root.querySelectorAll<HTMLButtonElement>('.import-candidate-results .import-candidate-pick')].find(
       (b) => b.textContent === 'Mushroom, button',
     )!;
     pick.click();
@@ -387,7 +387,7 @@ describe('recipe import screen', () => {
     submit(root);
     await waitForReview(root);
 
-    const skipBtn = [...root.querySelectorAll<HTMLButtonElement>('.import-candidates .btn-ghost')].find(
+    const skipBtn = [...root.querySelectorAll<HTMLButtonElement>('.import-candidates .btn')].find(
       (b) => b.textContent === 'skip line',
     )!;
     skipBtn.click();
@@ -417,7 +417,7 @@ describe('recipe import screen', () => {
     await waitForReview(root);
 
     const skipNext = (): void => {
-      const skipBtn = [...root.querySelectorAll<HTMLButtonElement>('.import-candidates .btn-ghost')].find(
+      const skipBtn = [...root.querySelectorAll<HTMLButtonElement>('.import-candidates .btn')].find(
         (b) => b.textContent === 'skip line',
       );
       expect(skipBtn).toBeDefined();

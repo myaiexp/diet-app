@@ -4,13 +4,13 @@ import { describe, test, expect } from 'vitest';
 import { config } from 'dotenv';
 import { fileURLToPath } from 'node:url';
 import { acquireDbTestLock } from '../test-lock.js';
-import { assertTestDbUrl } from '../test-db-url.js';
+import { assertTestDbUrl, testDatabaseUrl } from '../test-db-url.js';
 
 // Same .env read as the other two real-Postgres files: without it this one
 // skips silently in a full run while their loud gates still pass.
 config({ path: fileURLToPath(new URL('../../../../.env', import.meta.url)), quiet: true });
 
-const TEST_DB_URL = process.env.TEST_DATABASE_URL;
+const TEST_DB_URL = testDatabaseUrl();
 // Same prod guard as the suites that delete rows: this file opens a connection.
 if (TEST_DB_URL) assertTestDbUrl(TEST_DB_URL);
 const hasDb = Boolean(TEST_DB_URL);
@@ -28,7 +28,7 @@ describe('test-lock DB gate', () => {
   test.skipIf(SKIP_DB_TESTS)('TEST_DATABASE_URL is configured', () => {
     expect(
       hasDb,
-      'TEST_DATABASE_URL is not set, so the advisory-lock tests would skip ' +
+      'TEST_DATABASE_URL (or DATABASE_URL_TEST) is not set, so the advisory-lock tests would skip ' +
         'silently. Provision with `pnpm --filter @diet-app/db setup:test-db`. ' +
         'To run without Postgres on purpose, set DIET_APP_SKIP_DB_TESTS=1.',
     ).toBe(true);

@@ -138,7 +138,7 @@ export function openFeedback(opts: FeedbackModalOptions): void {
 
   const body = el('div', {}, ratingGroup, effortGroup, againGroup, asIsGroup, changesWrap);
 
-  const skipBtn = button('btn btn-ghost cook-feedback-skip', 'skip', () => {
+  const skipBtn = button('btn cook-feedback-skip', 'skip', () => {
     closeModal();
     opts.onDone?.();
   });

@@ -127,7 +127,7 @@ export function buildFirstRun(navigate: (r: Route) => void): HTMLElement {
       { class: 'today-first-run-actions flex gap-2' },
       button('btn btn-primary', '1. add to pantry →', () => navigate('/pantry')),
       button('btn', '2. import a recipe →', () => navigate('/import')),
-      button('btn btn-ghost', '3. plan the week →', () => navigate('/plan')),
+      button('btn', '3. plan the week →', () => navigate('/plan')),
     ),
   );
 }

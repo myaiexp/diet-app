@@ -12,7 +12,7 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { config } from 'dotenv';
 import pg from 'pg';
-import { assertTestDbUrl, resolveDbName } from '../test-db-url.js';
+import { assertTestDbUrl, resolveDbName, testDatabaseUrl } from '../test-db-url.js';
 import type { Db } from '../connection.js';
 import { applyMigrations, describeMigrationError, openMigrationDb } from '../apply-migrations.js';
 import {
@@ -24,7 +24,7 @@ import {
 
 config({ path: fileURLToPath(new URL('../../../../.env', import.meta.url)), quiet: true });
 
-const TEST_DB_URL = process.env.TEST_DATABASE_URL;
+const TEST_DB_URL = testDatabaseUrl();
 
 // SAFETY: same guard as the api suite — the database name must end in `_test`.
 if (TEST_DB_URL) assertTestDbUrl(TEST_DB_URL);
@@ -82,7 +82,7 @@ afterAll(async () => {
 // A scoped `vitest run` never reaches the other files' gates, so this file has its own.
 describe('integration DB gate', () => {
   test.skipIf(process.env.DIET_APP_SKIP_DB_TESTS === '1')('TEST_DATABASE_URL is configured', () => {
-    expect(hasDb, 'TEST_DATABASE_URL is not set; see docs/testing.md').toBe(true);
+    expect(hasDb, 'TEST_DATABASE_URL (or DATABASE_URL_TEST) is not set; see docs/testing.md').toBe(true);
   });
 });
 
