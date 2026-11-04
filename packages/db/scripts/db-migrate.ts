@@ -1,6 +1,7 @@
 // CLI shim behind `pnpm --filter @diet-app/db migrate` — guard, then apply the migrations.
 //
-// All the policy is in src/migrate-guard.ts + src/destructive-ddl.ts, and the git/pg
+// All the policy is in src/migrate-guard.ts + src/destructive-ddl.ts (and the chain /
+// skipped-migration refusal in src/migration-check.ts), and the git/pg
 // reads are in src/migrate-guard-io.ts; this file wires them to the journal on disk and
 // applies through drizzle-orm's migrator, not the drizzle-kit binary, so a failed statement
 // prints its Postgres error instead of exiting 1 silently (src/apply-migrations.ts). Journal
@@ -21,6 +22,7 @@ import { decideMigrate, pendingMigrations, renderRefusal } from '../src/migrate-
 import { isMainCheckout, lastAppliedWhen } from '../src/migrate-guard-io.js';
 import { applyMigrations, describeMigrationError, openMigrationDb } from '../src/apply-migrations.js';
 import { findJournalDrift, readApplied, readJournal, renderDrift } from '../src/journal-drift.js';
+import { checkMigrations } from '../src/migration-check.js';
 
 const PKG_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const REPO_ROOT = join(PKG_ROOT, '..', '..');
@@ -79,6 +81,14 @@ async function main(): Promise<void> {
   const migrationsFolder = join(PKG_ROOT, 'drizzle');
   const db = openMigrationDb(url);
   try {
+    // --force does not reach this: it waives the destructive-DDL rule, while a skipped
+    // migration is one the migrator would pass over whatever the flag says.
+    const unhealthy = await checkMigrations(migrationsFolder, db.$client);
+    if (unhealthy) {
+      console.error(unhealthy);
+      process.exitCode = 1;
+      return;
+    }
     await applyMigrations(db, migrationsFolder);
     console.log('✓ migrations applied');
   } catch (err) {

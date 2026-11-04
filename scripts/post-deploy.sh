@@ -28,6 +28,12 @@ rsync -a --delete packages/web/dist/ "$DOCROOT/"
 
 echo "✓ published $(find packages/web/dist -type f | wc -l) files to $DOCROOT"
 
+# The push-to-deploy hook's `drizzle-kit migrate` reports success even when a
+# journal migration sits below the database's `when` gate and is never applied
+# (two branches' migrations landing out of generation order). Fail the deploy
+# here, before the seed trips over the missing schema with a less useful error.
+pnpm --filter @diet-app/db migrate:check
+
 # This is the only step that carries packages/db/data/ingredients.json to
 # production. It runs on every deploy rather than when the file changed: deploy
 # passes no commit range, and a deploy that failed before this line would hide
