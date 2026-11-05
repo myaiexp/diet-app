@@ -1,4 +1,4 @@
-// Hono app factory: body cap, CORS, CSRF, auth, route mount
+// Hono app factory: error handler, body cap, CORS, CSRF, auth, route mount
 import { Hono } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
 import { cors } from 'hono/cors';
@@ -14,6 +14,7 @@ import { profileRoutes } from './routes/profile.js';
 import type { AiConfig } from './config.js';
 import { payloadTooLarge } from './responses.js';
 import { createHealthProbe } from './health.js';
+import { onError } from './on-error.js';
 
 export interface AppConfig {
   // When set, every /api/* route except /api/health requires `Bearer <authToken>`.
@@ -33,6 +34,7 @@ export const MAX_BODY_BYTES = 1024 * 1024;
 
 export function createApp(db: Db, config: AppConfig = {}) {
   const app = new Hono();
+  app.onError(onError);
 
   // Before CORS/auth: Hono buffers the body in-process, and a loopback client
   // bypasses nginx's 2M. Reject by Content-Length (or streamed byte count)
