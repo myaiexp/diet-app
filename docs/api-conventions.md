@@ -177,11 +177,16 @@ vanished mid-request, and that belongs in a 500, not a tidy 400.
   client. `describeError` unwraps `err.cause` because undici reports *every*
   transport failure as `TypeError: fetch failed` and the OpenAI SDK as
   `Error: Connection error.` — the real reason (ENOTFOUND, ECONNREFUSED,
-  status=401) lives only in `cause`. Expected user-input rejections (a bad or
+  status=401) lives only in `cause`; it lives in `describe-error.ts`. Expected user-input rejections (a bad or
   blocked URL the client typed) stay unlogged; a *redirect* target rejection
   logs, since there the user's own URL was fine. Elsewhere in the API, route
   `catch (err)` blocks `throw err` after mapping known PG codes, so unknown
   errors still reach `onError` — don't add a bare `catch {}` that breaks that.
+- **Unhandled errors**: `on-error.ts` (`app.onError`) answers any uncaught
+  throw with `{ error: 'Internal server error' }` 500 and logs
+  `[api] unhandled error on <METHOD> <path>: <describeError>` plus the stack.
+  The error text never reaches the client. An `HTTPException` keeps its status
+  in the same `{ error }` envelope, or its own `res` when it carries one.
 
 ## Postgres errors
 

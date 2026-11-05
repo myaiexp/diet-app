@@ -2,12 +2,13 @@
 
 import { describe, test, expect } from 'vitest';
 import { createApp, MAX_BODY_BYTES } from '../app.js';
+import { healthyDb } from './db-mock.js';
 
 const TOKEN = 'super-secret-token';
 
 describe('createApp bodyLimit', () => {
   test('rejects a body over the cap with 413 before auth runs', async () => {
-    const app = createApp({} as any, { authToken: TOKEN });
+    const app = createApp(healthyDb, { authToken: TOKEN });
     const over = MAX_BODY_BYTES + 1;
     const res = await app.request('/api/ingredients', {
       method: 'POST',
@@ -23,7 +24,7 @@ describe('createApp bodyLimit', () => {
   });
 
   test('a body exactly at the cap still reaches auth (401, not 413)', async () => {
-    const app = createApp({} as any, { authToken: TOKEN });
+    const app = createApp(healthyDb, { authToken: TOKEN });
     const res = await app.request('/api/ingredients', {
       method: 'POST',
       headers: {
@@ -36,7 +37,7 @@ describe('createApp bodyLimit', () => {
   });
 
   test('a small body still reaches auth (401, not a blanket 413)', async () => {
-    const app = createApp({} as any, { authToken: TOKEN });
+    const app = createApp(healthyDb, { authToken: TOKEN });
     const res = await app.request('/api/ingredients', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -46,7 +47,7 @@ describe('createApp bodyLimit', () => {
   });
 
   test('GET /api/health is unaffected', async () => {
-    const app = createApp({} as any, { authToken: TOKEN });
+    const app = createApp(healthyDb, { authToken: TOKEN });
     const res = await app.request('/api/health');
     expect(res.status).toBe(200);
   });

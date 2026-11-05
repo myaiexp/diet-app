@@ -1,7 +1,8 @@
 // Unit tests for the recipe-import failure logger (describeError / logImportFailure)
 
 import { describe, test, expect, vi, afterEach } from 'vitest';
-import { describeError, logImportFailure } from '../ai/log.js';
+import { describeError } from '../describe-error.js';
+import { logImportFailure } from '../ai/log.js';
 
 afterEach(() => {
   vi.restoreAllMocks();

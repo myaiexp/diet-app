@@ -15,7 +15,9 @@ In the app, every `/api/*` route except `/api/health` still checks that bearer
 itself (`auth.ts`); `API_TOKEN` is required at boot (the server exits if unset,
 fail-closed). The two gates are deliberately independent: a misconfigured
 `location` block cannot expose the API to anonymous traffic. Health stays public
-for the deploy/nginx/uptime checks.
+for nginx and uptime checks; it runs `select 1` (3s bound, one query per 2s
+however many callers, `health.ts`) and answers 503 `db: unreachable` when
+Postgres does not.
 
 Unit tests omit the token (`createApp(db)` with no config) to exercise route
 logic auth-free. Non-browser clients (cron, a future scanner #394) use the
@@ -70,6 +72,10 @@ mutating fetches, even with no body.
   and rsyncs `packages/web/dist/` → `/var/www/diet.mase.fi/` (mase-owned), then
   runs the catalog `seed`, so a `deploy` ships frontend, API and ingredient
   catalog together.
+- **Restart drains**: on SIGTERM the API stops accepting, lets in-flight
+  requests finish (up to 45s, the longest client wait), ends the pool and
+  exits 0 (`shutdown.ts`); a timeout or a second signal exits 1. Keep the
+  unit's `TimeoutStopSec` (default 90s) above that drain.
 - **systemd unit**: committed at `systemd/diet-app-api.service`; live copy
   `/etc/systemd/system/diet-app-api.service`. After editing: `sudo cp` that
   file into place, `daemon-reload`, restart. The process is sandboxed
@@ -117,3 +123,36 @@ FOR UPDATE locks). Pass overrides as the second arg for a genuinely long job.
 `pg_terminate_backend`, a dropped tunnel) and Node treats an unhandled
 EventEmitter `'error'` as a throw — without it a routine DB restart takes the
 API process down. Never construct a bare `new pg.Pool` elsewhere.
+
+## Backups and restore
+
+The project runs no backup of its own; the VPS-wide jobs cover `dietapp`
+(full reference: helm's `docs/backup-restore.md`):
+
+- **Local daily dump** — `postgresql-backup.timer`, 02:30 UTC, plain `pg_dump`
+  (no `--clean`, no `CREATE DATABASE`) to
+  `/var/backups/postgresql/dietapp_<YYYYMMDD_HHMMSS>.sql.gz`, kept 7 days,
+  mode 640 `postgres` (read with `sudo`). `db-verify` restores it into a
+  throwaway DB every Sunday and checks row counts.
+- **Off-site** — `forgejo-backup`'s 03:00 encrypted `pg_dumpall` to B2, seven
+  dumps kept. Use it only when the local tier is gone; extracting one DB from
+  the cluster dump is in that doc's "Manual full restore".
+- **Before a risky prod write** (`migrate --force`, `seed:demo --force`, a hand
+  `UPDATE`), take your own snapshot:
+  `pg_dump "$DATABASE_URL" | gzip > ~/backups/diet-app-<what>-<date>.sql.gz`.
+
+Restore from a local dump (loses every write since that dump; snapshot the
+damaged DB first if any of it matters):
+
+```sh
+sudo systemctl stop diet-app-api
+sudo -u postgres psql -c "ALTER DATABASE dietapp RENAME TO dietapp_broken_$(date +%Y%m%d)"
+sudo -u postgres createdb -O dietapp dietapp
+sudo cat /var/backups/postgresql/dietapp_<stamp>.sql.gz | gunzip \
+  | sudo -u postgres psql -v ON_ERROR_STOP=1 -d dietapp
+sudo systemctl start diet-app-api
+curl -s http://127.0.0.1:3300/api/health
+```
+
+The renamed copy has no `test` in its name, so the nightly jobs dump it too —
+drop it once the restore is confirmed.

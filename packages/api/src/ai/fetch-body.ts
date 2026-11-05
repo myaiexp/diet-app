@@ -1,7 +1,7 @@
 // Capped body read + HTML→plain-text for recipe URL import
 
 import { IMPORT_TEXT_MAX_CHARS } from './import-limits.js';
-import { describeError } from './log.js';
+import { describeError } from '../describe-error.js';
 
 const TRUNCATION_MARKER = '\n\n[truncated]';
 

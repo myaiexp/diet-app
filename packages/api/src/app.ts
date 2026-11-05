@@ -1,4 +1,4 @@
-// Hono app factory: body cap, CORS, CSRF, auth, route mount
+// Hono app factory: error handler, body cap, CORS, CSRF, auth, route mount
 import { Hono } from 'hono';
 import { bodyLimit } from 'hono/body-limit';
 import { cors } from 'hono/cors';
@@ -13,6 +13,8 @@ import { shoppingListsRoutes } from './routes/shopping-lists.js';
 import { profileRoutes } from './routes/profile.js';
 import type { AiConfig } from './config.js';
 import { payloadTooLarge } from './responses.js';
+import { createHealthProbe } from './health.js';
+import { onError } from './on-error.js';
 
 export interface AppConfig {
   // When set, every /api/* route except /api/health requires `Bearer <authToken>`.
@@ -32,6 +34,7 @@ export const MAX_BODY_BYTES = 1024 * 1024;
 
 export function createApp(db: Db, config: AppConfig = {}) {
   const app = new Hono();
+  app.onError(onError);
 
   // Before CORS/auth: Hono buffers the body in-process, and a loopback client
   // bypasses nginx's 2M. Reject by Content-Length (or streamed byte count)
@@ -56,9 +59,18 @@ export function createApp(db: Db, config: AppConfig = {}) {
     })
   );
 
-  // Public: the deploy health check, nginx, and uptime monitors hit this with no
-  // token. Registered before the auth middleware so it stays unauthenticated.
-  app.get('/api/health', (c) => c.json({ ok: true, name: 'diet-app-api' }));
+  // Public: nginx and uptime monitors hit this with no token. Registered before
+  // the auth middleware so it stays unauthenticated. 503 when Postgres does not
+  // answer: a live process with a dead pool (rotated password, Postgres down)
+  // 500s every real request, so it is not healthy.
+  const dbAnswers = createHealthProbe(db);
+  app.get('/api/health', async (c) => {
+    const ok = await dbAnswers();
+    return c.json(
+      { ok, name: 'diet-app-api', db: ok ? 'ok' : 'unreachable' },
+      ok ? 200 : 503,
+    );
+  });
 
   // Before bearerAuth so a sibling CSRF is 403/415 even with a valid token.
   // GET/HEAD/OPTIONS skip it; health is registered above and never reaches here.
