@@ -45,6 +45,15 @@ describe('createApp onError', () => {
     expect(log).not.toHaveBeenCalled();
   });
 
+  test('a 5xx HTTPException is logged like an unhandled error', async () => {
+    const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const app = createApp(throwingDb(new HTTPException(503, { message: 'draining' })));
+    const res = await app.request('/api/ingredients');
+    expect(res.status).toBe(503);
+    expect(await res.json()).toEqual({ error: 'draining' });
+    expect(log.mock.calls.flat().map(String).join(' ')).toContain('GET /api/ingredients');
+  });
+
   test('an HTTPException carrying its own response is returned as-is', async () => {
     const own = new Response('custom', { status: 409 });
     const app = createApp(throwingDb(new HTTPException(409, { res: own })));

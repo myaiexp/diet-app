@@ -3,7 +3,7 @@ import { describe, test, expect, vi, afterEach } from 'vitest';
 import { Hono } from 'hono';
 import { serve } from '@hono/node-server';
 import type { AddressInfo } from 'node:net';
-import { createShutdown, closeHttpServer } from '../shutdown.js';
+import { createShutdown, closeHttpServer, installShutdown } from '../shutdown.js';
 
 afterEach(() => {
   vi.useRealTimers();
@@ -59,6 +59,25 @@ describe('createShutdown', () => {
     expect(order).toEqual(['server', 'exit 1']);
   });
 
+  test('a server close that errors is logged, still ends the pool, exits 1', async () => {
+    const err = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const { d, order } = deps({
+      closeServer: vi.fn(async () => {
+        throw new Error('ERR_SERVER_NOT_RUNNING');
+      }),
+    });
+    await createShutdown(d)('SIGTERM');
+    expect(order).toEqual(['db', 'exit 1']);
+    expect(err.mock.calls.flat().map(String).join(' ')).toContain('ERR_SERVER_NOT_RUNNING');
+  });
+
+  test('logs to stdout when no logger is passed', async () => {
+    const out = vi.spyOn(console, 'log').mockImplementation(() => {});
+    const { d } = deps({ log: undefined });
+    await createShutdown(d)('SIGTERM');
+    expect(out.mock.calls.flat().join(' ')).toContain('clean stop');
+  });
+
   test('a second signal while draining exits 1 at once', async () => {
     const { d } = deps({ closeServer: vi.fn(() => new Promise<void>(() => {})) });
     const shutdown = createShutdown(d);
@@ -97,5 +116,32 @@ describe('closeHttpServer against a real server', () => {
     expect(await res.json()).toEqual({ done: true });
     await closing;
     expect(closed).toBe(true);
+  });
+});
+
+describe('installShutdown', () => {
+  test('SIGTERM and SIGINT each run the drain, then process.exit', async () => {
+    const handlers = new Map<string, () => void>();
+    vi.spyOn(process, 'on').mockImplementation(((sig: string, fn: () => void) => {
+      handlers.set(sig, fn);
+      return process;
+    }) as any);
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    const exited = new Promise<number>((resolve) =>
+      vi.spyOn(process, 'exit').mockImplementation(((code: number) => resolve(code)) as any),
+    );
+    const server = {
+      close: vi.fn((cb: (err?: Error) => void) => cb()),
+      closeAllConnections: vi.fn(),
+    } as any;
+    const closeDb = vi.fn(async () => {});
+
+    installShutdown(server, closeDb);
+    expect([...handlers.keys()].sort()).toEqual(['SIGINT', 'SIGTERM']);
+    handlers.get('SIGTERM')!();
+
+    expect(await exited).toBe(0);
+    expect(server.close).toHaveBeenCalledTimes(1);
+    expect(closeDb).toHaveBeenCalledTimes(1);
   });
 });
