@@ -117,3 +117,36 @@ FOR UPDATE locks). Pass overrides as the second arg for a genuinely long job.
 `pg_terminate_backend`, a dropped tunnel) and Node treats an unhandled
 EventEmitter `'error'` as a throw — without it a routine DB restart takes the
 API process down. Never construct a bare `new pg.Pool` elsewhere.
+
+## Backups and restore
+
+The project runs no backup of its own; the VPS-wide jobs cover `dietapp`
+(full reference: helm's `docs/backup-restore.md`):
+
+- **Local daily dump** — `postgresql-backup.timer`, 02:30 UTC, plain `pg_dump`
+  (no `--clean`, no `CREATE DATABASE`) to
+  `/var/backups/postgresql/dietapp_<YYYYMMDD_HHMMSS>.sql.gz`, kept 7 days,
+  mode 640 `postgres` (read with `sudo`). `db-verify` restores it into a
+  throwaway DB every Sunday and checks row counts.
+- **Off-site** — `forgejo-backup`'s 03:00 encrypted `pg_dumpall` to B2, seven
+  dumps kept. Use it only when the local tier is gone; extracting one DB from
+  the cluster dump is in that doc's "Manual full restore".
+- **Before a risky prod write** (`migrate --force`, `seed:demo --force`, a hand
+  `UPDATE`), take your own snapshot:
+  `pg_dump "$DATABASE_URL" | gzip > ~/backups/diet-app-<what>-<date>.sql.gz`.
+
+Restore from a local dump (loses every write since that dump; snapshot the
+damaged DB first if any of it matters):
+
+```sh
+sudo systemctl stop diet-app-api
+sudo -u postgres psql -c "ALTER DATABASE dietapp RENAME TO dietapp_broken_$(date +%Y%m%d)"
+sudo -u postgres createdb -O dietapp dietapp
+sudo cat /var/backups/postgresql/dietapp_<stamp>.sql.gz | gunzip \
+  | sudo -u postgres psql -v ON_ERROR_STOP=1 -d dietapp
+sudo systemctl start diet-app-api
+curl -s http://127.0.0.1:3300/api/health
+```
+
+The renamed copy has no `test` in its name, so the nightly jobs dump it too —
+drop it once the restore is confirmed.
