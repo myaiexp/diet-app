@@ -277,3 +277,10 @@ export function makeDbMock(opts: DbMockOptions = {}): DbMock {
     writes,
   };
 }
+
+/**
+ * A db whose health probe (`select 1`) answers. For suites that hit
+ * /api/health but test something else (auth, CORS, body limit) — an empty `{}`
+ * now makes health 503.
+ */
+export const healthyDb = { execute: async () => ({ rows: [] }) } as any;

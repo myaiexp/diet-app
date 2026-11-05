@@ -15,7 +15,9 @@ In the app, every `/api/*` route except `/api/health` still checks that bearer
 itself (`auth.ts`); `API_TOKEN` is required at boot (the server exits if unset,
 fail-closed). The two gates are deliberately independent: a misconfigured
 `location` block cannot expose the API to anonymous traffic. Health stays public
-for the deploy/nginx/uptime checks.
+for nginx and uptime checks; it runs `select 1` (3s bound, one query per 2s
+however many callers, `health.ts`) and answers 503 `db: unreachable` when
+Postgres does not.
 
 Unit tests omit the token (`createApp(db)` with no config) to exercise route
 logic auth-free. Non-browser clients (cron, a future scanner #394) use the

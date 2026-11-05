@@ -5,7 +5,7 @@ import { describe, test, expect } from 'vitest';
 import { Hono } from 'hono';
 import { bearerAuth } from '../auth.js';
 import { createApp } from '../app.js';
-import { makeSelectMock } from './db-mock.js';
+import { healthyDb, makeSelectMock } from './db-mock.js';
 
 const TOKEN = 'super-secret-token';
 const AUTH = { Authorization: `Bearer ${TOKEN}` };
@@ -41,7 +41,7 @@ describe('bearerAuth middleware', () => {
 
 describe('createApp auth wiring', () => {
   test('health is public — no token required even when auth is configured', async () => {
-    const app = createApp({} as any, { authToken: TOKEN });
+    const app = createApp(healthyDb, { authToken: TOKEN });
     const res = await app.request('/api/health');
     expect(res.status).toBe(200);
     expect((await res.json()).ok).toBe(true);
@@ -49,7 +49,7 @@ describe('createApp auth wiring', () => {
 
   test('protected route returns 401 without a token (DB never touched)', async () => {
     // Empty db: a 401 from the middleware proves no route/db code ran.
-    const app = createApp({} as any, { authToken: TOKEN });
+    const app = createApp(healthyDb, { authToken: TOKEN });
     const res = await app.request('/api/ingredients');
     expect(res.status).toBe(401);
   });
@@ -75,19 +75,19 @@ describe('CORS allowlist', () => {
   const ALLOWED = 'https://other.example';
 
   test('reflects an allowed origin', async () => {
-    const app = createApp({} as any, { corsOrigins: [ALLOWED] });
+    const app = createApp(healthyDb, { corsOrigins: [ALLOWED] });
     const res = await app.request('/api/health', { headers: { Origin: ALLOWED } });
     expect(acao(res)).toBe(ALLOWED);
   });
 
   test('omits the header for a disallowed origin', async () => {
-    const app = createApp({} as any, { corsOrigins: [ALLOWED] });
+    const app = createApp(healthyDb, { corsOrigins: [ALLOWED] });
     const res = await app.request('/api/health', { headers: { Origin: 'http://evil.example' } });
     expect(acao(res)).toBeNull();
   });
 
   test('empty production default does not allow the apex origin or localhost', async () => {
-    const app = createApp({} as any, { corsOrigins: [] });
+    const app = createApp(healthyDb, { corsOrigins: [] });
     for (const origin of ['https://mase.fi', 'http://localhost:5173', 'https://diet.mase.fi']) {
       const res = await app.request('/api/health', { headers: { Origin: origin } });
       expect(acao(res), origin).toBeNull();
@@ -95,7 +95,7 @@ describe('CORS allowlist', () => {
   });
 
   test('createApp without corsOrigins does not allowlist the retired apex origin', async () => {
-    const app = createApp({} as any);
+    const app = createApp(healthyDb);
     const res = await app.request('/api/health', { headers: { Origin: 'https://mase.fi' } });
     expect(acao(res)).toBeNull();
   });
@@ -103,7 +103,7 @@ describe('CORS allowlist', () => {
   // cors() must short-circuit OPTIONS before bearerAuth: a browser preflight
   // never carries Authorization, so an extra origin would otherwise 401.
   test('preflight OPTIONS on a protected route succeeds without a token', async () => {
-    const app = createApp({} as any, { authToken: TOKEN, corsOrigins: [ALLOWED] });
+    const app = createApp(healthyDb, { authToken: TOKEN, corsOrigins: [ALLOWED] });
     const res = await app.request('/api/ingredients', {
       method: 'OPTIONS',
       headers: {
@@ -118,7 +118,7 @@ describe('CORS allowlist', () => {
   });
 
   test('preflight from a disallowed origin omits ACAO when the allowlist is empty', async () => {
-    const app = createApp({} as any, { authToken: TOKEN, corsOrigins: [] });
+    const app = createApp(healthyDb, { authToken: TOKEN, corsOrigins: [] });
     const res = await app.request('/api/ingredients', {
       method: 'OPTIONS',
       headers: {
