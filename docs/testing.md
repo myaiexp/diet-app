@@ -235,7 +235,11 @@ cascade. `isStaple` is written on insert but deliberately left out of the
 deploy, so a committed catalog edit reaches production without a manual step;
 a row that already matches is skipped and keeps its `updatedAt`
 (`seed-core-sql.test.ts`). The catalog source is also where the
-"every row has a Finnish alias" rule lives (`seed-data.test.ts`).
+"every row has a Finnish alias" rule lives (`seed-data.test.ts`). The `.mjs`
+is the source and the JSON its committed output, because the deploy seeds the
+JSON without regenerating: `ingredients-generator-drift.test.ts` runs the
+generator into a temp file and fails unless it matches the committed JSON byte
+for byte. Edit the generator, re-run it, commit both.
 
 ## Demo data
 

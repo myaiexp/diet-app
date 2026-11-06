@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 // Generates ingredients.json with ~500 ingredients
-// Run: node packages/db/scripts/generate-ingredients.mjs  (or `pnpm db:seed` to generate + seed)
+// helm-large-file-ok: one flat data table of ~500 ingredient rows; splitting it adds nothing
+// Run: node packages/db/scripts/generate-ingredients.mjs [outPath]  (or `pnpm db:seed` to generate + seed)
+// outPath defaults to packages/db/data/ingredients.json; the drift test passes a temp path.
 
 import { writeFileSync } from 'fs';
 import { join, dirname } from 'path';
@@ -595,5 +597,6 @@ console.log(`Categories: ${Object.entries(
 console.log(`Staples: ${ingredients.filter(i => i.isStaple).length}`);
 console.log(`With Finnish aliases: ${ingredients.filter(i => i.aliases.length > 0).length}`);
 
-writeFileSync(join(__dirname, '..', 'data', 'ingredients.json'), JSON.stringify(ingredients, null, 2) + '\n');
-console.log('Written to packages/db/data/ingredients.json');
+const outPath = process.argv[2] ?? join(__dirname, '..', 'data', 'ingredients.json');
+writeFileSync(outPath, JSON.stringify(ingredients, null, 2) + '\n');
+console.log(`Written to ${outPath}`);
