@@ -72,6 +72,12 @@ mutating fetches, even with no body.
   and rsyncs `packages/web/dist/` → `/var/www/diet.mase.fi/` (mase-owned), then
   runs the catalog `seed`, so a `deploy` ships frontend, API and ingredient
   catalog together.
+- **Health gate**: `scripts/healthcheck.sh` curls `/api/health`, so after
+  the restart `deploy` waits for `{ ok: true }` (API up and Postgres answering)
+  and auto-reverts the deploy if it never comes. It runs before
+  `post-deploy.sh`, so web build and seed failures fail the deploy there
+  instead. `/api/health` reports no sha, so the gate cannot tell which commit
+  is being served (`healthcheck-script.test.ts`).
 - **Restart drains**: on SIGTERM the API stops accepting, lets in-flight
   requests finish (up to 45s, the longest client wait), ends the pool and
   exits 0 (`shutdown.ts`); a timeout or a second signal exits 1. Keep the

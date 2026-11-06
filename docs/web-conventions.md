@@ -12,7 +12,7 @@
 | --- | ----- |
 | `src/screens/<feature>/` | `index.ts` exports the `Screen` factory registered in `router.ts`'s `SCREENS`; sibling files are that screen's row/panel builders. `screens/profile.ts` stays a single file. |
 | `src/modals/` | Modals, including the cook flow. `cook-flow.ts` is what other screens call (confirm → cook → feedback). |
-| `src/api/` | One thin module per resource over `client.ts`; wire types in `types.ts`. |
+| `src/api/` | One thin module per resource over `client.ts`; wire types in `types/<resource>.ts`, imported through the `types.ts` barrel. |
 | `src/format/` | Display-only formatting (dates, quantities, the expiry ramp, entry titles). A formatted value is never sent back. |
 | `src/ui/` | Shared primitives — see below. |
 | `src/css/` | `app.css`, `form.css`, one sheet per screen — see CSS layering. |
