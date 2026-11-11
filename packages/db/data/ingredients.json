@@ -2151,6 +2151,562 @@
     "isStaple": false
   },
   {
+    "name": "romanesco",
+    "aliases": [
+      "romanesco",
+      "romanescokaali"
+    ],
+    "category": "produce",
+    "defaultUnit": "g",
+    "nutritionPer100g": {
+      "calories": 25,
+      "protein_g": 2.2,
+      "carbs_g": 4.7,
+      "fat_g": 0.3,
+      "fiber_g": 2.4
+    },
+    "shelfLife": {
+      "fridge_days": 7,
+      "freezer_days": 180,
+      "pantry_days": null
+    },
+    "tags": [
+      "vegetarian",
+      "vegan",
+      "gluten-free"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "celeriac",
+    "aliases": [
+      "juuriselleri"
+    ],
+    "category": "produce",
+    "defaultUnit": "g",
+    "nutritionPer100g": {
+      "calories": 42,
+      "protein_g": 1.5,
+      "carbs_g": 9.2,
+      "fat_g": 0.3,
+      "fiber_g": 1.8
+    },
+    "shelfLife": {
+      "fridge_days": 14,
+      "freezer_days": 180,
+      "pantry_days": null
+    },
+    "tags": [
+      "vegetarian",
+      "vegan",
+      "gluten-free"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "endive",
+    "aliases": [
+      "endiivi",
+      "salaattisikuri"
+    ],
+    "category": "produce",
+    "defaultUnit": "g",
+    "nutritionPer100g": {
+      "calories": 17,
+      "protein_g": 1.3,
+      "carbs_g": 3.4,
+      "fat_g": 0.2,
+      "fiber_g": 3.1
+    },
+    "shelfLife": {
+      "fridge_days": 5,
+      "freezer_days": null,
+      "pantry_days": null
+    },
+    "tags": [
+      "vegetarian",
+      "vegan",
+      "gluten-free"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "radicchio",
+    "aliases": [
+      "radicchio",
+      "punasikuri"
+    ],
+    "category": "produce",
+    "defaultUnit": "g",
+    "nutritionPer100g": {
+      "calories": 23,
+      "protein_g": 1.4,
+      "carbs_g": 4.5,
+      "fat_g": 0.3,
+      "fiber_g": 0.9
+    },
+    "shelfLife": {
+      "fridge_days": 7,
+      "freezer_days": 180,
+      "pantry_days": null
+    },
+    "tags": [
+      "vegetarian",
+      "vegan",
+      "gluten-free"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "okra",
+    "aliases": [
+      "okra"
+    ],
+    "category": "produce",
+    "defaultUnit": "g",
+    "nutritionPer100g": {
+      "calories": 33,
+      "protein_g": 1.9,
+      "carbs_g": 7,
+      "fat_g": 0.2,
+      "fiber_g": 3.2
+    },
+    "shelfLife": {
+      "fridge_days": 7,
+      "freezer_days": 180,
+      "pantry_days": null
+    },
+    "tags": [
+      "vegetarian",
+      "vegan",
+      "gluten-free"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "snap peas",
+    "aliases": [
+      "sokeriherneet"
+    ],
+    "category": "produce",
+    "defaultUnit": "g",
+    "nutritionPer100g": {
+      "calories": 42,
+      "protein_g": 2.8,
+      "carbs_g": 8,
+      "fat_g": 0.2,
+      "fiber_g": 2.6
+    },
+    "shelfLife": {
+      "fridge_days": 7,
+      "freezer_days": 180,
+      "pantry_days": null
+    },
+    "tags": [
+      "vegetarian",
+      "vegan",
+      "gluten-free"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "bean sprouts",
+    "aliases": [
+      "idut"
+    ],
+    "category": "produce",
+    "defaultUnit": "g",
+    "nutritionPer100g": {
+      "calories": 31,
+      "protein_g": 3.1,
+      "carbs_g": 5.9,
+      "fat_g": 0.2,
+      "fiber_g": 1.8
+    },
+    "shelfLife": {
+      "fridge_days": 7,
+      "freezer_days": 180,
+      "pantry_days": null
+    },
+    "tags": [
+      "vegetarian",
+      "vegan",
+      "gluten-free"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "daikon radish",
+    "aliases": [
+      "daikon",
+      "daikonretikka"
+    ],
+    "category": "produce",
+    "defaultUnit": "g",
+    "nutritionPer100g": {
+      "calories": 18,
+      "protein_g": 0.6,
+      "carbs_g": 4.1,
+      "fat_g": 0.1,
+      "fiber_g": 1.6
+    },
+    "shelfLife": {
+      "fridge_days": 7,
+      "freezer_days": 180,
+      "pantry_days": null
+    },
+    "tags": [
+      "vegetarian",
+      "vegan",
+      "gluten-free"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "taro",
+    "aliases": [
+      "taro",
+      "tarojuuri"
+    ],
+    "category": "produce",
+    "defaultUnit": "g",
+    "nutritionPer100g": {
+      "calories": 112,
+      "protein_g": 1.5,
+      "carbs_g": 27,
+      "fat_g": 0.2,
+      "fiber_g": 4.1
+    },
+    "shelfLife": {
+      "fridge_days": 7,
+      "freezer_days": 180,
+      "pantry_days": 14
+    },
+    "tags": [
+      "vegetarian",
+      "vegan",
+      "gluten-free"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "plantain",
+    "aliases": [
+      "plantaani",
+      "ruokabanaani"
+    ],
+    "category": "produce",
+    "defaultUnit": "pieces",
+    "nutritionPer100g": {
+      "calories": 122,
+      "protein_g": 1.3,
+      "carbs_g": 32,
+      "fat_g": 0.4,
+      "fiber_g": 2.3
+    },
+    "shelfLife": {
+      "fridge_days": 7,
+      "freezer_days": 180,
+      "pantry_days": null
+    },
+    "tags": [
+      "vegetarian",
+      "vegan",
+      "gluten-free"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "nectarine",
+    "aliases": [
+      "nektariini"
+    ],
+    "category": "produce",
+    "defaultUnit": "pieces",
+    "nutritionPer100g": {
+      "calories": 44,
+      "protein_g": 1.1,
+      "carbs_g": 11,
+      "fat_g": 0.3,
+      "fiber_g": 1.7
+    },
+    "shelfLife": {
+      "fridge_days": 7,
+      "freezer_days": 180,
+      "pantry_days": null
+    },
+    "tags": [
+      "vegetarian",
+      "vegan",
+      "gluten-free"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "persimmon",
+    "aliases": [
+      "sharon"
+    ],
+    "category": "produce",
+    "defaultUnit": "pieces",
+    "nutritionPer100g": {
+      "calories": 70,
+      "protein_g": 0.6,
+      "carbs_g": 19,
+      "fat_g": 0.2,
+      "fiber_g": 3.6
+    },
+    "shelfLife": {
+      "fridge_days": 7,
+      "freezer_days": 180,
+      "pantry_days": null
+    },
+    "tags": [
+      "vegetarian",
+      "vegan",
+      "gluten-free"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "lychee",
+    "aliases": [
+      "litsi"
+    ],
+    "category": "produce",
+    "defaultUnit": "g",
+    "nutritionPer100g": {
+      "calories": 66,
+      "protein_g": 0.8,
+      "carbs_g": 17,
+      "fat_g": 0.4,
+      "fiber_g": 1.3
+    },
+    "shelfLife": {
+      "fridge_days": 7,
+      "freezer_days": 180,
+      "pantry_days": null
+    },
+    "tags": [
+      "vegetarian",
+      "vegan",
+      "gluten-free"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "papaya",
+    "aliases": [
+      "papaija"
+    ],
+    "category": "produce",
+    "defaultUnit": "g",
+    "nutritionPer100g": {
+      "calories": 43,
+      "protein_g": 0.5,
+      "carbs_g": 11,
+      "fat_g": 0.3,
+      "fiber_g": 1.7
+    },
+    "shelfLife": {
+      "fridge_days": 7,
+      "freezer_days": 180,
+      "pantry_days": null
+    },
+    "tags": [
+      "vegetarian",
+      "vegan",
+      "gluten-free"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "dragon fruit",
+    "aliases": [
+      "pitaija",
+      "lohikäärmehedelmä"
+    ],
+    "category": "produce",
+    "defaultUnit": "g",
+    "nutritionPer100g": {
+      "calories": 50,
+      "protein_g": 1.1,
+      "carbs_g": 13,
+      "fat_g": 0.4,
+      "fiber_g": 3
+    },
+    "shelfLife": {
+      "fridge_days": 7,
+      "freezer_days": 180,
+      "pantry_days": null
+    },
+    "tags": [
+      "vegetarian",
+      "vegan",
+      "gluten-free"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "star fruit",
+    "aliases": [
+      "karambola",
+      "tähtihedelmä"
+    ],
+    "category": "produce",
+    "defaultUnit": "g",
+    "nutritionPer100g": {
+      "calories": 31,
+      "protein_g": 1,
+      "carbs_g": 6.7,
+      "fat_g": 0.3,
+      "fiber_g": 2.8
+    },
+    "shelfLife": {
+      "fridge_days": 7,
+      "freezer_days": 180,
+      "pantry_days": null
+    },
+    "tags": [
+      "vegetarian",
+      "vegan",
+      "gluten-free"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "guava",
+    "aliases": [
+      "guava",
+      "guajava"
+    ],
+    "category": "produce",
+    "defaultUnit": "g",
+    "nutritionPer100g": {
+      "calories": 68,
+      "protein_g": 2.6,
+      "carbs_g": 14,
+      "fat_g": 1,
+      "fiber_g": 5.4
+    },
+    "shelfLife": {
+      "fridge_days": 7,
+      "freezer_days": 180,
+      "pantry_days": null
+    },
+    "tags": [
+      "vegetarian",
+      "vegan",
+      "gluten-free",
+      "high-fiber"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "chinese cabbage",
+    "aliases": [
+      "kiinankaali"
+    ],
+    "category": "produce",
+    "defaultUnit": "g",
+    "nutritionPer100g": {
+      "calories": 13,
+      "protein_g": 1.5,
+      "carbs_g": 2.2,
+      "fat_g": 0.2,
+      "fiber_g": 1
+    },
+    "shelfLife": {
+      "fridge_days": 7,
+      "freezer_days": 180,
+      "pantry_days": null
+    },
+    "tags": [
+      "vegetarian",
+      "vegan",
+      "gluten-free"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "fresh sage",
+    "aliases": [
+      "salvia"
+    ],
+    "category": "produce",
+    "defaultUnit": "g",
+    "nutritionPer100g": {
+      "calories": 315,
+      "protein_g": 11,
+      "carbs_g": 61,
+      "fat_g": 13,
+      "fiber_g": 40
+    },
+    "shelfLife": {
+      "fridge_days": 7,
+      "freezer_days": 90,
+      "pantry_days": null
+    },
+    "tags": [
+      "vegetarian",
+      "vegan",
+      "gluten-free"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "fresh tarragon",
+    "aliases": [
+      "rakuuna"
+    ],
+    "category": "produce",
+    "defaultUnit": "g",
+    "nutritionPer100g": {
+      "calories": 295,
+      "protein_g": 23,
+      "carbs_g": 50,
+      "fat_g": 7,
+      "fiber_g": 7
+    },
+    "shelfLife": {
+      "fridge_days": 7,
+      "freezer_days": 90,
+      "pantry_days": null
+    },
+    "tags": [
+      "vegetarian",
+      "vegan",
+      "gluten-free"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "fresh oregano",
+    "aliases": [
+      "tuore oregano"
+    ],
+    "category": "produce",
+    "defaultUnit": "g",
+    "nutritionPer100g": {
+      "calories": 265,
+      "protein_g": 9,
+      "carbs_g": 69,
+      "fat_g": 4,
+      "fiber_g": 43
+    },
+    "shelfLife": {
+      "fridge_days": 7,
+      "freezer_days": 90,
+      "pantry_days": null
+    },
+    "tags": [
+      "vegetarian",
+      "vegan",
+      "gluten-free"
+    ],
+    "isStaple": false
+  },
+  {
     "name": "chicken breast",
     "aliases": [
       "kanan rinta",
@@ -3419,6 +3975,505 @@
     "isStaple": false
   },
   {
+    "name": "venison",
+    "aliases": [
+      "hirvenliha"
+    ],
+    "category": "protein",
+    "defaultUnit": "g",
+    "nutritionPer100g": {
+      "calories": 158,
+      "protein_g": 30,
+      "carbs_g": 0,
+      "fat_g": 3.2,
+      "fiber_g": 0
+    },
+    "shelfLife": {
+      "fridge_days": 3,
+      "freezer_days": 180,
+      "pantry_days": null
+    },
+    "tags": [
+      "gluten-free",
+      "dairy-free",
+      "high-protein"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "rabbit",
+    "aliases": [
+      "kaniini"
+    ],
+    "category": "protein",
+    "defaultUnit": "g",
+    "nutritionPer100g": {
+      "calories": 197,
+      "protein_g": 29,
+      "carbs_g": 0,
+      "fat_g": 8,
+      "fiber_g": 0
+    },
+    "shelfLife": {
+      "fridge_days": 3,
+      "freezer_days": 180,
+      "pantry_days": null
+    },
+    "tags": [
+      "gluten-free",
+      "dairy-free",
+      "high-protein"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "elk",
+    "aliases": [
+      "hirvi"
+    ],
+    "category": "protein",
+    "defaultUnit": "g",
+    "nutritionPer100g": {
+      "calories": 146,
+      "protein_g": 30,
+      "carbs_g": 0,
+      "fat_g": 2.4,
+      "fiber_g": 0
+    },
+    "shelfLife": {
+      "fridge_days": 3,
+      "freezer_days": 180,
+      "pantry_days": null
+    },
+    "tags": [
+      "gluten-free",
+      "dairy-free",
+      "high-protein"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "reindeer",
+    "aliases": [
+      "poro",
+      "poronliha"
+    ],
+    "category": "protein",
+    "defaultUnit": "g",
+    "nutritionPer100g": {
+      "calories": 155,
+      "protein_g": 30,
+      "carbs_g": 0,
+      "fat_g": 3.6,
+      "fiber_g": 0
+    },
+    "shelfLife": {
+      "fridge_days": 3,
+      "freezer_days": 180,
+      "pantry_days": null
+    },
+    "tags": [
+      "gluten-free",
+      "dairy-free",
+      "high-protein"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "prosciutto",
+    "aliases": [
+      "prosciutto",
+      "ilmakuivattu kinkku"
+    ],
+    "category": "protein",
+    "defaultUnit": "g",
+    "nutritionPer100g": {
+      "calories": 195,
+      "protein_g": 26,
+      "carbs_g": 0,
+      "fat_g": 10,
+      "fiber_g": 0
+    },
+    "shelfLife": {
+      "fridge_days": 3,
+      "freezer_days": 180,
+      "pantry_days": null
+    },
+    "tags": [
+      "gluten-free",
+      "dairy-free",
+      "high-protein"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "chorizo",
+    "aliases": [
+      "chorizo",
+      "chorizomakkara"
+    ],
+    "category": "protein",
+    "defaultUnit": "g",
+    "nutritionPer100g": {
+      "calories": 455,
+      "protein_g": 24,
+      "carbs_g": 2,
+      "fat_g": 38,
+      "fiber_g": 0
+    },
+    "shelfLife": {
+      "fridge_days": 3,
+      "freezer_days": 180,
+      "pantry_days": null
+    },
+    "tags": [
+      "dairy-free"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "salami",
+    "aliases": [
+      "salami",
+      "salamimakkara"
+    ],
+    "category": "protein",
+    "defaultUnit": "g",
+    "nutritionPer100g": {
+      "calories": 378,
+      "protein_g": 22,
+      "carbs_g": 2,
+      "fat_g": 31,
+      "fiber_g": 0
+    },
+    "shelfLife": {
+      "fridge_days": 3,
+      "freezer_days": 180,
+      "pantry_days": null
+    },
+    "tags": [
+      "dairy-free"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "pepperoni",
+    "aliases": [
+      "pepperoni",
+      "pepperonimakkara"
+    ],
+    "category": "protein",
+    "defaultUnit": "g",
+    "nutritionPer100g": {
+      "calories": 504,
+      "protein_g": 22,
+      "carbs_g": 4,
+      "fat_g": 44,
+      "fiber_g": 0
+    },
+    "shelfLife": {
+      "fridge_days": 3,
+      "freezer_days": 180,
+      "pantry_days": null
+    },
+    "tags": [
+      "dairy-free"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "canned sardines",
+    "aliases": [
+      "sardiinisailyke"
+    ],
+    "category": "protein",
+    "defaultUnit": "g",
+    "nutritionPer100g": {
+      "calories": 208,
+      "protein_g": 25,
+      "carbs_g": 0,
+      "fat_g": 11,
+      "fiber_g": 0
+    },
+    "shelfLife": {
+      "fridge_days": 3,
+      "freezer_days": null,
+      "pantry_days": 1095
+    },
+    "tags": [
+      "gluten-free",
+      "dairy-free",
+      "high-protein"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "octopus",
+    "aliases": [
+      "mustekala"
+    ],
+    "category": "protein",
+    "defaultUnit": "g",
+    "nutritionPer100g": {
+      "calories": 82,
+      "protein_g": 15,
+      "carbs_g": 2.2,
+      "fat_g": 1,
+      "fiber_g": 0
+    },
+    "shelfLife": {
+      "fridge_days": 3,
+      "freezer_days": 180,
+      "pantry_days": null
+    },
+    "tags": [
+      "gluten-free",
+      "dairy-free",
+      "high-protein"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "scallop",
+    "aliases": [
+      "kampasimpukka"
+    ],
+    "category": "protein",
+    "defaultUnit": "g",
+    "nutritionPer100g": {
+      "calories": 111,
+      "protein_g": 21,
+      "carbs_g": 5,
+      "fat_g": 0.8,
+      "fiber_g": 0
+    },
+    "shelfLife": {
+      "fridge_days": 3,
+      "freezer_days": 180,
+      "pantry_days": null
+    },
+    "tags": [
+      "gluten-free",
+      "dairy-free",
+      "high-protein"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "lobster",
+    "aliases": [
+      "hummeri"
+    ],
+    "category": "protein",
+    "defaultUnit": "g",
+    "nutritionPer100g": {
+      "calories": 89,
+      "protein_g": 19,
+      "carbs_g": 0.5,
+      "fat_g": 0.9,
+      "fiber_g": 0
+    },
+    "shelfLife": {
+      "fridge_days": 3,
+      "freezer_days": 180,
+      "pantry_days": null
+    },
+    "tags": [
+      "gluten-free",
+      "dairy-free",
+      "high-protein"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "clam",
+    "aliases": [
+      "simpukka",
+      "venussimpukka"
+    ],
+    "category": "protein",
+    "defaultUnit": "g",
+    "nutritionPer100g": {
+      "calories": 74,
+      "protein_g": 13,
+      "carbs_g": 2.6,
+      "fat_g": 1,
+      "fiber_g": 0
+    },
+    "shelfLife": {
+      "fridge_days": 3,
+      "freezer_days": 180,
+      "pantry_days": null
+    },
+    "tags": [
+      "gluten-free",
+      "dairy-free",
+      "high-protein"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "whitefish",
+    "aliases": [
+      "siika"
+    ],
+    "category": "protein",
+    "defaultUnit": "g",
+    "nutritionPer100g": {
+      "calories": 90,
+      "protein_g": 19,
+      "carbs_g": 0,
+      "fat_g": 1.3,
+      "fiber_g": 0
+    },
+    "shelfLife": {
+      "fridge_days": 3,
+      "freezer_days": 180,
+      "pantry_days": null
+    },
+    "tags": [
+      "gluten-free",
+      "dairy-free",
+      "high-protein"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "halibut",
+    "aliases": [
+      "ruijanpallas",
+      "pallas"
+    ],
+    "category": "protein",
+    "defaultUnit": "g",
+    "nutritionPer100g": {
+      "calories": 111,
+      "protein_g": 23,
+      "carbs_g": 0,
+      "fat_g": 1.6,
+      "fiber_g": 0
+    },
+    "shelfLife": {
+      "fridge_days": 3,
+      "freezer_days": 180,
+      "pantry_days": null
+    },
+    "tags": [
+      "gluten-free",
+      "dairy-free",
+      "high-protein"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "tilapia",
+    "aliases": [
+      "tilapia"
+    ],
+    "category": "protein",
+    "defaultUnit": "g",
+    "nutritionPer100g": {
+      "calories": 96,
+      "protein_g": 20,
+      "carbs_g": 0,
+      "fat_g": 1.7,
+      "fiber_g": 0
+    },
+    "shelfLife": {
+      "fridge_days": 3,
+      "freezer_days": 180,
+      "pantry_days": null
+    },
+    "tags": [
+      "gluten-free",
+      "dairy-free",
+      "high-protein"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "split peas",
+    "aliases": [
+      "halkaistu herne"
+    ],
+    "category": "protein",
+    "defaultUnit": "g",
+    "nutritionPer100g": {
+      "calories": 118,
+      "protein_g": 8.3,
+      "carbs_g": 21,
+      "fat_g": 0.4,
+      "fiber_g": 8.3
+    },
+    "shelfLife": {
+      "fridge_days": 5,
+      "freezer_days": 180,
+      "pantry_days": 730
+    },
+    "tags": [
+      "vegetarian",
+      "vegan",
+      "gluten-free",
+      "high-protein",
+      "high-fiber"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "fava beans",
+    "aliases": [
+      "haerkaepavut"
+    ],
+    "category": "protein",
+    "defaultUnit": "g",
+    "nutritionPer100g": {
+      "calories": 110,
+      "protein_g": 7.6,
+      "carbs_g": 19,
+      "fat_g": 0.4,
+      "fiber_g": 5.4
+    },
+    "shelfLife": {
+      "fridge_days": 5,
+      "freezer_days": 180,
+      "pantry_days": 730
+    },
+    "tags": [
+      "vegetarian",
+      "vegan",
+      "gluten-free",
+      "high-protein"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "mung beans",
+    "aliases": [
+      "mungopapu"
+    ],
+    "category": "protein",
+    "defaultUnit": "g",
+    "nutritionPer100g": {
+      "calories": 105,
+      "protein_g": 7,
+      "carbs_g": 19,
+      "fat_g": 0.4,
+      "fiber_g": 7.6
+    },
+    "shelfLife": {
+      "fridge_days": 5,
+      "freezer_days": 180,
+      "pantry_days": 730
+    },
+    "tags": [
+      "vegetarian",
+      "vegan",
+      "gluten-free",
+      "high-protein"
+    ],
+    "isStaple": false
+  },
+  {
     "name": "milk",
     "aliases": [
       "maito"
@@ -4219,6 +5274,239 @@
       "vegetarian",
       "vegan",
       "dairy-free",
+      "gluten-free"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "halloumi",
+    "aliases": [
+      "halloumi-juusto"
+    ],
+    "category": "dairy",
+    "defaultUnit": "g",
+    "nutritionPer100g": {
+      "calories": 321,
+      "protein_g": 22,
+      "carbs_g": 3,
+      "fat_g": 25,
+      "fiber_g": 0
+    },
+    "shelfLife": {
+      "fridge_days": 14,
+      "freezer_days": 90,
+      "pantry_days": null
+    },
+    "tags": [
+      "vegetarian",
+      "gluten-free",
+      "high-protein"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "brie",
+    "aliases": [
+      "brie-juusto"
+    ],
+    "category": "dairy",
+    "defaultUnit": "g",
+    "nutritionPer100g": {
+      "calories": 334,
+      "protein_g": 21,
+      "carbs_g": 0.5,
+      "fat_g": 28,
+      "fiber_g": 0
+    },
+    "shelfLife": {
+      "fridge_days": 14,
+      "freezer_days": 90,
+      "pantry_days": null
+    },
+    "tags": [
+      "vegetarian",
+      "gluten-free"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "camembert",
+    "aliases": [
+      "camembert",
+      "camembertjuusto"
+    ],
+    "category": "dairy",
+    "defaultUnit": "g",
+    "nutritionPer100g": {
+      "calories": 300,
+      "protein_g": 20,
+      "carbs_g": 0.5,
+      "fat_g": 24,
+      "fiber_g": 0
+    },
+    "shelfLife": {
+      "fridge_days": 14,
+      "freezer_days": 90,
+      "pantry_days": null
+    },
+    "tags": [
+      "vegetarian",
+      "gluten-free"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "gruyere",
+    "aliases": [
+      "gruyère",
+      "gruyerejuusto"
+    ],
+    "category": "dairy",
+    "defaultUnit": "g",
+    "nutritionPer100g": {
+      "calories": 413,
+      "protein_g": 30,
+      "carbs_g": 0.4,
+      "fat_g": 32,
+      "fiber_g": 0
+    },
+    "shelfLife": {
+      "fridge_days": 14,
+      "freezer_days": 90,
+      "pantry_days": null
+    },
+    "tags": [
+      "vegetarian",
+      "gluten-free",
+      "high-protein"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "provolone",
+    "aliases": [
+      "provolone",
+      "provolonejuusto"
+    ],
+    "category": "dairy",
+    "defaultUnit": "g",
+    "nutritionPer100g": {
+      "calories": 352,
+      "protein_g": 26,
+      "carbs_g": 2.1,
+      "fat_g": 27,
+      "fiber_g": 0
+    },
+    "shelfLife": {
+      "fridge_days": 14,
+      "freezer_days": 90,
+      "pantry_days": null
+    },
+    "tags": [
+      "vegetarian",
+      "gluten-free"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "cream",
+    "aliases": [
+      "ruokakerma"
+    ],
+    "category": "dairy",
+    "defaultUnit": "ml",
+    "nutritionPer100g": {
+      "calories": 195,
+      "protein_g": 2.1,
+      "carbs_g": 3.7,
+      "fat_g": 20,
+      "fiber_g": 0
+    },
+    "shelfLife": {
+      "fridge_days": 14,
+      "freezer_days": 90,
+      "pantry_days": null
+    },
+    "tags": [
+      "vegetarian",
+      "gluten-free"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "creme fraiche",
+    "aliases": [
+      "creme fraiche",
+      "ranskankerma"
+    ],
+    "category": "dairy",
+    "defaultUnit": "ml",
+    "nutritionPer100g": {
+      "calories": 292,
+      "protein_g": 2.4,
+      "carbs_g": 3,
+      "fat_g": 30,
+      "fiber_g": 0
+    },
+    "shelfLife": {
+      "fridge_days": 14,
+      "freezer_days": 90,
+      "pantry_days": null
+    },
+    "tags": [
+      "vegetarian",
+      "gluten-free"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "skyr",
+    "aliases": [
+      "skyr"
+    ],
+    "category": "dairy",
+    "defaultUnit": "g",
+    "nutritionPer100g": {
+      "calories": 61,
+      "protein_g": 11,
+      "carbs_g": 4,
+      "fat_g": 0.2,
+      "fiber_g": 0
+    },
+    "shelfLife": {
+      "fridge_days": 14,
+      "freezer_days": 90,
+      "pantry_days": null
+    },
+    "tags": [
+      "vegetarian",
+      "gluten-free",
+      "high-protein",
+      "fermented"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "ghee",
+    "aliases": [
+      "ghee-voi"
+    ],
+    "category": "dairy",
+    "defaultUnit": "g",
+    "nutritionPer100g": {
+      "calories": 900,
+      "protein_g": 0,
+      "carbs_g": 0,
+      "fat_g": 100,
+      "fiber_g": 0
+    },
+    "shelfLife": {
+      "fridge_days": 365,
+      "freezer_days": null,
+      "pantry_days": 180
+    },
+    "tags": [
+      "vegetarian",
       "gluten-free"
     ],
     "isStaple": false
@@ -5288,6 +6576,391 @@
     },
     "tags": [
       "vegetarian"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "orzo",
+    "aliases": [
+      "orzo",
+      "riisipasta"
+    ],
+    "category": "grain",
+    "defaultUnit": "g",
+    "nutritionPer100g": {
+      "calories": 157,
+      "protein_g": 5.8,
+      "carbs_g": 31,
+      "fat_g": 0.9,
+      "fiber_g": 1.8
+    },
+    "shelfLife": {
+      "fridge_days": null,
+      "freezer_days": null,
+      "pantry_days": 365
+    },
+    "tags": [
+      "vegetarian",
+      "vegan"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "gnocchi",
+    "aliases": [
+      "gnocchi",
+      "perunanyytit"
+    ],
+    "category": "grain",
+    "defaultUnit": "g",
+    "nutritionPer100g": {
+      "calories": 133,
+      "protein_g": 3,
+      "carbs_g": 28,
+      "fat_g": 0.8,
+      "fiber_g": 1.5
+    },
+    "shelfLife": {
+      "fridge_days": null,
+      "freezer_days": null,
+      "pantry_days": 365
+    },
+    "tags": [
+      "vegetarian"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "farro",
+    "aliases": [
+      "farro",
+      "emmervehnä"
+    ],
+    "category": "grain",
+    "defaultUnit": "g",
+    "nutritionPer100g": {
+      "calories": 340,
+      "protein_g": 14,
+      "carbs_g": 72,
+      "fat_g": 2.5,
+      "fiber_g": 11
+    },
+    "shelfLife": {
+      "fridge_days": null,
+      "freezer_days": null,
+      "pantry_days": 365
+    },
+    "tags": [
+      "vegetarian",
+      "vegan",
+      "whole-grain"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "amaranth",
+    "aliases": [
+      "amarantti"
+    ],
+    "category": "grain",
+    "defaultUnit": "g",
+    "nutritionPer100g": {
+      "calories": 371,
+      "protein_g": 14,
+      "carbs_g": 66,
+      "fat_g": 7,
+      "fiber_g": 7
+    },
+    "shelfLife": {
+      "fridge_days": null,
+      "freezer_days": null,
+      "pantry_days": 365
+    },
+    "tags": [
+      "vegetarian",
+      "vegan",
+      "gluten-free",
+      "whole-grain"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "teff",
+    "aliases": [
+      "teff",
+      "tef"
+    ],
+    "category": "grain",
+    "defaultUnit": "g",
+    "nutritionPer100g": {
+      "calories": 367,
+      "protein_g": 13,
+      "carbs_g": 73,
+      "fat_g": 2.4,
+      "fiber_g": 8
+    },
+    "shelfLife": {
+      "fridge_days": null,
+      "freezer_days": null,
+      "pantry_days": 365
+    },
+    "tags": [
+      "vegetarian",
+      "vegan",
+      "gluten-free",
+      "whole-grain"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "rice paper",
+    "aliases": [
+      "riisipaperi"
+    ],
+    "category": "grain",
+    "defaultUnit": "pieces",
+    "nutritionPer100g": {
+      "calories": 312,
+      "protein_g": 0.8,
+      "carbs_g": 77,
+      "fat_g": 0,
+      "fiber_g": 0.3
+    },
+    "shelfLife": {
+      "fridge_days": null,
+      "freezer_days": null,
+      "pantry_days": 365
+    },
+    "tags": [
+      "vegetarian",
+      "vegan",
+      "gluten-free"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "croissant",
+    "aliases": [
+      "voisarvi"
+    ],
+    "category": "grain",
+    "defaultUnit": "pieces",
+    "nutritionPer100g": {
+      "calories": 406,
+      "protein_g": 8,
+      "carbs_g": 45,
+      "fat_g": 21,
+      "fiber_g": 2.1
+    },
+    "shelfLife": {
+      "fridge_days": null,
+      "freezer_days": null,
+      "pantry_days": 365
+    },
+    "tags": [
+      "vegetarian"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "bagel",
+    "aliases": [
+      "bagel",
+      "bageli"
+    ],
+    "category": "grain",
+    "defaultUnit": "pieces",
+    "nutritionPer100g": {
+      "calories": 257,
+      "protein_g": 10,
+      "carbs_g": 50,
+      "fat_g": 1.6,
+      "fiber_g": 2.1
+    },
+    "shelfLife": {
+      "fridge_days": null,
+      "freezer_days": null,
+      "pantry_days": 365
+    },
+    "tags": [
+      "vegetarian",
+      "vegan"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "ciabatta",
+    "aliases": [
+      "ciabatta",
+      "ciabattaleipä"
+    ],
+    "category": "grain",
+    "defaultUnit": "g",
+    "nutritionPer100g": {
+      "calories": 271,
+      "protein_g": 9,
+      "carbs_g": 47,
+      "fat_g": 5,
+      "fiber_g": 2.5
+    },
+    "shelfLife": {
+      "fridge_days": null,
+      "freezer_days": null,
+      "pantry_days": 365
+    },
+    "tags": [
+      "vegetarian",
+      "vegan"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "naan bread",
+    "aliases": [
+      "naanleipa"
+    ],
+    "category": "grain",
+    "defaultUnit": "pieces",
+    "nutritionPer100g": {
+      "calories": 291,
+      "protein_g": 9,
+      "carbs_g": 50,
+      "fat_g": 6,
+      "fiber_g": 2.1
+    },
+    "shelfLife": {
+      "fridge_days": null,
+      "freezer_days": null,
+      "pantry_days": 365
+    },
+    "tags": [
+      "vegetarian"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "focaccia",
+    "aliases": [
+      "focaccia"
+    ],
+    "category": "grain",
+    "defaultUnit": "g",
+    "nutritionPer100g": {
+      "calories": 271,
+      "protein_g": 8,
+      "carbs_g": 42,
+      "fat_g": 8,
+      "fiber_g": 2
+    },
+    "shelfLife": {
+      "fridge_days": null,
+      "freezer_days": null,
+      "pantry_days": 365
+    },
+    "tags": [
+      "vegetarian",
+      "vegan"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "cracker",
+    "aliases": [
+      "voileipakeksi"
+    ],
+    "category": "grain",
+    "defaultUnit": "g",
+    "nutritionPer100g": {
+      "calories": 484,
+      "protein_g": 10,
+      "carbs_g": 62,
+      "fat_g": 22,
+      "fiber_g": 2.5
+    },
+    "shelfLife": {
+      "fridge_days": null,
+      "freezer_days": null,
+      "pantry_days": 365
+    },
+    "tags": [
+      "vegetarian"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "rice cake",
+    "aliases": [
+      "riisikakku"
+    ],
+    "category": "grain",
+    "defaultUnit": "pieces",
+    "nutritionPer100g": {
+      "calories": 387,
+      "protein_g": 8,
+      "carbs_g": 82,
+      "fat_g": 2.8,
+      "fiber_g": 1.3
+    },
+    "shelfLife": {
+      "fridge_days": null,
+      "freezer_days": null,
+      "pantry_days": 365
+    },
+    "tags": [
+      "vegetarian",
+      "vegan",
+      "gluten-free"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "gluten-free pasta",
+    "aliases": [
+      "gluteeniton pasta"
+    ],
+    "category": "grain",
+    "defaultUnit": "g",
+    "nutritionPer100g": {
+      "calories": 153,
+      "protein_g": 3,
+      "carbs_g": 34,
+      "fat_g": 0.5,
+      "fiber_g": 1.2
+    },
+    "shelfLife": {
+      "fridge_days": null,
+      "freezer_days": null,
+      "pantry_days": 365
+    },
+    "tags": [
+      "vegetarian",
+      "vegan",
+      "gluten-free"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "semolina",
+    "aliases": [
+      "mannasuurimo"
+    ],
+    "category": "grain",
+    "defaultUnit": "g",
+    "nutritionPer100g": {
+      "calories": 360,
+      "protein_g": 13,
+      "carbs_g": 73,
+      "fat_g": 1.1,
+      "fiber_g": 3.9
+    },
+    "shelfLife": {
+      "fridge_days": null,
+      "freezer_days": null,
+      "pantry_days": 365
+    },
+    "tags": [
+      "vegetarian",
+      "vegan"
     ],
     "isStaple": false
   },
@@ -6545,6 +8218,242 @@
     "isStaple": true
   },
   {
+    "name": "dried sage",
+    "aliases": [
+      "kuivattu salvia"
+    ],
+    "category": "spice",
+    "defaultUnit": "g",
+    "nutritionPer100g": {
+      "calories": 315,
+      "protein_g": 11,
+      "carbs_g": 61,
+      "fat_g": 13,
+      "fiber_g": 40
+    },
+    "shelfLife": {
+      "fridge_days": null,
+      "freezer_days": null,
+      "pantry_days": 730
+    },
+    "tags": [
+      "vegetarian",
+      "vegan",
+      "gluten-free"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "dried tarragon",
+    "aliases": [
+      "kuivattu rakuuna"
+    ],
+    "category": "spice",
+    "defaultUnit": "g",
+    "nutritionPer100g": {
+      "calories": 295,
+      "protein_g": 23,
+      "carbs_g": 50,
+      "fat_g": 7,
+      "fiber_g": 7
+    },
+    "shelfLife": {
+      "fridge_days": null,
+      "freezer_days": null,
+      "pantry_days": 730
+    },
+    "tags": [
+      "vegetarian",
+      "vegan",
+      "gluten-free"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "dried marjoram",
+    "aliases": [
+      "meirami"
+    ],
+    "category": "spice",
+    "defaultUnit": "g",
+    "nutritionPer100g": {
+      "calories": 271,
+      "protein_g": 12,
+      "carbs_g": 60,
+      "fat_g": 7,
+      "fiber_g": 40
+    },
+    "shelfLife": {
+      "fridge_days": null,
+      "freezer_days": null,
+      "pantry_days": 730
+    },
+    "tags": [
+      "vegetarian",
+      "vegan",
+      "gluten-free"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "lemon pepper",
+    "aliases": [
+      "sitruunapippuri"
+    ],
+    "category": "spice",
+    "defaultUnit": "g",
+    "nutritionPer100g": {
+      "calories": 206,
+      "protein_g": 7,
+      "carbs_g": 47,
+      "fat_g": 2,
+      "fiber_g": 16
+    },
+    "shelfLife": {
+      "fridge_days": null,
+      "freezer_days": null,
+      "pantry_days": 730
+    },
+    "tags": [
+      "vegetarian",
+      "vegan",
+      "gluten-free"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "herbes de provence",
+    "aliases": [
+      "herbes de provence",
+      "provencen yrtit"
+    ],
+    "category": "spice",
+    "defaultUnit": "g",
+    "nutritionPer100g": {
+      "calories": 265,
+      "protein_g": 9,
+      "carbs_g": 60,
+      "fat_g": 5,
+      "fiber_g": 40
+    },
+    "shelfLife": {
+      "fridge_days": null,
+      "freezer_days": null,
+      "pantry_days": 730
+    },
+    "tags": [
+      "vegetarian",
+      "vegan",
+      "gluten-free"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "cajun seasoning",
+    "aliases": [
+      "cajun-mauste",
+      "cajunmauste"
+    ],
+    "category": "spice",
+    "defaultUnit": "g",
+    "nutritionPer100g": {
+      "calories": 282,
+      "protein_g": 12,
+      "carbs_g": 54,
+      "fat_g": 10,
+      "fiber_g": 30
+    },
+    "shelfLife": {
+      "fridge_days": null,
+      "freezer_days": null,
+      "pantry_days": 730
+    },
+    "tags": [
+      "vegetarian",
+      "vegan",
+      "gluten-free"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "taco seasoning",
+    "aliases": [
+      "taco-mauste",
+      "tacomauste"
+    ],
+    "category": "spice",
+    "defaultUnit": "g",
+    "nutritionPer100g": {
+      "calories": 312,
+      "protein_g": 10,
+      "carbs_g": 56,
+      "fat_g": 8,
+      "fiber_g": 15
+    },
+    "shelfLife": {
+      "fridge_days": null,
+      "freezer_days": null,
+      "pantry_days": 730
+    },
+    "tags": [
+      "vegetarian",
+      "vegan"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "wasabi",
+    "aliases": [
+      "wasabi"
+    ],
+    "category": "spice",
+    "defaultUnit": "g",
+    "nutritionPer100g": {
+      "calories": 109,
+      "protein_g": 5,
+      "carbs_g": 24,
+      "fat_g": 0.6,
+      "fiber_g": 8
+    },
+    "shelfLife": {
+      "fridge_days": null,
+      "freezer_days": null,
+      "pantry_days": 730
+    },
+    "tags": [
+      "vegetarian",
+      "vegan",
+      "gluten-free"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "horseradish",
+    "aliases": [
+      "piparjuuri"
+    ],
+    "category": "spice",
+    "defaultUnit": "g",
+    "nutritionPer100g": {
+      "calories": 48,
+      "protein_g": 1.2,
+      "carbs_g": 11,
+      "fat_g": 0.7,
+      "fiber_g": 3.3
+    },
+    "shelfLife": {
+      "fridge_days": null,
+      "freezer_days": null,
+      "pantry_days": 730
+    },
+    "tags": [
+      "vegetarian",
+      "vegan",
+      "gluten-free"
+    ],
+    "isStaple": false
+  },
+  {
     "name": "olive oil",
     "aliases": [
       "oliiviöljy"
@@ -7731,6 +9640,268 @@
     "isStaple": false
   },
   {
+    "name": "truffle oil",
+    "aliases": [
+      "tryffelioeljy"
+    ],
+    "category": "condiment",
+    "defaultUnit": "ml",
+    "nutritionPer100g": {
+      "calories": 884,
+      "protein_g": 0,
+      "carbs_g": 0,
+      "fat_g": 100,
+      "fiber_g": 0
+    },
+    "shelfLife": {
+      "fridge_days": 180,
+      "freezer_days": null,
+      "pantry_days": 365
+    },
+    "tags": [
+      "vegetarian",
+      "vegan",
+      "gluten-free"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "gochujang",
+    "aliases": [
+      "gochujang"
+    ],
+    "category": "condiment",
+    "defaultUnit": "g",
+    "nutritionPer100g": {
+      "calories": 100,
+      "protein_g": 4,
+      "carbs_g": 19,
+      "fat_g": 1,
+      "fiber_g": 3
+    },
+    "shelfLife": {
+      "fridge_days": 180,
+      "freezer_days": null,
+      "pantry_days": 365
+    },
+    "tags": [
+      "vegetarian",
+      "vegan",
+      "fermented"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "sweet chili sauce",
+    "aliases": [
+      "makea chilikastike"
+    ],
+    "category": "condiment",
+    "defaultUnit": "ml",
+    "nutritionPer100g": {
+      "calories": 220,
+      "protein_g": 0.3,
+      "carbs_g": 55,
+      "fat_g": 0.2,
+      "fiber_g": 0.3
+    },
+    "shelfLife": {
+      "fridge_days": 180,
+      "freezer_days": null,
+      "pantry_days": 365
+    },
+    "tags": [
+      "vegetarian",
+      "vegan",
+      "gluten-free"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "pomegranate molasses",
+    "aliases": [
+      "granaattiomenasiirappi"
+    ],
+    "category": "condiment",
+    "defaultUnit": "ml",
+    "nutritionPer100g": {
+      "calories": 250,
+      "protein_g": 0.5,
+      "carbs_g": 65,
+      "fat_g": 0.1,
+      "fiber_g": 0
+    },
+    "shelfLife": {
+      "fridge_days": 180,
+      "freezer_days": null,
+      "pantry_days": 365
+    },
+    "tags": [
+      "vegetarian",
+      "vegan",
+      "gluten-free"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "capers",
+    "aliases": [
+      "kaprikset"
+    ],
+    "category": "condiment",
+    "defaultUnit": "g",
+    "nutritionPer100g": {
+      "calories": 23,
+      "protein_g": 2.4,
+      "carbs_g": 5,
+      "fat_g": 0.9,
+      "fiber_g": 3.2
+    },
+    "shelfLife": {
+      "fridge_days": 180,
+      "freezer_days": null,
+      "pantry_days": 365
+    },
+    "tags": [
+      "vegetarian",
+      "vegan",
+      "gluten-free"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "olives",
+    "aliases": [
+      "oliivit"
+    ],
+    "category": "condiment",
+    "defaultUnit": "g",
+    "nutritionPer100g": {
+      "calories": 115,
+      "protein_g": 0.8,
+      "carbs_g": 6,
+      "fat_g": 11,
+      "fiber_g": 3.2
+    },
+    "shelfLife": {
+      "fridge_days": 180,
+      "freezer_days": null,
+      "pantry_days": 365
+    },
+    "tags": [
+      "vegetarian",
+      "vegan",
+      "gluten-free"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "sun-dried tomatoes",
+    "aliases": [
+      "aurinkokuivatut tomaatit"
+    ],
+    "category": "condiment",
+    "defaultUnit": "g",
+    "nutritionPer100g": {
+      "calories": 258,
+      "protein_g": 14,
+      "carbs_g": 56,
+      "fat_g": 3,
+      "fiber_g": 12
+    },
+    "shelfLife": {
+      "fridge_days": 180,
+      "freezer_days": null,
+      "pantry_days": 365
+    },
+    "tags": [
+      "vegetarian",
+      "vegan",
+      "gluten-free"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "kimchi",
+    "aliases": [
+      "kimchi"
+    ],
+    "category": "condiment",
+    "defaultUnit": "g",
+    "nutritionPer100g": {
+      "calories": 15,
+      "protein_g": 1.1,
+      "carbs_g": 2.4,
+      "fat_g": 0.5,
+      "fiber_g": 1.6
+    },
+    "shelfLife": {
+      "fridge_days": 180,
+      "freezer_days": null,
+      "pantry_days": 365
+    },
+    "tags": [
+      "vegetarian",
+      "vegan",
+      "gluten-free",
+      "fermented"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "sauerkraut",
+    "aliases": [
+      "hapankaali"
+    ],
+    "category": "condiment",
+    "defaultUnit": "g",
+    "nutritionPer100g": {
+      "calories": 19,
+      "protein_g": 0.9,
+      "carbs_g": 4.3,
+      "fat_g": 0.1,
+      "fiber_g": 2.9
+    },
+    "shelfLife": {
+      "fridge_days": 180,
+      "freezer_days": null,
+      "pantry_days": 365
+    },
+    "tags": [
+      "vegetarian",
+      "vegan",
+      "gluten-free",
+      "fermented"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "mirin",
+    "aliases": [
+      "riisiviini"
+    ],
+    "category": "condiment",
+    "defaultUnit": "ml",
+    "nutritionPer100g": {
+      "calories": 134,
+      "protein_g": 0.5,
+      "carbs_g": 5,
+      "fat_g": 0,
+      "fiber_g": 0
+    },
+    "shelfLife": {
+      "fridge_days": 180,
+      "freezer_days": null,
+      "pantry_days": 365
+    },
+    "tags": [
+      "vegetarian",
+      "vegan",
+      "gluten-free"
+    ],
+    "isStaple": false
+  },
+  {
     "name": "frozen peas",
     "aliases": [
       "pakasteherneet"
@@ -8267,6 +10438,235 @@
     },
     "tags": [
       "vegetarian",
+      "gluten-free"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "frozen artichoke hearts",
+    "aliases": [
+      "artisokansydämet"
+    ],
+    "category": "frozen",
+    "defaultUnit": "g",
+    "nutritionPer100g": {
+      "calories": 38,
+      "protein_g": 2.9,
+      "carbs_g": 8.6,
+      "fat_g": 0.2,
+      "fiber_g": 4.8
+    },
+    "shelfLife": {
+      "fridge_days": null,
+      "freezer_days": 180,
+      "pantry_days": null
+    },
+    "tags": [
+      "vegetarian",
+      "vegan",
+      "gluten-free"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "frozen sweet potato fries",
+    "aliases": [
+      "bataattiranskalaiset"
+    ],
+    "category": "frozen",
+    "defaultUnit": "g",
+    "nutritionPer100g": {
+      "calories": 180,
+      "protein_g": 1.5,
+      "carbs_g": 30,
+      "fat_g": 6,
+      "fiber_g": 2.5
+    },
+    "shelfLife": {
+      "fridge_days": null,
+      "freezer_days": 180,
+      "pantry_days": null
+    },
+    "tags": [
+      "vegetarian",
+      "vegan",
+      "gluten-free"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "frozen dumplings",
+    "aliases": [
+      "nyytit",
+      "dumplingit"
+    ],
+    "category": "frozen",
+    "defaultUnit": "g",
+    "nutritionPer100g": {
+      "calories": 215,
+      "protein_g": 8,
+      "carbs_g": 30,
+      "fat_g": 7,
+      "fiber_g": 1.2
+    },
+    "shelfLife": {
+      "fridge_days": null,
+      "freezer_days": 180,
+      "pantry_days": null
+    },
+    "tags": [],
+    "isStaple": false
+  },
+  {
+    "name": "frozen spring rolls",
+    "aliases": [
+      "kevätrullat"
+    ],
+    "category": "frozen",
+    "defaultUnit": "g",
+    "nutritionPer100g": {
+      "calories": 225,
+      "protein_g": 5,
+      "carbs_g": 28,
+      "fat_g": 10,
+      "fiber_g": 1.5
+    },
+    "shelfLife": {
+      "fridge_days": null,
+      "freezer_days": 180,
+      "pantry_days": null
+    },
+    "tags": [
+      "vegetarian"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "frozen waffles",
+    "aliases": [
+      "pakastevohvelit"
+    ],
+    "category": "frozen",
+    "defaultUnit": "pieces",
+    "nutritionPer100g": {
+      "calories": 312,
+      "protein_g": 6,
+      "carbs_g": 45,
+      "fat_g": 12,
+      "fiber_g": 1.5
+    },
+    "shelfLife": {
+      "fridge_days": null,
+      "freezer_days": 180,
+      "pantry_days": null
+    },
+    "tags": [
+      "vegetarian"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "frozen hash browns",
+    "aliases": [
+      "perunarösti",
+      "röstiperuna"
+    ],
+    "category": "frozen",
+    "defaultUnit": "g",
+    "nutritionPer100g": {
+      "calories": 174,
+      "protein_g": 2,
+      "carbs_g": 24,
+      "fat_g": 8,
+      "fiber_g": 2
+    },
+    "shelfLife": {
+      "fridge_days": null,
+      "freezer_days": 180,
+      "pantry_days": null
+    },
+    "tags": [
+      "vegetarian",
+      "vegan",
+      "gluten-free"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "frozen french fries",
+    "aliases": [
+      "pakasteperunat"
+    ],
+    "category": "frozen",
+    "defaultUnit": "g",
+    "nutritionPer100g": {
+      "calories": 150,
+      "protein_g": 2,
+      "carbs_g": 24,
+      "fat_g": 5,
+      "fiber_g": 2
+    },
+    "shelfLife": {
+      "fridge_days": null,
+      "freezer_days": 180,
+      "pantry_days": null
+    },
+    "tags": [
+      "vegetarian",
+      "vegan",
+      "gluten-free"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "frozen acai",
+    "aliases": [
+      "acai",
+      "acaimarja"
+    ],
+    "category": "frozen",
+    "defaultUnit": "g",
+    "nutritionPer100g": {
+      "calories": 70,
+      "protein_g": 1,
+      "carbs_g": 4,
+      "fat_g": 5,
+      "fiber_g": 3
+    },
+    "shelfLife": {
+      "fridge_days": null,
+      "freezer_days": 180,
+      "pantry_days": null
+    },
+    "tags": [
+      "vegetarian",
+      "vegan",
+      "gluten-free"
+    ],
+    "isStaple": false
+  },
+  {
+    "name": "frozen cherries",
+    "aliases": [
+      "pakastekirsikat"
+    ],
+    "category": "frozen",
+    "defaultUnit": "g",
+    "nutritionPer100g": {
+      "calories": 50,
+      "protein_g": 1,
+      "carbs_g": 12,
+      "fat_g": 0.3,
+      "fiber_g": 1.6
+    },
+    "shelfLife": {
+      "fridge_days": null,
+      "freezer_days": 180,
+      "pantry_days": null
+    },
+    "tags": [
+      "vegetarian",
+      "vegan",
       "gluten-free"
     ],
     "isStaple": false
@@ -9257,2406 +11657,6 @@
       "vegetarian",
       "gluten-free",
       "high-protein"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "romanesco",
-    "aliases": [
-      "romanesco",
-      "romanescokaali"
-    ],
-    "category": "produce",
-    "defaultUnit": "g",
-    "nutritionPer100g": {
-      "calories": 25,
-      "protein_g": 2.2,
-      "carbs_g": 4.7,
-      "fat_g": 0.3,
-      "fiber_g": 2.4
-    },
-    "shelfLife": {
-      "fridge_days": 7,
-      "freezer_days": 180,
-      "pantry_days": null
-    },
-    "tags": [
-      "vegetarian",
-      "vegan",
-      "gluten-free"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "celeriac",
-    "aliases": [
-      "juuriselleri"
-    ],
-    "category": "produce",
-    "defaultUnit": "g",
-    "nutritionPer100g": {
-      "calories": 42,
-      "protein_g": 1.5,
-      "carbs_g": 9.2,
-      "fat_g": 0.3,
-      "fiber_g": 1.8
-    },
-    "shelfLife": {
-      "fridge_days": 14,
-      "freezer_days": 180,
-      "pantry_days": null
-    },
-    "tags": [
-      "vegetarian",
-      "vegan",
-      "gluten-free"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "endive",
-    "aliases": [
-      "endiivi",
-      "salaattisikuri"
-    ],
-    "category": "produce",
-    "defaultUnit": "g",
-    "nutritionPer100g": {
-      "calories": 17,
-      "protein_g": 1.3,
-      "carbs_g": 3.4,
-      "fat_g": 0.2,
-      "fiber_g": 3.1
-    },
-    "shelfLife": {
-      "fridge_days": 5,
-      "freezer_days": null,
-      "pantry_days": null
-    },
-    "tags": [
-      "vegetarian",
-      "vegan",
-      "gluten-free"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "radicchio",
-    "aliases": [
-      "radicchio",
-      "punasikuri"
-    ],
-    "category": "produce",
-    "defaultUnit": "g",
-    "nutritionPer100g": {
-      "calories": 23,
-      "protein_g": 1.4,
-      "carbs_g": 4.5,
-      "fat_g": 0.3,
-      "fiber_g": 0.9
-    },
-    "shelfLife": {
-      "fridge_days": 7,
-      "freezer_days": 180,
-      "pantry_days": null
-    },
-    "tags": [
-      "vegetarian",
-      "vegan",
-      "gluten-free"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "okra",
-    "aliases": [
-      "okra"
-    ],
-    "category": "produce",
-    "defaultUnit": "g",
-    "nutritionPer100g": {
-      "calories": 33,
-      "protein_g": 1.9,
-      "carbs_g": 7,
-      "fat_g": 0.2,
-      "fiber_g": 3.2
-    },
-    "shelfLife": {
-      "fridge_days": 7,
-      "freezer_days": 180,
-      "pantry_days": null
-    },
-    "tags": [
-      "vegetarian",
-      "vegan",
-      "gluten-free"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "snap peas",
-    "aliases": [
-      "sokeriherneet"
-    ],
-    "category": "produce",
-    "defaultUnit": "g",
-    "nutritionPer100g": {
-      "calories": 42,
-      "protein_g": 2.8,
-      "carbs_g": 8,
-      "fat_g": 0.2,
-      "fiber_g": 2.6
-    },
-    "shelfLife": {
-      "fridge_days": 7,
-      "freezer_days": 180,
-      "pantry_days": null
-    },
-    "tags": [
-      "vegetarian",
-      "vegan",
-      "gluten-free"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "bean sprouts",
-    "aliases": [
-      "idut"
-    ],
-    "category": "produce",
-    "defaultUnit": "g",
-    "nutritionPer100g": {
-      "calories": 31,
-      "protein_g": 3.1,
-      "carbs_g": 5.9,
-      "fat_g": 0.2,
-      "fiber_g": 1.8
-    },
-    "shelfLife": {
-      "fridge_days": 7,
-      "freezer_days": 180,
-      "pantry_days": null
-    },
-    "tags": [
-      "vegetarian",
-      "vegan",
-      "gluten-free"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "daikon radish",
-    "aliases": [
-      "daikon",
-      "daikonretikka"
-    ],
-    "category": "produce",
-    "defaultUnit": "g",
-    "nutritionPer100g": {
-      "calories": 18,
-      "protein_g": 0.6,
-      "carbs_g": 4.1,
-      "fat_g": 0.1,
-      "fiber_g": 1.6
-    },
-    "shelfLife": {
-      "fridge_days": 7,
-      "freezer_days": 180,
-      "pantry_days": null
-    },
-    "tags": [
-      "vegetarian",
-      "vegan",
-      "gluten-free"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "taro",
-    "aliases": [
-      "taro",
-      "tarojuuri"
-    ],
-    "category": "produce",
-    "defaultUnit": "g",
-    "nutritionPer100g": {
-      "calories": 112,
-      "protein_g": 1.5,
-      "carbs_g": 27,
-      "fat_g": 0.2,
-      "fiber_g": 4.1
-    },
-    "shelfLife": {
-      "fridge_days": 7,
-      "freezer_days": 180,
-      "pantry_days": 14
-    },
-    "tags": [
-      "vegetarian",
-      "vegan",
-      "gluten-free"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "plantain",
-    "aliases": [
-      "plantaani",
-      "ruokabanaani"
-    ],
-    "category": "produce",
-    "defaultUnit": "pieces",
-    "nutritionPer100g": {
-      "calories": 122,
-      "protein_g": 1.3,
-      "carbs_g": 32,
-      "fat_g": 0.4,
-      "fiber_g": 2.3
-    },
-    "shelfLife": {
-      "fridge_days": 7,
-      "freezer_days": 180,
-      "pantry_days": null
-    },
-    "tags": [
-      "vegetarian",
-      "vegan",
-      "gluten-free"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "nectarine",
-    "aliases": [
-      "nektariini"
-    ],
-    "category": "produce",
-    "defaultUnit": "pieces",
-    "nutritionPer100g": {
-      "calories": 44,
-      "protein_g": 1.1,
-      "carbs_g": 11,
-      "fat_g": 0.3,
-      "fiber_g": 1.7
-    },
-    "shelfLife": {
-      "fridge_days": 7,
-      "freezer_days": 180,
-      "pantry_days": null
-    },
-    "tags": [
-      "vegetarian",
-      "vegan",
-      "gluten-free"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "persimmon",
-    "aliases": [
-      "sharon"
-    ],
-    "category": "produce",
-    "defaultUnit": "pieces",
-    "nutritionPer100g": {
-      "calories": 70,
-      "protein_g": 0.6,
-      "carbs_g": 19,
-      "fat_g": 0.2,
-      "fiber_g": 3.6
-    },
-    "shelfLife": {
-      "fridge_days": 7,
-      "freezer_days": 180,
-      "pantry_days": null
-    },
-    "tags": [
-      "vegetarian",
-      "vegan",
-      "gluten-free"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "lychee",
-    "aliases": [
-      "litsi"
-    ],
-    "category": "produce",
-    "defaultUnit": "g",
-    "nutritionPer100g": {
-      "calories": 66,
-      "protein_g": 0.8,
-      "carbs_g": 17,
-      "fat_g": 0.4,
-      "fiber_g": 1.3
-    },
-    "shelfLife": {
-      "fridge_days": 7,
-      "freezer_days": 180,
-      "pantry_days": null
-    },
-    "tags": [
-      "vegetarian",
-      "vegan",
-      "gluten-free"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "papaya",
-    "aliases": [
-      "papaija"
-    ],
-    "category": "produce",
-    "defaultUnit": "g",
-    "nutritionPer100g": {
-      "calories": 43,
-      "protein_g": 0.5,
-      "carbs_g": 11,
-      "fat_g": 0.3,
-      "fiber_g": 1.7
-    },
-    "shelfLife": {
-      "fridge_days": 7,
-      "freezer_days": 180,
-      "pantry_days": null
-    },
-    "tags": [
-      "vegetarian",
-      "vegan",
-      "gluten-free"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "dragon fruit",
-    "aliases": [
-      "pitaija",
-      "lohikäärmehedelmä"
-    ],
-    "category": "produce",
-    "defaultUnit": "g",
-    "nutritionPer100g": {
-      "calories": 50,
-      "protein_g": 1.1,
-      "carbs_g": 13,
-      "fat_g": 0.4,
-      "fiber_g": 3
-    },
-    "shelfLife": {
-      "fridge_days": 7,
-      "freezer_days": 180,
-      "pantry_days": null
-    },
-    "tags": [
-      "vegetarian",
-      "vegan",
-      "gluten-free"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "star fruit",
-    "aliases": [
-      "karambola",
-      "tähtihedelmä"
-    ],
-    "category": "produce",
-    "defaultUnit": "g",
-    "nutritionPer100g": {
-      "calories": 31,
-      "protein_g": 1,
-      "carbs_g": 6.7,
-      "fat_g": 0.3,
-      "fiber_g": 2.8
-    },
-    "shelfLife": {
-      "fridge_days": 7,
-      "freezer_days": 180,
-      "pantry_days": null
-    },
-    "tags": [
-      "vegetarian",
-      "vegan",
-      "gluten-free"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "guava",
-    "aliases": [
-      "guava",
-      "guajava"
-    ],
-    "category": "produce",
-    "defaultUnit": "g",
-    "nutritionPer100g": {
-      "calories": 68,
-      "protein_g": 2.6,
-      "carbs_g": 14,
-      "fat_g": 1,
-      "fiber_g": 5.4
-    },
-    "shelfLife": {
-      "fridge_days": 7,
-      "freezer_days": 180,
-      "pantry_days": null
-    },
-    "tags": [
-      "vegetarian",
-      "vegan",
-      "gluten-free",
-      "high-fiber"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "chinese cabbage",
-    "aliases": [
-      "kiinankaali"
-    ],
-    "category": "produce",
-    "defaultUnit": "g",
-    "nutritionPer100g": {
-      "calories": 13,
-      "protein_g": 1.5,
-      "carbs_g": 2.2,
-      "fat_g": 0.2,
-      "fiber_g": 1
-    },
-    "shelfLife": {
-      "fridge_days": 7,
-      "freezer_days": 180,
-      "pantry_days": null
-    },
-    "tags": [
-      "vegetarian",
-      "vegan",
-      "gluten-free"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "fresh sage",
-    "aliases": [
-      "salvia"
-    ],
-    "category": "produce",
-    "defaultUnit": "g",
-    "nutritionPer100g": {
-      "calories": 315,
-      "protein_g": 11,
-      "carbs_g": 61,
-      "fat_g": 13,
-      "fiber_g": 40
-    },
-    "shelfLife": {
-      "fridge_days": 7,
-      "freezer_days": 90,
-      "pantry_days": null
-    },
-    "tags": [
-      "vegetarian",
-      "vegan",
-      "gluten-free"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "fresh tarragon",
-    "aliases": [
-      "rakuuna"
-    ],
-    "category": "produce",
-    "defaultUnit": "g",
-    "nutritionPer100g": {
-      "calories": 295,
-      "protein_g": 23,
-      "carbs_g": 50,
-      "fat_g": 7,
-      "fiber_g": 7
-    },
-    "shelfLife": {
-      "fridge_days": 7,
-      "freezer_days": 90,
-      "pantry_days": null
-    },
-    "tags": [
-      "vegetarian",
-      "vegan",
-      "gluten-free"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "fresh oregano",
-    "aliases": [
-      "tuore oregano"
-    ],
-    "category": "produce",
-    "defaultUnit": "g",
-    "nutritionPer100g": {
-      "calories": 265,
-      "protein_g": 9,
-      "carbs_g": 69,
-      "fat_g": 4,
-      "fiber_g": 43
-    },
-    "shelfLife": {
-      "fridge_days": 7,
-      "freezer_days": 90,
-      "pantry_days": null
-    },
-    "tags": [
-      "vegetarian",
-      "vegan",
-      "gluten-free"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "venison",
-    "aliases": [
-      "hirvenliha"
-    ],
-    "category": "protein",
-    "defaultUnit": "g",
-    "nutritionPer100g": {
-      "calories": 158,
-      "protein_g": 30,
-      "carbs_g": 0,
-      "fat_g": 3.2,
-      "fiber_g": 0
-    },
-    "shelfLife": {
-      "fridge_days": 3,
-      "freezer_days": 180,
-      "pantry_days": null
-    },
-    "tags": [
-      "gluten-free",
-      "dairy-free",
-      "high-protein"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "rabbit",
-    "aliases": [
-      "kaniini"
-    ],
-    "category": "protein",
-    "defaultUnit": "g",
-    "nutritionPer100g": {
-      "calories": 197,
-      "protein_g": 29,
-      "carbs_g": 0,
-      "fat_g": 8,
-      "fiber_g": 0
-    },
-    "shelfLife": {
-      "fridge_days": 3,
-      "freezer_days": 180,
-      "pantry_days": null
-    },
-    "tags": [
-      "gluten-free",
-      "dairy-free",
-      "high-protein"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "elk",
-    "aliases": [
-      "hirvi"
-    ],
-    "category": "protein",
-    "defaultUnit": "g",
-    "nutritionPer100g": {
-      "calories": 146,
-      "protein_g": 30,
-      "carbs_g": 0,
-      "fat_g": 2.4,
-      "fiber_g": 0
-    },
-    "shelfLife": {
-      "fridge_days": 3,
-      "freezer_days": 180,
-      "pantry_days": null
-    },
-    "tags": [
-      "gluten-free",
-      "dairy-free",
-      "high-protein"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "reindeer",
-    "aliases": [
-      "poro",
-      "poronliha"
-    ],
-    "category": "protein",
-    "defaultUnit": "g",
-    "nutritionPer100g": {
-      "calories": 155,
-      "protein_g": 30,
-      "carbs_g": 0,
-      "fat_g": 3.6,
-      "fiber_g": 0
-    },
-    "shelfLife": {
-      "fridge_days": 3,
-      "freezer_days": 180,
-      "pantry_days": null
-    },
-    "tags": [
-      "gluten-free",
-      "dairy-free",
-      "high-protein"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "prosciutto",
-    "aliases": [
-      "prosciutto",
-      "ilmakuivattu kinkku"
-    ],
-    "category": "protein",
-    "defaultUnit": "g",
-    "nutritionPer100g": {
-      "calories": 195,
-      "protein_g": 26,
-      "carbs_g": 0,
-      "fat_g": 10,
-      "fiber_g": 0
-    },
-    "shelfLife": {
-      "fridge_days": 3,
-      "freezer_days": 180,
-      "pantry_days": null
-    },
-    "tags": [
-      "gluten-free",
-      "dairy-free",
-      "high-protein"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "chorizo",
-    "aliases": [
-      "chorizo",
-      "chorizomakkara"
-    ],
-    "category": "protein",
-    "defaultUnit": "g",
-    "nutritionPer100g": {
-      "calories": 455,
-      "protein_g": 24,
-      "carbs_g": 2,
-      "fat_g": 38,
-      "fiber_g": 0
-    },
-    "shelfLife": {
-      "fridge_days": 3,
-      "freezer_days": 180,
-      "pantry_days": null
-    },
-    "tags": [
-      "dairy-free"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "salami",
-    "aliases": [
-      "salami",
-      "salamimakkara"
-    ],
-    "category": "protein",
-    "defaultUnit": "g",
-    "nutritionPer100g": {
-      "calories": 378,
-      "protein_g": 22,
-      "carbs_g": 2,
-      "fat_g": 31,
-      "fiber_g": 0
-    },
-    "shelfLife": {
-      "fridge_days": 3,
-      "freezer_days": 180,
-      "pantry_days": null
-    },
-    "tags": [
-      "dairy-free"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "pepperoni",
-    "aliases": [
-      "pepperoni",
-      "pepperonimakkara"
-    ],
-    "category": "protein",
-    "defaultUnit": "g",
-    "nutritionPer100g": {
-      "calories": 504,
-      "protein_g": 22,
-      "carbs_g": 4,
-      "fat_g": 44,
-      "fiber_g": 0
-    },
-    "shelfLife": {
-      "fridge_days": 3,
-      "freezer_days": 180,
-      "pantry_days": null
-    },
-    "tags": [
-      "dairy-free"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "canned sardines",
-    "aliases": [
-      "sardiinisailyke"
-    ],
-    "category": "protein",
-    "defaultUnit": "g",
-    "nutritionPer100g": {
-      "calories": 208,
-      "protein_g": 25,
-      "carbs_g": 0,
-      "fat_g": 11,
-      "fiber_g": 0
-    },
-    "shelfLife": {
-      "fridge_days": 3,
-      "freezer_days": null,
-      "pantry_days": 1095
-    },
-    "tags": [
-      "gluten-free",
-      "dairy-free",
-      "high-protein"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "octopus",
-    "aliases": [
-      "mustekala"
-    ],
-    "category": "protein",
-    "defaultUnit": "g",
-    "nutritionPer100g": {
-      "calories": 82,
-      "protein_g": 15,
-      "carbs_g": 2.2,
-      "fat_g": 1,
-      "fiber_g": 0
-    },
-    "shelfLife": {
-      "fridge_days": 3,
-      "freezer_days": 180,
-      "pantry_days": null
-    },
-    "tags": [
-      "gluten-free",
-      "dairy-free",
-      "high-protein"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "scallop",
-    "aliases": [
-      "kampasimpukka"
-    ],
-    "category": "protein",
-    "defaultUnit": "g",
-    "nutritionPer100g": {
-      "calories": 111,
-      "protein_g": 21,
-      "carbs_g": 5,
-      "fat_g": 0.8,
-      "fiber_g": 0
-    },
-    "shelfLife": {
-      "fridge_days": 3,
-      "freezer_days": 180,
-      "pantry_days": null
-    },
-    "tags": [
-      "gluten-free",
-      "dairy-free",
-      "high-protein"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "lobster",
-    "aliases": [
-      "hummeri"
-    ],
-    "category": "protein",
-    "defaultUnit": "g",
-    "nutritionPer100g": {
-      "calories": 89,
-      "protein_g": 19,
-      "carbs_g": 0.5,
-      "fat_g": 0.9,
-      "fiber_g": 0
-    },
-    "shelfLife": {
-      "fridge_days": 3,
-      "freezer_days": 180,
-      "pantry_days": null
-    },
-    "tags": [
-      "gluten-free",
-      "dairy-free",
-      "high-protein"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "clam",
-    "aliases": [
-      "simpukka",
-      "venussimpukka"
-    ],
-    "category": "protein",
-    "defaultUnit": "g",
-    "nutritionPer100g": {
-      "calories": 74,
-      "protein_g": 13,
-      "carbs_g": 2.6,
-      "fat_g": 1,
-      "fiber_g": 0
-    },
-    "shelfLife": {
-      "fridge_days": 3,
-      "freezer_days": 180,
-      "pantry_days": null
-    },
-    "tags": [
-      "gluten-free",
-      "dairy-free",
-      "high-protein"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "whitefish",
-    "aliases": [
-      "siika"
-    ],
-    "category": "protein",
-    "defaultUnit": "g",
-    "nutritionPer100g": {
-      "calories": 90,
-      "protein_g": 19,
-      "carbs_g": 0,
-      "fat_g": 1.3,
-      "fiber_g": 0
-    },
-    "shelfLife": {
-      "fridge_days": 3,
-      "freezer_days": 180,
-      "pantry_days": null
-    },
-    "tags": [
-      "gluten-free",
-      "dairy-free",
-      "high-protein"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "halibut",
-    "aliases": [
-      "ruijanpallas",
-      "pallas"
-    ],
-    "category": "protein",
-    "defaultUnit": "g",
-    "nutritionPer100g": {
-      "calories": 111,
-      "protein_g": 23,
-      "carbs_g": 0,
-      "fat_g": 1.6,
-      "fiber_g": 0
-    },
-    "shelfLife": {
-      "fridge_days": 3,
-      "freezer_days": 180,
-      "pantry_days": null
-    },
-    "tags": [
-      "gluten-free",
-      "dairy-free",
-      "high-protein"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "tilapia",
-    "aliases": [
-      "tilapia"
-    ],
-    "category": "protein",
-    "defaultUnit": "g",
-    "nutritionPer100g": {
-      "calories": 96,
-      "protein_g": 20,
-      "carbs_g": 0,
-      "fat_g": 1.7,
-      "fiber_g": 0
-    },
-    "shelfLife": {
-      "fridge_days": 3,
-      "freezer_days": 180,
-      "pantry_days": null
-    },
-    "tags": [
-      "gluten-free",
-      "dairy-free",
-      "high-protein"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "split peas",
-    "aliases": [
-      "halkaistu herne"
-    ],
-    "category": "protein",
-    "defaultUnit": "g",
-    "nutritionPer100g": {
-      "calories": 118,
-      "protein_g": 8.3,
-      "carbs_g": 21,
-      "fat_g": 0.4,
-      "fiber_g": 8.3
-    },
-    "shelfLife": {
-      "fridge_days": 5,
-      "freezer_days": 180,
-      "pantry_days": 730
-    },
-    "tags": [
-      "vegetarian",
-      "vegan",
-      "gluten-free",
-      "high-protein",
-      "high-fiber"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "fava beans",
-    "aliases": [
-      "haerkaepavut"
-    ],
-    "category": "protein",
-    "defaultUnit": "g",
-    "nutritionPer100g": {
-      "calories": 110,
-      "protein_g": 7.6,
-      "carbs_g": 19,
-      "fat_g": 0.4,
-      "fiber_g": 5.4
-    },
-    "shelfLife": {
-      "fridge_days": 5,
-      "freezer_days": 180,
-      "pantry_days": 730
-    },
-    "tags": [
-      "vegetarian",
-      "vegan",
-      "gluten-free",
-      "high-protein"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "mung beans",
-    "aliases": [
-      "mungopapu"
-    ],
-    "category": "protein",
-    "defaultUnit": "g",
-    "nutritionPer100g": {
-      "calories": 105,
-      "protein_g": 7,
-      "carbs_g": 19,
-      "fat_g": 0.4,
-      "fiber_g": 7.6
-    },
-    "shelfLife": {
-      "fridge_days": 5,
-      "freezer_days": 180,
-      "pantry_days": 730
-    },
-    "tags": [
-      "vegetarian",
-      "vegan",
-      "gluten-free",
-      "high-protein"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "halloumi",
-    "aliases": [
-      "halloumi-juusto"
-    ],
-    "category": "dairy",
-    "defaultUnit": "g",
-    "nutritionPer100g": {
-      "calories": 321,
-      "protein_g": 22,
-      "carbs_g": 3,
-      "fat_g": 25,
-      "fiber_g": 0
-    },
-    "shelfLife": {
-      "fridge_days": 14,
-      "freezer_days": 90,
-      "pantry_days": null
-    },
-    "tags": [
-      "vegetarian",
-      "gluten-free",
-      "high-protein"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "brie",
-    "aliases": [
-      "brie-juusto"
-    ],
-    "category": "dairy",
-    "defaultUnit": "g",
-    "nutritionPer100g": {
-      "calories": 334,
-      "protein_g": 21,
-      "carbs_g": 0.5,
-      "fat_g": 28,
-      "fiber_g": 0
-    },
-    "shelfLife": {
-      "fridge_days": 14,
-      "freezer_days": 90,
-      "pantry_days": null
-    },
-    "tags": [
-      "vegetarian",
-      "gluten-free"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "camembert",
-    "aliases": [
-      "camembert",
-      "camembertjuusto"
-    ],
-    "category": "dairy",
-    "defaultUnit": "g",
-    "nutritionPer100g": {
-      "calories": 300,
-      "protein_g": 20,
-      "carbs_g": 0.5,
-      "fat_g": 24,
-      "fiber_g": 0
-    },
-    "shelfLife": {
-      "fridge_days": 14,
-      "freezer_days": 90,
-      "pantry_days": null
-    },
-    "tags": [
-      "vegetarian",
-      "gluten-free"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "gruyere",
-    "aliases": [
-      "gruyère",
-      "gruyerejuusto"
-    ],
-    "category": "dairy",
-    "defaultUnit": "g",
-    "nutritionPer100g": {
-      "calories": 413,
-      "protein_g": 30,
-      "carbs_g": 0.4,
-      "fat_g": 32,
-      "fiber_g": 0
-    },
-    "shelfLife": {
-      "fridge_days": 14,
-      "freezer_days": 90,
-      "pantry_days": null
-    },
-    "tags": [
-      "vegetarian",
-      "gluten-free",
-      "high-protein"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "provolone",
-    "aliases": [
-      "provolone",
-      "provolonejuusto"
-    ],
-    "category": "dairy",
-    "defaultUnit": "g",
-    "nutritionPer100g": {
-      "calories": 352,
-      "protein_g": 26,
-      "carbs_g": 2.1,
-      "fat_g": 27,
-      "fiber_g": 0
-    },
-    "shelfLife": {
-      "fridge_days": 14,
-      "freezer_days": 90,
-      "pantry_days": null
-    },
-    "tags": [
-      "vegetarian",
-      "gluten-free"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "cream",
-    "aliases": [
-      "ruokakerma"
-    ],
-    "category": "dairy",
-    "defaultUnit": "ml",
-    "nutritionPer100g": {
-      "calories": 195,
-      "protein_g": 2.1,
-      "carbs_g": 3.7,
-      "fat_g": 20,
-      "fiber_g": 0
-    },
-    "shelfLife": {
-      "fridge_days": 14,
-      "freezer_days": 90,
-      "pantry_days": null
-    },
-    "tags": [
-      "vegetarian",
-      "gluten-free"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "creme fraiche",
-    "aliases": [
-      "creme fraiche",
-      "ranskankerma"
-    ],
-    "category": "dairy",
-    "defaultUnit": "ml",
-    "nutritionPer100g": {
-      "calories": 292,
-      "protein_g": 2.4,
-      "carbs_g": 3,
-      "fat_g": 30,
-      "fiber_g": 0
-    },
-    "shelfLife": {
-      "fridge_days": 14,
-      "freezer_days": 90,
-      "pantry_days": null
-    },
-    "tags": [
-      "vegetarian",
-      "gluten-free"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "skyr",
-    "aliases": [
-      "skyr"
-    ],
-    "category": "dairy",
-    "defaultUnit": "g",
-    "nutritionPer100g": {
-      "calories": 61,
-      "protein_g": 11,
-      "carbs_g": 4,
-      "fat_g": 0.2,
-      "fiber_g": 0
-    },
-    "shelfLife": {
-      "fridge_days": 14,
-      "freezer_days": 90,
-      "pantry_days": null
-    },
-    "tags": [
-      "vegetarian",
-      "gluten-free",
-      "high-protein",
-      "fermented"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "ghee",
-    "aliases": [
-      "ghee-voi"
-    ],
-    "category": "dairy",
-    "defaultUnit": "g",
-    "nutritionPer100g": {
-      "calories": 900,
-      "protein_g": 0,
-      "carbs_g": 0,
-      "fat_g": 100,
-      "fiber_g": 0
-    },
-    "shelfLife": {
-      "fridge_days": 365,
-      "freezer_days": null,
-      "pantry_days": 180
-    },
-    "tags": [
-      "vegetarian",
-      "gluten-free"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "orzo",
-    "aliases": [
-      "orzo",
-      "riisipasta"
-    ],
-    "category": "grain",
-    "defaultUnit": "g",
-    "nutritionPer100g": {
-      "calories": 157,
-      "protein_g": 5.8,
-      "carbs_g": 31,
-      "fat_g": 0.9,
-      "fiber_g": 1.8
-    },
-    "shelfLife": {
-      "fridge_days": null,
-      "freezer_days": null,
-      "pantry_days": 365
-    },
-    "tags": [
-      "vegetarian",
-      "vegan"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "gnocchi",
-    "aliases": [
-      "gnocchi",
-      "perunanyytit"
-    ],
-    "category": "grain",
-    "defaultUnit": "g",
-    "nutritionPer100g": {
-      "calories": 133,
-      "protein_g": 3,
-      "carbs_g": 28,
-      "fat_g": 0.8,
-      "fiber_g": 1.5
-    },
-    "shelfLife": {
-      "fridge_days": null,
-      "freezer_days": null,
-      "pantry_days": 365
-    },
-    "tags": [
-      "vegetarian"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "farro",
-    "aliases": [
-      "farro",
-      "emmervehnä"
-    ],
-    "category": "grain",
-    "defaultUnit": "g",
-    "nutritionPer100g": {
-      "calories": 340,
-      "protein_g": 14,
-      "carbs_g": 72,
-      "fat_g": 2.5,
-      "fiber_g": 11
-    },
-    "shelfLife": {
-      "fridge_days": null,
-      "freezer_days": null,
-      "pantry_days": 365
-    },
-    "tags": [
-      "vegetarian",
-      "vegan",
-      "whole-grain"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "amaranth",
-    "aliases": [
-      "amarantti"
-    ],
-    "category": "grain",
-    "defaultUnit": "g",
-    "nutritionPer100g": {
-      "calories": 371,
-      "protein_g": 14,
-      "carbs_g": 66,
-      "fat_g": 7,
-      "fiber_g": 7
-    },
-    "shelfLife": {
-      "fridge_days": null,
-      "freezer_days": null,
-      "pantry_days": 365
-    },
-    "tags": [
-      "vegetarian",
-      "vegan",
-      "gluten-free",
-      "whole-grain"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "teff",
-    "aliases": [
-      "teff",
-      "tef"
-    ],
-    "category": "grain",
-    "defaultUnit": "g",
-    "nutritionPer100g": {
-      "calories": 367,
-      "protein_g": 13,
-      "carbs_g": 73,
-      "fat_g": 2.4,
-      "fiber_g": 8
-    },
-    "shelfLife": {
-      "fridge_days": null,
-      "freezer_days": null,
-      "pantry_days": 365
-    },
-    "tags": [
-      "vegetarian",
-      "vegan",
-      "gluten-free",
-      "whole-grain"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "rice paper",
-    "aliases": [
-      "riisipaperi"
-    ],
-    "category": "grain",
-    "defaultUnit": "pieces",
-    "nutritionPer100g": {
-      "calories": 312,
-      "protein_g": 0.8,
-      "carbs_g": 77,
-      "fat_g": 0,
-      "fiber_g": 0.3
-    },
-    "shelfLife": {
-      "fridge_days": null,
-      "freezer_days": null,
-      "pantry_days": 365
-    },
-    "tags": [
-      "vegetarian",
-      "vegan",
-      "gluten-free"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "croissant",
-    "aliases": [
-      "voisarvi"
-    ],
-    "category": "grain",
-    "defaultUnit": "pieces",
-    "nutritionPer100g": {
-      "calories": 406,
-      "protein_g": 8,
-      "carbs_g": 45,
-      "fat_g": 21,
-      "fiber_g": 2.1
-    },
-    "shelfLife": {
-      "fridge_days": null,
-      "freezer_days": null,
-      "pantry_days": 365
-    },
-    "tags": [
-      "vegetarian"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "bagel",
-    "aliases": [
-      "bagel",
-      "bageli"
-    ],
-    "category": "grain",
-    "defaultUnit": "pieces",
-    "nutritionPer100g": {
-      "calories": 257,
-      "protein_g": 10,
-      "carbs_g": 50,
-      "fat_g": 1.6,
-      "fiber_g": 2.1
-    },
-    "shelfLife": {
-      "fridge_days": null,
-      "freezer_days": null,
-      "pantry_days": 365
-    },
-    "tags": [
-      "vegetarian",
-      "vegan"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "ciabatta",
-    "aliases": [
-      "ciabatta",
-      "ciabattaleipä"
-    ],
-    "category": "grain",
-    "defaultUnit": "g",
-    "nutritionPer100g": {
-      "calories": 271,
-      "protein_g": 9,
-      "carbs_g": 47,
-      "fat_g": 5,
-      "fiber_g": 2.5
-    },
-    "shelfLife": {
-      "fridge_days": null,
-      "freezer_days": null,
-      "pantry_days": 365
-    },
-    "tags": [
-      "vegetarian",
-      "vegan"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "naan bread",
-    "aliases": [
-      "naanleipa"
-    ],
-    "category": "grain",
-    "defaultUnit": "pieces",
-    "nutritionPer100g": {
-      "calories": 291,
-      "protein_g": 9,
-      "carbs_g": 50,
-      "fat_g": 6,
-      "fiber_g": 2.1
-    },
-    "shelfLife": {
-      "fridge_days": null,
-      "freezer_days": null,
-      "pantry_days": 365
-    },
-    "tags": [
-      "vegetarian"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "focaccia",
-    "aliases": [
-      "focaccia"
-    ],
-    "category": "grain",
-    "defaultUnit": "g",
-    "nutritionPer100g": {
-      "calories": 271,
-      "protein_g": 8,
-      "carbs_g": 42,
-      "fat_g": 8,
-      "fiber_g": 2
-    },
-    "shelfLife": {
-      "fridge_days": null,
-      "freezer_days": null,
-      "pantry_days": 365
-    },
-    "tags": [
-      "vegetarian",
-      "vegan"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "cracker",
-    "aliases": [
-      "voileipakeksi"
-    ],
-    "category": "grain",
-    "defaultUnit": "g",
-    "nutritionPer100g": {
-      "calories": 484,
-      "protein_g": 10,
-      "carbs_g": 62,
-      "fat_g": 22,
-      "fiber_g": 2.5
-    },
-    "shelfLife": {
-      "fridge_days": null,
-      "freezer_days": null,
-      "pantry_days": 365
-    },
-    "tags": [
-      "vegetarian"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "rice cake",
-    "aliases": [
-      "riisikakku"
-    ],
-    "category": "grain",
-    "defaultUnit": "pieces",
-    "nutritionPer100g": {
-      "calories": 387,
-      "protein_g": 8,
-      "carbs_g": 82,
-      "fat_g": 2.8,
-      "fiber_g": 1.3
-    },
-    "shelfLife": {
-      "fridge_days": null,
-      "freezer_days": null,
-      "pantry_days": 365
-    },
-    "tags": [
-      "vegetarian",
-      "vegan",
-      "gluten-free"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "gluten-free pasta",
-    "aliases": [
-      "gluteeniton pasta"
-    ],
-    "category": "grain",
-    "defaultUnit": "g",
-    "nutritionPer100g": {
-      "calories": 153,
-      "protein_g": 3,
-      "carbs_g": 34,
-      "fat_g": 0.5,
-      "fiber_g": 1.2
-    },
-    "shelfLife": {
-      "fridge_days": null,
-      "freezer_days": null,
-      "pantry_days": 365
-    },
-    "tags": [
-      "vegetarian",
-      "vegan",
-      "gluten-free"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "semolina",
-    "aliases": [
-      "mannasuurimo"
-    ],
-    "category": "grain",
-    "defaultUnit": "g",
-    "nutritionPer100g": {
-      "calories": 360,
-      "protein_g": 13,
-      "carbs_g": 73,
-      "fat_g": 1.1,
-      "fiber_g": 3.9
-    },
-    "shelfLife": {
-      "fridge_days": null,
-      "freezer_days": null,
-      "pantry_days": 365
-    },
-    "tags": [
-      "vegetarian",
-      "vegan"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "dried sage",
-    "aliases": [
-      "kuivattu salvia"
-    ],
-    "category": "spice",
-    "defaultUnit": "g",
-    "nutritionPer100g": {
-      "calories": 315,
-      "protein_g": 11,
-      "carbs_g": 61,
-      "fat_g": 13,
-      "fiber_g": 40
-    },
-    "shelfLife": {
-      "fridge_days": null,
-      "freezer_days": null,
-      "pantry_days": 730
-    },
-    "tags": [
-      "vegetarian",
-      "vegan",
-      "gluten-free"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "dried tarragon",
-    "aliases": [
-      "kuivattu rakuuna"
-    ],
-    "category": "spice",
-    "defaultUnit": "g",
-    "nutritionPer100g": {
-      "calories": 295,
-      "protein_g": 23,
-      "carbs_g": 50,
-      "fat_g": 7,
-      "fiber_g": 7
-    },
-    "shelfLife": {
-      "fridge_days": null,
-      "freezer_days": null,
-      "pantry_days": 730
-    },
-    "tags": [
-      "vegetarian",
-      "vegan",
-      "gluten-free"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "dried marjoram",
-    "aliases": [
-      "meirami"
-    ],
-    "category": "spice",
-    "defaultUnit": "g",
-    "nutritionPer100g": {
-      "calories": 271,
-      "protein_g": 12,
-      "carbs_g": 60,
-      "fat_g": 7,
-      "fiber_g": 40
-    },
-    "shelfLife": {
-      "fridge_days": null,
-      "freezer_days": null,
-      "pantry_days": 730
-    },
-    "tags": [
-      "vegetarian",
-      "vegan",
-      "gluten-free"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "lemon pepper",
-    "aliases": [
-      "sitruunapippuri"
-    ],
-    "category": "spice",
-    "defaultUnit": "g",
-    "nutritionPer100g": {
-      "calories": 206,
-      "protein_g": 7,
-      "carbs_g": 47,
-      "fat_g": 2,
-      "fiber_g": 16
-    },
-    "shelfLife": {
-      "fridge_days": null,
-      "freezer_days": null,
-      "pantry_days": 730
-    },
-    "tags": [
-      "vegetarian",
-      "vegan",
-      "gluten-free"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "herbes de provence",
-    "aliases": [
-      "herbes de provence",
-      "provencen yrtit"
-    ],
-    "category": "spice",
-    "defaultUnit": "g",
-    "nutritionPer100g": {
-      "calories": 265,
-      "protein_g": 9,
-      "carbs_g": 60,
-      "fat_g": 5,
-      "fiber_g": 40
-    },
-    "shelfLife": {
-      "fridge_days": null,
-      "freezer_days": null,
-      "pantry_days": 730
-    },
-    "tags": [
-      "vegetarian",
-      "vegan",
-      "gluten-free"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "cajun seasoning",
-    "aliases": [
-      "cajun-mauste",
-      "cajunmauste"
-    ],
-    "category": "spice",
-    "defaultUnit": "g",
-    "nutritionPer100g": {
-      "calories": 282,
-      "protein_g": 12,
-      "carbs_g": 54,
-      "fat_g": 10,
-      "fiber_g": 30
-    },
-    "shelfLife": {
-      "fridge_days": null,
-      "freezer_days": null,
-      "pantry_days": 730
-    },
-    "tags": [
-      "vegetarian",
-      "vegan",
-      "gluten-free"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "taco seasoning",
-    "aliases": [
-      "taco-mauste",
-      "tacomauste"
-    ],
-    "category": "spice",
-    "defaultUnit": "g",
-    "nutritionPer100g": {
-      "calories": 312,
-      "protein_g": 10,
-      "carbs_g": 56,
-      "fat_g": 8,
-      "fiber_g": 15
-    },
-    "shelfLife": {
-      "fridge_days": null,
-      "freezer_days": null,
-      "pantry_days": 730
-    },
-    "tags": [
-      "vegetarian",
-      "vegan"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "wasabi",
-    "aliases": [
-      "wasabi"
-    ],
-    "category": "spice",
-    "defaultUnit": "g",
-    "nutritionPer100g": {
-      "calories": 109,
-      "protein_g": 5,
-      "carbs_g": 24,
-      "fat_g": 0.6,
-      "fiber_g": 8
-    },
-    "shelfLife": {
-      "fridge_days": null,
-      "freezer_days": null,
-      "pantry_days": 730
-    },
-    "tags": [
-      "vegetarian",
-      "vegan",
-      "gluten-free"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "horseradish",
-    "aliases": [
-      "piparjuuri"
-    ],
-    "category": "spice",
-    "defaultUnit": "g",
-    "nutritionPer100g": {
-      "calories": 48,
-      "protein_g": 1.2,
-      "carbs_g": 11,
-      "fat_g": 0.7,
-      "fiber_g": 3.3
-    },
-    "shelfLife": {
-      "fridge_days": null,
-      "freezer_days": null,
-      "pantry_days": 730
-    },
-    "tags": [
-      "vegetarian",
-      "vegan",
-      "gluten-free"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "truffle oil",
-    "aliases": [
-      "tryffelioeljy"
-    ],
-    "category": "condiment",
-    "defaultUnit": "ml",
-    "nutritionPer100g": {
-      "calories": 884,
-      "protein_g": 0,
-      "carbs_g": 0,
-      "fat_g": 100,
-      "fiber_g": 0
-    },
-    "shelfLife": {
-      "fridge_days": 180,
-      "freezer_days": null,
-      "pantry_days": 365
-    },
-    "tags": [
-      "vegetarian",
-      "vegan",
-      "gluten-free"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "gochujang",
-    "aliases": [
-      "gochujang"
-    ],
-    "category": "condiment",
-    "defaultUnit": "g",
-    "nutritionPer100g": {
-      "calories": 100,
-      "protein_g": 4,
-      "carbs_g": 19,
-      "fat_g": 1,
-      "fiber_g": 3
-    },
-    "shelfLife": {
-      "fridge_days": 180,
-      "freezer_days": null,
-      "pantry_days": 365
-    },
-    "tags": [
-      "vegetarian",
-      "vegan",
-      "fermented"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "sweet chili sauce",
-    "aliases": [
-      "makea chilikastike"
-    ],
-    "category": "condiment",
-    "defaultUnit": "ml",
-    "nutritionPer100g": {
-      "calories": 220,
-      "protein_g": 0.3,
-      "carbs_g": 55,
-      "fat_g": 0.2,
-      "fiber_g": 0.3
-    },
-    "shelfLife": {
-      "fridge_days": 180,
-      "freezer_days": null,
-      "pantry_days": 365
-    },
-    "tags": [
-      "vegetarian",
-      "vegan",
-      "gluten-free"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "pomegranate molasses",
-    "aliases": [
-      "granaattiomenasiirappi"
-    ],
-    "category": "condiment",
-    "defaultUnit": "ml",
-    "nutritionPer100g": {
-      "calories": 250,
-      "protein_g": 0.5,
-      "carbs_g": 65,
-      "fat_g": 0.1,
-      "fiber_g": 0
-    },
-    "shelfLife": {
-      "fridge_days": 180,
-      "freezer_days": null,
-      "pantry_days": 365
-    },
-    "tags": [
-      "vegetarian",
-      "vegan",
-      "gluten-free"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "capers",
-    "aliases": [
-      "kaprikset"
-    ],
-    "category": "condiment",
-    "defaultUnit": "g",
-    "nutritionPer100g": {
-      "calories": 23,
-      "protein_g": 2.4,
-      "carbs_g": 5,
-      "fat_g": 0.9,
-      "fiber_g": 3.2
-    },
-    "shelfLife": {
-      "fridge_days": 180,
-      "freezer_days": null,
-      "pantry_days": 365
-    },
-    "tags": [
-      "vegetarian",
-      "vegan",
-      "gluten-free"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "olives",
-    "aliases": [
-      "oliivit"
-    ],
-    "category": "condiment",
-    "defaultUnit": "g",
-    "nutritionPer100g": {
-      "calories": 115,
-      "protein_g": 0.8,
-      "carbs_g": 6,
-      "fat_g": 11,
-      "fiber_g": 3.2
-    },
-    "shelfLife": {
-      "fridge_days": 180,
-      "freezer_days": null,
-      "pantry_days": 365
-    },
-    "tags": [
-      "vegetarian",
-      "vegan",
-      "gluten-free"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "sun-dried tomatoes",
-    "aliases": [
-      "aurinkokuivatut tomaatit"
-    ],
-    "category": "condiment",
-    "defaultUnit": "g",
-    "nutritionPer100g": {
-      "calories": 258,
-      "protein_g": 14,
-      "carbs_g": 56,
-      "fat_g": 3,
-      "fiber_g": 12
-    },
-    "shelfLife": {
-      "fridge_days": 180,
-      "freezer_days": null,
-      "pantry_days": 365
-    },
-    "tags": [
-      "vegetarian",
-      "vegan",
-      "gluten-free"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "kimchi",
-    "aliases": [
-      "kimchi"
-    ],
-    "category": "condiment",
-    "defaultUnit": "g",
-    "nutritionPer100g": {
-      "calories": 15,
-      "protein_g": 1.1,
-      "carbs_g": 2.4,
-      "fat_g": 0.5,
-      "fiber_g": 1.6
-    },
-    "shelfLife": {
-      "fridge_days": 180,
-      "freezer_days": null,
-      "pantry_days": 365
-    },
-    "tags": [
-      "vegetarian",
-      "vegan",
-      "gluten-free",
-      "fermented"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "sauerkraut",
-    "aliases": [
-      "hapankaali"
-    ],
-    "category": "condiment",
-    "defaultUnit": "g",
-    "nutritionPer100g": {
-      "calories": 19,
-      "protein_g": 0.9,
-      "carbs_g": 4.3,
-      "fat_g": 0.1,
-      "fiber_g": 2.9
-    },
-    "shelfLife": {
-      "fridge_days": 180,
-      "freezer_days": null,
-      "pantry_days": 365
-    },
-    "tags": [
-      "vegetarian",
-      "vegan",
-      "gluten-free",
-      "fermented"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "mirin",
-    "aliases": [
-      "riisiviini"
-    ],
-    "category": "condiment",
-    "defaultUnit": "ml",
-    "nutritionPer100g": {
-      "calories": 134,
-      "protein_g": 0.5,
-      "carbs_g": 5,
-      "fat_g": 0,
-      "fiber_g": 0
-    },
-    "shelfLife": {
-      "fridge_days": 180,
-      "freezer_days": null,
-      "pantry_days": 365
-    },
-    "tags": [
-      "vegetarian",
-      "vegan",
-      "gluten-free"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "frozen artichoke hearts",
-    "aliases": [
-      "artisokansydämet"
-    ],
-    "category": "frozen",
-    "defaultUnit": "g",
-    "nutritionPer100g": {
-      "calories": 38,
-      "protein_g": 2.9,
-      "carbs_g": 8.6,
-      "fat_g": 0.2,
-      "fiber_g": 4.8
-    },
-    "shelfLife": {
-      "fridge_days": null,
-      "freezer_days": 180,
-      "pantry_days": null
-    },
-    "tags": [
-      "vegetarian",
-      "vegan",
-      "gluten-free"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "frozen sweet potato fries",
-    "aliases": [
-      "bataattiranskalaiset"
-    ],
-    "category": "frozen",
-    "defaultUnit": "g",
-    "nutritionPer100g": {
-      "calories": 180,
-      "protein_g": 1.5,
-      "carbs_g": 30,
-      "fat_g": 6,
-      "fiber_g": 2.5
-    },
-    "shelfLife": {
-      "fridge_days": null,
-      "freezer_days": 180,
-      "pantry_days": null
-    },
-    "tags": [
-      "vegetarian",
-      "vegan",
-      "gluten-free"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "frozen dumplings",
-    "aliases": [
-      "nyytit",
-      "dumplingit"
-    ],
-    "category": "frozen",
-    "defaultUnit": "g",
-    "nutritionPer100g": {
-      "calories": 215,
-      "protein_g": 8,
-      "carbs_g": 30,
-      "fat_g": 7,
-      "fiber_g": 1.2
-    },
-    "shelfLife": {
-      "fridge_days": null,
-      "freezer_days": 180,
-      "pantry_days": null
-    },
-    "tags": [],
-    "isStaple": false
-  },
-  {
-    "name": "frozen spring rolls",
-    "aliases": [
-      "kevätrullat"
-    ],
-    "category": "frozen",
-    "defaultUnit": "g",
-    "nutritionPer100g": {
-      "calories": 225,
-      "protein_g": 5,
-      "carbs_g": 28,
-      "fat_g": 10,
-      "fiber_g": 1.5
-    },
-    "shelfLife": {
-      "fridge_days": null,
-      "freezer_days": 180,
-      "pantry_days": null
-    },
-    "tags": [
-      "vegetarian"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "frozen waffles",
-    "aliases": [
-      "pakastevohvelit"
-    ],
-    "category": "frozen",
-    "defaultUnit": "pieces",
-    "nutritionPer100g": {
-      "calories": 312,
-      "protein_g": 6,
-      "carbs_g": 45,
-      "fat_g": 12,
-      "fiber_g": 1.5
-    },
-    "shelfLife": {
-      "fridge_days": null,
-      "freezer_days": 180,
-      "pantry_days": null
-    },
-    "tags": [
-      "vegetarian"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "frozen hash browns",
-    "aliases": [
-      "perunarösti",
-      "röstiperuna"
-    ],
-    "category": "frozen",
-    "defaultUnit": "g",
-    "nutritionPer100g": {
-      "calories": 174,
-      "protein_g": 2,
-      "carbs_g": 24,
-      "fat_g": 8,
-      "fiber_g": 2
-    },
-    "shelfLife": {
-      "fridge_days": null,
-      "freezer_days": 180,
-      "pantry_days": null
-    },
-    "tags": [
-      "vegetarian",
-      "vegan",
-      "gluten-free"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "frozen french fries",
-    "aliases": [
-      "pakasteperunat"
-    ],
-    "category": "frozen",
-    "defaultUnit": "g",
-    "nutritionPer100g": {
-      "calories": 150,
-      "protein_g": 2,
-      "carbs_g": 24,
-      "fat_g": 5,
-      "fiber_g": 2
-    },
-    "shelfLife": {
-      "fridge_days": null,
-      "freezer_days": 180,
-      "pantry_days": null
-    },
-    "tags": [
-      "vegetarian",
-      "vegan",
-      "gluten-free"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "frozen acai",
-    "aliases": [
-      "acai",
-      "acaimarja"
-    ],
-    "category": "frozen",
-    "defaultUnit": "g",
-    "nutritionPer100g": {
-      "calories": 70,
-      "protein_g": 1,
-      "carbs_g": 4,
-      "fat_g": 5,
-      "fiber_g": 3
-    },
-    "shelfLife": {
-      "fridge_days": null,
-      "freezer_days": 180,
-      "pantry_days": null
-    },
-    "tags": [
-      "vegetarian",
-      "vegan",
-      "gluten-free"
-    ],
-    "isStaple": false
-  },
-  {
-    "name": "frozen cherries",
-    "aliases": [
-      "pakastekirsikat"
-    ],
-    "category": "frozen",
-    "defaultUnit": "g",
-    "nutritionPer100g": {
-      "calories": 50,
-      "protein_g": 1,
-      "carbs_g": 12,
-      "fat_g": 0.3,
-      "fiber_g": 1.6
-    },
-    "shelfLife": {
-      "fridge_days": null,
-      "freezer_days": 180,
-      "pantry_days": null
-    },
-    "tags": [
-      "vegetarian",
-      "vegan",
-      "gluten-free"
     ],
     "isStaple": false
   },
