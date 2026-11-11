@@ -1,3 +1,5 @@
+// Meal plan entry table and its 1:1 cook feedback table
+
 import { pgTable, uuid, text, numeric, boolean, date, timestamp } from 'drizzle-orm/pg-core';
 import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 import { recipes } from './recipes.js';

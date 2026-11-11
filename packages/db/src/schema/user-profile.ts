@@ -1,3 +1,5 @@
+// Singleton user profile table and its disliked-ingredients join table
+
 import { pgTable, uuid, text, integer, jsonb, timestamp, primaryKey } from 'drizzle-orm/pg-core';
 import { ingredients } from './ingredients.js';
 

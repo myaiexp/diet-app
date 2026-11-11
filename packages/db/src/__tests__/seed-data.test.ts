@@ -1,3 +1,5 @@
+// Shape and sanity checks over the committed ingredients.json catalog
+
 import { describe, test, expect } from 'vitest';
 import { readFileSync } from 'fs';
 import { join, dirname } from 'path';

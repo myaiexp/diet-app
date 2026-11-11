@@ -81,28 +81,11 @@ and the migration workflow: **`docs/testing.md`**.
 
 ## Plans
 
-Active design docs in `docs/plans/`:
-
-- `2026-03-05-project-init-design.md` — original 2026-03-05 architecture
-  (superseded on URL/auth/frontend; current stack is Stack/API above,
-  `docs/auth-deploy.md`, and later shipped plans)
-- `2026-03-05-phase0-skeleton.md` — Phase 0, shipped; historical (npm
-  workspaces and the `mase.fi/diet/api` health path are superseded)
-- `2026-07-20-pantry-recipe-writes-design.md` + `-plan.md` — Phase 1 pantry/recipe
-  write endpoints, shipped
-- `2026-07-20-cook-flow-design.md` + `-plan.md` — meal plan writes, auto-deduct
-  on cook, cook feedback (#379/#241/#377), shipped
-- `2026-07-21-phase1-closeout-design.md` + `-plan.md` — profile writes #376,
-  recipe scaling #240, recipe import draft #378, shipped
-- `2026-08-04-shopping-lists-design.md` + `-plan.md` — list generation from the
-  meal plan #381, item/status writes and the `/complete` pantry hand-off #382,
-  shipped
-- `2026-08-04-frontend-design.md` + `2026-08-04-frontend-phase1-plan.md` — the
-  frontend #391, **shipped** (including shopping list #3238/#3233). Placeholders
-  remain for AI suggestions (#380), nutrition (#385), and waste (#389) — no
-  endpoint yet.
-- `2026-08-05-grocery-products-design.md` — products table and S-market Jämsä
-  import, shipped
+Design records in `docs/plans/`, all shipped. Each feature's design doc is
+linked from its bullet above; read them for rationale, and the code plus
+`docs/*.md` for current behavior. The two 2026-03-05 docs (project init,
+Phase 0) predate today's stack — npm workspaces, `mase.fi/diet` paths, a
+different auth — and are historical only.
 
 **Frontend design doc caveat**: `2026-08-04-frontend-design.md` is authoritative
 for look, layout, copy and interaction, but **not for the API** — the design

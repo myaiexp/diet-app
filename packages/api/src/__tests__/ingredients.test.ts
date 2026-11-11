@@ -1,3 +1,5 @@
+// Ingredient routes: UUID check, list filters, pagination, GET by id, PATCH
+
 import { describe, test, expect } from 'vitest';
 import { asc } from 'drizzle-orm';
 import { ingredients } from '@diet-app/db';

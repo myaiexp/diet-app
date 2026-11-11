@@ -1,3 +1,5 @@
+// Recipe table and its ingredient-line table
+
 import { pgTable, uuid, text, jsonb, integer, boolean, numeric, timestamp } from 'drizzle-orm/pg-core';
 import type { AnyPgColumn } from 'drizzle-orm/pg-core';
 import { ingredients } from './ingredients.js';

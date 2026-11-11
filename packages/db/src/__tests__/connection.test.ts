@@ -1,3 +1,5 @@
+// createDb / createPool: query APIs, lazy connect, pool bounds, error listener
+
 import { describe, test, expect, vi, afterEach } from 'vitest';
 import { createDb, createPool, POOL_DEFAULTS } from '../connection.js';
 

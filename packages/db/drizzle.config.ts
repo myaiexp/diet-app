@@ -1,3 +1,5 @@
+// drizzle-kit config: schema, migrations dir, DATABASE_URL from the repo .env
+
 import { defineConfig } from 'drizzle-kit';
 import { loadRepoEnv } from './src/load-env.js';
 

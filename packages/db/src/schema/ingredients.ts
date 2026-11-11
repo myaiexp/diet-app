@@ -1,3 +1,5 @@
+// Ingredient catalog table: names, aliases, nutrition, shelf-life defaults
+
 import { pgTable, uuid, text, jsonb, boolean, timestamp } from 'drizzle-orm/pg-core';
 
 export const ingredients = pgTable('ingredients', {
