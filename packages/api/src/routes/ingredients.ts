@@ -1,3 +1,5 @@
+// Ingredient catalog routes: search list, GET by id, PATCH isStaple
+
 import { Hono } from 'hono';
 import type { Db } from '@diet-app/db';
 import { ingredients } from '@diet-app/db';

@@ -1,3 +1,5 @@
+// Grocery product table: S-kaupat SKUs keyed by (store_id, ean)
+
 import { pgTable, uuid, text, numeric, boolean, jsonb, timestamp, unique, index } from 'drizzle-orm/pg-core';
 
 export const products = pgTable(

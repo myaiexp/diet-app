@@ -224,7 +224,7 @@ its code fails.
 ## Catalog seed
 
 `pnpm --filter @diet-app/db db:seed` regenerates `packages/db/data/ingredients.json`
-from `scripts/generate-ingredients.mjs`, then upserts every row into
+from `scripts/generate-ingredients.ts`, then upserts every row into
 `ingredients` on the unique `name` and creates the default `user_profile` if
 none exists (`seed` alone skips the regenerate step). It is idempotent and never
 deletes, since `recipe_ingredients` / `pantry_items` reference the rows without
@@ -235,11 +235,13 @@ cascade. `isStaple` is written on insert but deliberately left out of the
 deploy, so a committed catalog edit reaches production without a manual step;
 a row that already matches is skipped and keeps its `updatedAt`
 (`seed-core-sql.test.ts`). The catalog source is also where the
-"every row has a Finnish alias" rule lives (`seed-data.test.ts`). The `.mjs`
-is the source and the JSON its committed output, because the deploy seeds the
-JSON without regenerating: `ingredients-generator-drift.test.ts` runs the
-generator into a temp file and fails unless it matches the committed JSON byte
-for byte. Edit the generator, re-run it, commit both.
+"every row has a Finnish alias" rule lives (`seed-data.test.ts`). The rows live one file per
+category in `scripts/ingredients/`, built by the typed `ingredient()` factory in
+`define.ts`, whose closed category/unit/tag unions make a typo a type error.
+They are the source and the JSON their committed output, because the deploy
+seeds the JSON without regenerating: `ingredients-generator-drift.test.ts` runs
+the generator into a temp file and fails unless it matches the committed JSON
+byte for byte. Edit a row, re-run the generator, commit both.
 
 ## Demo data
 

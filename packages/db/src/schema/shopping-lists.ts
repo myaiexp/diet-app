@@ -1,3 +1,5 @@
+// Shopping list table (one per week) and its item table
+
 import {
   pgTable,
   uuid,

@@ -15,7 +15,7 @@
 | `src/api/` | One thin module per resource over `client.ts`; wire types in `types/<resource>.ts`, imported through the `types.ts` barrel. |
 | `src/format/` | Display-only formatting (dates, quantities, the expiry ramp, entry titles). A formatted value is never sent back. |
 | `src/ui/` | Shared primitives — see below. |
-| `src/css/` | `app.css`, `form.css`, one sheet per screen — see CSS layering. |
+| `src/css/` | `shell.css`, `app.css`, `form.css`, one sheet per screen — see CSS layering. |
 
 ## Routing and the mount lifecycle
 
@@ -114,11 +114,14 @@
 1. `https://mase.fi/base.css` — linked in `index.html` with SRI. A `base.css`
    change needs a new integrity hash (the comment in `index.html`,
    `docs/auth-deploy.md`).
-2. `src/css/app.css` — the project layer: tokens (cyan accent,
+2. `src/css/shell.css` + `src/css/app.css` — the project layer. `shell.css`
+   is the app shell (sidebar, screen pane, phone tab bar, and the phone
+   breakpoint's touch sizing); `app.css` is the tokens (cyan accent,
    `--ramp-amber`) and shared surfaces (modal chrome, `.bar-sticky`
-   background, extra label tints, touch sizing). It is the first import in
-   `main.ts`, ahead of the router that pulls in every screen, which is what
-   puts it before the screen sheets in the bundle — keep it first.
+   background, extra label tints). They are the first imports in `main.ts`,
+   `shell.css` then `app.css`, ahead of the router that pulls in every
+   screen, which is what puts them before the screen sheets in the bundle —
+   keep them first and in that order.
 3. `src/css/form.css` — imported by `ui/form.ts`, so any screen using form
    chrome gets it. Its `.pantry-field` / `.pantry-search-*` names are the
    shared form vocabulary despite the prefix.

@@ -1,3 +1,5 @@
+// Package entry: connection, schema, seed and test-DB helpers
+
 export {
   createDb,
   createPool,

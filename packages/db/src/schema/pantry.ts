@@ -1,3 +1,5 @@
+// Pantry item table: stock on hand per ingredient, location and expiry
+
 import { pgTable, uuid, text, numeric, boolean, date, timestamp } from 'drizzle-orm/pg-core';
 import { ingredients } from './ingredients.js';
 
